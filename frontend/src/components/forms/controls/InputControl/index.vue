@@ -14,11 +14,15 @@
     :maxlength="maxlength"
     :minlength="minlength"
     :inputmode="inputmode"
+    :min="min"
+    :max="max"
+    :step="step"
     :aria-invalid="ariaInvalid"
     :aria-describedby="ariaDescribedBy"
     @input="emitModelValue"
     @focus="emit('focus', $event)"
     @blur="emit('blur', $event)"
+    
   />
 </template>
 

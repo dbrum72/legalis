@@ -63,4 +63,19 @@ export const inputControlProps = {
         type: String,
         default: undefined,
     },
+
+    min: {
+        type: [Number, String],
+        default: undefined,
+    },
+
+    max: {
+        type: [Number, String],
+        default: undefined,
+    },
+
+    step: {
+        type: [Number, String],
+        default: undefined,
+    },
 }

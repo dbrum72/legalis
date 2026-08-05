@@ -1,27 +1,34 @@
 {
-  "name": "frontend",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "format": "prettier --write --experimental-cli src/"
-  },
-  "dependencies": {
-    "@lucide/vue": "^1.28.0",
-    "pinia": "^4.0.2",
-    "vue": "^3.5.40",
-    "vue-router": "^5.2.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.8",
-    "prettier": "3.9.5",
-    "vite": "^8.1.5",
-    "vite-plugin-vue-devtools": "^8.1.5"
-  },
-  "engines": {
-    "node": "^22.18.0 || >=24.12.0"
-  }
+    "name": "frontend",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "format": "prettier --write --experimental-cli src/",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage"
+    },
+    "dependencies": {
+        "@lucide/vue": "^1.28.0",
+        "pinia": "^4.0.2",
+        "vue": "^3.5.40",
+        "vue-router": "^5.2.0"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^6.0.8",
+        "@vitest/coverage-v8": "^4.1.10",
+        "@vue/test-utils": "^2.4.11",
+        "jsdom": "^30.0.1",
+        "prettier": "3.9.5",
+        "vite": "^8.1.5",
+        "vite-plugin-vue-devtools": "^8.1.5",
+        "vitest": "^4.1.10"
+    },
+    "engines": {
+        "node": "^22.18.0 || >=24.12.0"
+    }
 }
