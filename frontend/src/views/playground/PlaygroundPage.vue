@@ -28,10 +28,4 @@ import PasswordPlayground from './forms/PasswordPlayground.vue'
 import SearchPlayground from './forms/SearchPlayground.vue'
 import EmailPlayground from './forms/EmailPlayground.vue'
 import PhonePlayground from './forms/PhonePlayground.vue'
-
-
-//import TextareaPlayground from './forms/TextareaPlayground.vue'
-//import SelectPlayground from './forms/SelectPlayground.vue'
-//import CheckboxPlayground from './forms/CheckboxPlayground.vue'
-//import RadioPlayground from './forms/RadioPlayground.vue'
 </script>

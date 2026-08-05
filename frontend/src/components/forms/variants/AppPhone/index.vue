@@ -2,11 +2,7 @@
   <InputVariant
     :model-value="modelValue"
     :input-props="inputProps"
-    type="tel"
-    autocomplete="tel"
-    inputmode="tel"
-    icon="phone"
-    :show-icon="showIcon"
+    :config="variantConfig"
     @update:model-value="emit('update:modelValue', $event)"
     @focus="emit('focus', $event)"
     @blur="emit('blur', $event)"
@@ -40,6 +36,15 @@ const emit = defineEmits([
   'focus',
   'blur',
 ])
+
+const variantConfig = computed(() => ({
+  type: 'tel',
+  autocomplete: 'tel',
+  inputmode: 'tel',
+  icon: 'phone',
+  iconSize: 18,
+  showIcon: props.showIcon,
+}))
 
 const inputProps = computed(() => {
   const {
