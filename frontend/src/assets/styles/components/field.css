@@ -9,6 +9,33 @@
   width: 100%;
 }
 
+.app-field__input {
+  display: flex;
+  align-items: center;
+
+  min-width: 0;
+  flex: 1;
+}
+
+.app-field__prepend,
+.app-field__append {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  color: var(--color-text-muted);
+}
+
+.app-field__prepend {
+  margin-right: var(--space-3);
+}
+
+.app-field__append {
+  margin-left: var(--space-3);
+}
+
 .app-field__label {
   display: inline-flex;
   align-items: center;

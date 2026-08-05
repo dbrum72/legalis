@@ -8,12 +8,47 @@
     :disabled="disabled"
     :readonly="readonly"
   >
+    <template
+      v-if="$slots.prepend"
+      #prepend
+    >
+      <slot name="prepend" />
+    </template>
+
+    <template
+      v-if="$slots.prepend"
+      #prepend
+    >
+      <slot name="prepend" />
+    </template>
+
     <InputControl
       v-bind="controlProps"
       @update:model-value="emit('update:modelValue', $event)"
       @focus="emit('focus', $event)"
       @blur="emit('blur', $event)"
     />
+
+    <template
+      v-if="$slots.append"
+      #append
+    >
+      <slot name="append" />
+    </template>
+
+    <template
+  v-if="$slots.append"
+  #append
+>
+  <slot name="append" />
+</template>
+
+    <template
+      v-if="$slots.append"
+      #append
+    >
+      <slot name="append" />
+    </template>
   </BaseField>
 </template>
 

@@ -7,8 +7,9 @@ export default [
         children: [],
     },
     {
-        title: 'Playground',
+        id: 'playground',
+        name: 'playground',
+        label: 'Playground',
         icon: 'fa-solid fa-flask',
-        route: 'playground',
     },
 ]

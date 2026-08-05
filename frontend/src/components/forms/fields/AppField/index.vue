@@ -25,7 +25,23 @@
     </label>
 
     <div class="app-field__control">
-      <slot />
+      <div
+        v-if="$slots.prepend"
+        class="app-field__prepend"
+      >
+        <slot name="prepend" />
+      </div>
+
+      <div class="app-field__input">
+        <slot />
+      </div>
+
+      <div
+        v-if="$slots.append"
+        class="app-field__append"
+      >
+        <slot name="append" />
+      </div>
     </div>
 
     <p
