@@ -18,6 +18,8 @@
 
     <UrlPlayground />
 
+    <NumberPlayground />
+
   </PageContainer>
 
 </template>
@@ -31,4 +33,5 @@ import SearchPlayground from './forms/SearchPlayground.vue'
 import EmailPlayground from './forms/EmailPlayground.vue'
 import PhonePlayground from './forms/PhonePlayground.vue'
 import UrlPlayground from './forms/UrlPlayground.vue'
+import NumberPlayground from './forms/NumberPlayground.vue'
 </script>
