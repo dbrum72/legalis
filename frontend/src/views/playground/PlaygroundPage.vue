@@ -16,6 +16,8 @@
 
     <PhonePlayground />
 
+    <UrlPlayground />
+
   </PageContainer>
 
 </template>
@@ -28,4 +30,5 @@ import PasswordPlayground from './forms/PasswordPlayground.vue'
 import SearchPlayground from './forms/SearchPlayground.vue'
 import EmailPlayground from './forms/EmailPlayground.vue'
 import PhonePlayground from './forms/PhonePlayground.vue'
+import UrlPlayground from './forms/UrlPlayground.vue'
 </script>

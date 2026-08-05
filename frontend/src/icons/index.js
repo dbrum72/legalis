@@ -5,8 +5,9 @@ import {
   EyeOff,
   FileText,
   LayoutDashboard,
+  Link,
   Mail,
-  Phone,
+  Phone,  
   Scale,
   Search,
   Settings,
@@ -33,4 +34,5 @@ export const icons = {
   clear: CircleX,
   email: Mail,
   phone: Phone,
+  link: Link,
 }
