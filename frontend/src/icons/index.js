@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   Mail,
+  Phone
   Scale,
   Search,
   Settings,
@@ -31,4 +32,5 @@ export const icons = {
   close: X,
   clear: CircleX,
   email: Mail,
+  phone: Phone,
 }
