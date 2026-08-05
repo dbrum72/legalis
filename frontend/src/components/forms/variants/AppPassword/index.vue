@@ -7,10 +7,14 @@
 
         <template v-if="showToggle || $slots.append" #append>
             <slot name="append">
-                <button v-if="showToggle" type="button" class="app-password__toggle" :aria-label="toggleLabel"
-                    :aria-pressed="isVisible" :disabled="disabled" @click="toggleVisibility">
-                    {{ isVisible ? 'Ocultar' : 'Mostrar' }}
-                </button>
+                <InputIconButton v-if="showToggle" :aria-label="toggleLabel" :disabled="disabled"
+                    @click="toggleVisibility">
+                    <InputIcon>
+
+                        {{ isVisible ? '🙈' : '👁' }}
+
+                    </InputIcon>
+                </InputIconButton>
             </slot>
         </template>
     </AppInput>
@@ -21,6 +25,11 @@ import { computed, ref } from 'vue'
 
 import AppInput from '@/components/forms/fields/AppInput/index.vue'
 import { appPasswordProps } from './props.js'
+
+import {
+    InputIcon,
+    InputIconButton,
+} from '@/components/forms/internal'
 
 const props = defineProps(appPasswordProps)
 
