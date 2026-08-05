@@ -1,25 +1,21 @@
 <template>
-  <AppInput
-    v-bind="inputProps"
+  <InputVariant
+    :model-value="modelValue"
+    :input-props="inputProps"
     type="tel"
     autocomplete="tel"
     inputmode="tel"
+    icon="phone"
+    :show-icon="showIcon"
     @update:model-value="emit('update:modelValue', $event)"
     @focus="emit('focus', $event)"
     @blur="emit('blur', $event)"
   >
     <template
-      v-if="showIcon || $slots.prepend"
+      v-if="$slots.prepend"
       #prepend
     >
-      <slot name="prepend">
-        <InputIcon v-if="showIcon">
-          <AppIcon
-            name="phone"
-            :size="18"
-          />
-        </InputIcon>
-      </slot>
+      <slot name="prepend" />
     </template>
 
     <template
@@ -28,15 +24,13 @@
     >
       <slot name="append" />
     </template>
-  </AppInput>
+  </InputVariant>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 
-import AppInput from '@/components/forms/fields/AppInput/index.vue'
-import { InputIcon } from '@/components/forms/internal/index.js'
-import AppIcon from '@/components/ui/AppIcon.vue'
+import InputVariant from '@/components/forms/internal/InputVariant.vue'
 import { appPhoneProps } from './props.js'
 
 const props = defineProps(appPhoneProps)
@@ -49,6 +43,7 @@ const emit = defineEmits([
 
 const inputProps = computed(() => {
   const {
+    modelValue,
     showIcon,
     type,
     autocomplete,

@@ -6,7 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   Mail,
-  Phone
+  Phone,
   Scale,
   Search,
   Settings,

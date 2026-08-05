@@ -14,6 +14,8 @@
 
     <EmailPlayground />
 
+    <PhonePlayground />
+
   </PageContainer>
 
 </template>
@@ -25,6 +27,7 @@ import PageContainer from '@/components/layout/PageContainer.vue'
 import PasswordPlayground from './forms/PasswordPlayground.vue'
 import SearchPlayground from './forms/SearchPlayground.vue'
 import EmailPlayground from './forms/EmailPlayground.vue'
+import PhonePlayground from './forms/PhonePlayground.vue'
 
 
 //import TextareaPlayground from './forms/TextareaPlayground.vue'
