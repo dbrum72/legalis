@@ -10,6 +10,8 @@
 
     <PasswordPlayground />
 
+    <SearchPlayground />
+
   </PageContainer>
 
 </template>
@@ -17,6 +19,7 @@
 <script setup>
 import PageContainer from '@/components/layout/PageContainer.vue'
 import PasswordPlayground from './forms/PasswordPlayground.vue'
+import SearchPlayground from './forms/SearchPlayground.vue'
 
 import InputPlayground from './forms/InputPlayground.vue'
 //import TextareaPlayground from './forms/TextareaPlayground.vue'
