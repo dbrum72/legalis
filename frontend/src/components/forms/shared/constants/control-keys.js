@@ -1,0 +1,75 @@
+export const INPUT_CONTROL_KEYS = [
+  'modelValue',
+  'type',
+  'id',
+  'name',
+  'placeholder',
+  'disabled',
+  'readonly',
+  'required',
+  'autofocus',
+  'autocomplete',
+  'maxlength',
+  'minlength',
+  'inputmode',
+]
+
+export const TEXTAREA_CONTROL_KEYS = [
+  'modelValue',
+  'id',
+  'name',
+  'placeholder',
+  'disabled',
+  'readonly',
+  'required',
+  'autofocus',
+  'autocomplete',
+  'maxlength',
+  'minlength',
+  'rows',
+  'cols',
+  'wrap',
+]
+
+export const SELECT_CONTROL_KEYS = [
+  'modelValue',
+  'id',
+  'name',
+  'placeholder',
+  'disabled',
+  'required',
+  'autofocus',
+  'options',
+  'optionLabel',
+  'optionValue',
+]
+
+export const CHECKBOX_CONTROL_KEYS = [
+  'modelValue',
+  'id',
+  'name',
+  'value',
+  'disabled',
+  'required',
+  'autofocus',
+  'indeterminate',
+]
+
+export const RADIO_CONTROL_KEYS = [
+  'modelValue',
+  'id',
+  'name',
+  'value',
+  'disabled',
+  'required',
+  'autofocus',
+]
+
+export const SWITCH_CONTROL_KEYS = [
+  'modelValue',
+  'id',
+  'name',
+  'disabled',
+  'required',
+  'autofocus',
+]

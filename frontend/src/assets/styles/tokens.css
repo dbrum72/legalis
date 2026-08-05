@@ -93,4 +93,7 @@
   --header-height: 4rem;
   --sidebar-width: 17rem;
   --sidebar-collapsed-width: 4.5rem;
+
+  --control-height: 2.75rem;
+  --selection-size: 1.125rem;
 }

@@ -1,10 +1,19 @@
 <template>
     <aside class="app-sidebar-nav">
+
+        <header class="sidebar-header">
+            <AppLogo />
+        </header>
+
         <SideBarNav />
+
+        <footer class="sidebar-footer">
+        </footer>
+
     </aside>
 </template>
 
 <script setup>
-import SideBarNav from '@/components/layout/SideBarNav.vue'
-
+import AppLogo from '@/components/ui/AppLogo.vue'
+import SideBarNav from '@/components/navigation/SideBarNav.vue'
 </script>

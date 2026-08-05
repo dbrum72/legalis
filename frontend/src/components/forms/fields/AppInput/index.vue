@@ -1,0 +1,40 @@
+<template>
+  <BaseField
+    :id="id"
+    :label="label"
+    :hint="hint"
+    :error="error"
+    :required="required"
+    :disabled="disabled"
+    :readonly="readonly"
+  >
+    <InputControl
+      v-bind="controlProps"
+      @update:model-value="emit('update:modelValue', $event)"
+      @focus="emit('focus', $event)"
+      @blur="emit('blur', $event)"
+    />
+  </BaseField>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+
+import BaseField from '@/components/forms/fields/BaseField/index.vue'
+import InputControl from '@/components/forms/controls/InputControl/index.vue'
+import { appInputProps } from './props.js'
+import { pick } from '@/components/forms/shared/utils/pick.js'
+import { INPUT_CONTROL_KEYS } from '@/components/forms/shared/constants/control-keys.js'
+
+const props = defineProps(appInputProps)
+
+const emit = defineEmits([
+  'update:modelValue',
+  'focus',
+  'blur',
+])
+
+const controlProps = computed(() =>
+  pick(props, INPUT_CONTROL_KEYS)
+)
+</script>

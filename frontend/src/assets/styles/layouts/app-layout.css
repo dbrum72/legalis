@@ -16,7 +16,9 @@
 }
 
 .app-sidebar {
-  grid-area: sidebar;
+    grid-area: sidebar;
+    min-height: 0;
+    height: 100%;
 }
 
 .app-header {

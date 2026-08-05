@@ -15,8 +15,14 @@ const router = createRouter({
                 {
                     path: '',
                     name: 'dashboard',
-                    component: DashboardPage
-                }
+                    component: DashboardPage,
+                    meta: { breadcrumb: 'Dashboard' },
+                },
+                {
+                    path: '/playground',
+                    name: 'playground',
+                    component: () => import('@/views/playground/PlaygroundPage.vue'),
+                },
             ],
         },
     ],

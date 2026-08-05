@@ -5,7 +5,7 @@
         </aside>
 
         <header class="app-header">
-            Header
+            <HeaderBar />
         </header>
 
         <main class="app-main">
@@ -16,6 +16,6 @@
 
 <script setup>
 import { RouterView } from 'vue-router'
-//import HeaderBar from '@/components/layout/HeaderBar.vue'
+import HeaderBar from '@/components/layout/HeaderBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
 </script>
