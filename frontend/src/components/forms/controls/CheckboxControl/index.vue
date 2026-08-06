@@ -1,5 +1,6 @@
 <template>
   <input
+    ref="inputRef"
     class="checkbox-control"
     type="checkbox"
     :id="id"
@@ -17,15 +18,34 @@
 </template>
 
 <script setup>
+import { onMounted, ref, watch } from 'vue'
+
 import { checkboxControlProps } from './props.js'
 
-defineProps(checkboxControlProps)
+const props = defineProps(checkboxControlProps)
 
 const emit = defineEmits([
   'update:modelValue',
   'focus',
   'blur',
 ])
+
+const inputRef = ref(null)
+
+watch(
+  () => props.indeterminate,
+  applyIndeterminate,
+)
+
+onMounted(applyIndeterminate)
+
+function applyIndeterminate() {
+  if (!inputRef.value) {
+    return
+  }
+
+  inputRef.value.indeterminate = props.indeterminate
+}
 
 function emitModelValue(event) {
   emit('update:modelValue', event.target.checked)

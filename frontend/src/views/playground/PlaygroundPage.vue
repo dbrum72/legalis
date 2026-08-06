@@ -20,7 +20,19 @@
 
     <NumberPlayground />
 
+    <CurrencyPlayground />
+
+    <TextareaPlayground />
+
+    <SelectPlayground />
+
+    <AutocompletePlayground />
+
+    <RadioPlayground />
+
   </PageContainer>
+
+
 
 </template>
 
@@ -34,4 +46,10 @@ import EmailPlayground from './forms/EmailPlayground.vue'
 import PhonePlayground from './forms/PhonePlayground.vue'
 import UrlPlayground from './forms/UrlPlayground.vue'
 import NumberPlayground from './forms/NumberPlayground.vue'
+import CurrencyPlayground from './forms/CurrencyPlayground.vue'
+import TextareaPlayground from './forms/TextareaPlayground.vue'
+import SelectPlayground from './forms/SelectPlayground.vue'
+import AutocompletePlayground from './forms/AutocompletePlayground.vue'
+import RadioPlayground from './forms/RadioPlayground.vue'
+
 </script>
