@@ -22,6 +22,8 @@
 
     <CurrencyPlayground />
 
+    <DatePlayground />
+
     <TextareaPlayground />
 
     <SelectPlayground />
@@ -61,6 +63,7 @@ import CheckboxPlayground from './forms/CheckboxPlayground.vue'
 import SwitchPlayground from './forms/SwitchPlayground.vue'
 import RadioGroupPlayground from './forms/RadioGroupPlayground.vue'
 import CheckboxGroupPlayground from './forms/CheckboxGroupPlayground.vue'
+import DatePlayground from './forms/DatePlayground.vue'
 
 
 </script>
