@@ -8,6 +8,8 @@
 
     <ButtonPlayground />
 
+    <CardPlayground />
+
     <InputPlayground />
 
     <PasswordPlayground />
@@ -70,6 +72,7 @@ import CheckboxGroupPlayground from './forms/CheckboxGroupPlayground.vue'
 import DatePlayground from './forms/DatePlayground.vue'
 import FileUploadPlayground from './forms/FileUploadPlayground.vue'
 import ButtonPlayground from './ui/ButtonPlayground.vue'
+import CardPlayground from './ui/CardPlayground.vue'
 
 
 </script>
