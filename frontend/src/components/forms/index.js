@@ -14,6 +14,9 @@ export { default as AppSwitch } from './selection/AppSwitch/index.vue'
 export { default as RadioGroup } from './groups/RadioGroup/index.vue'
 export { default as CheckboxGroup } from './groups/CheckboxGroup/index.vue'
 
+// Files
+export { default as AppFileUpload } from './files/AppFileUpload/index.vue'
+
 // Variants
 export { default as AppPassword } from './variants/AppPassword/index.vue'
 export { default as AppSearch } from './variants/AppSearch/index.vue'
