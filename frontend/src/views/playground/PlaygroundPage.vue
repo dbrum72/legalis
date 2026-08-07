@@ -28,11 +28,17 @@
 
     <AutocompletePlayground />
 
+    <CheckboxPlayground />
+
+    <CheckboxGroupPlayground />
+
     <RadioPlayground />
 
+    <RadioGroupPlayground />
+    
+    <SwitchPlayground />
+
   </PageContainer>
-
-
 
 </template>
 
@@ -51,5 +57,10 @@ import TextareaPlayground from './forms/TextareaPlayground.vue'
 import SelectPlayground from './forms/SelectPlayground.vue'
 import AutocompletePlayground from './forms/AutocompletePlayground.vue'
 import RadioPlayground from './forms/RadioPlayground.vue'
+import CheckboxPlayground from './forms/CheckboxPlayground.vue'
+import SwitchPlayground from './forms/SwitchPlayground.vue'
+import RadioGroupPlayground from './forms/RadioGroupPlayground.vue'
+import CheckboxGroupPlayground from './forms/CheckboxGroupPlayground.vue'
+
 
 </script>

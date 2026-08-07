@@ -2,41 +2,56 @@ import { fieldProps } from '@/components/forms/shared/props/field.js'
 import { controlProps } from '@/components/forms/shared/props/control.js'
 
 export const appInputProps = {
-  ...fieldProps,
-  ...controlProps,
+    ...fieldProps,
+    ...controlProps,
 
-  modelValue: {
-    type: [String, Number],
-    default: '',
-  },
+    modelValue: {
+        type: [String, Number],
+        default: '',
+    },
 
-  placeholder: {
-    type: String,
-    default: '',
-  },
+    placeholder: {
+        type: String,
+        default: '',
+    },
 
-  autocomplete: {
-    type: String,
-    default: 'off',
-  },
+    autocomplete: {
+        type: String,
+        default: 'off',
+    },
 
-  maxlength: {
-    type: Number,
-    default: undefined,
-  },
+    maxlength: {
+        type: Number,
+        default: undefined,
+    },
 
-  minlength: {
-    type: Number,
-    default: undefined,
-  },
+    minlength: {
+        type: Number,
+        default: undefined,
+    },
 
-  inputmode: {
-    type: String,
-    default: undefined,
-  },
+    inputmode: {
+        type: String,
+        default: undefined,
+    },
 
-  type: {
-    type: String,
-    default: 'text',
-  },
+    min: {
+        type: [Number, String],
+        default: undefined,
+    },
+
+    max: {
+        type: [Number, String],
+        default: undefined,
+    },
+
+    step: {
+        type: [Number, String],
+        default: undefined,
+    },
+
+    type: {
+        type: String,
+        default: 'text',
+    },
 }

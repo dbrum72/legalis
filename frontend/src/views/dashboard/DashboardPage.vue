@@ -20,10 +20,8 @@
 
     <hr />
 
-    <AppRadio v-model="gender" id="gender-m" name="gender" value="M" label="Masculino"
-      hint="Selecione o sexo masculino." />
-
-    <AppRadio v-model="gender" id="gender-f" name="gender" value="F" label="Feminino" />
+    <RadioGroup v-model="gender" id="gender" name="gender" label="Sexo" hint="Selecione uma opção."
+      :options="genderOptions" />
 
     <p>Selecionado: {{ gender }}</p>
 
@@ -48,7 +46,7 @@ import {
   AppTextarea,
   AppSelect,
   AppCheckbox,
-  AppRadio,
+  RadioGroup,
   AppSwitch,
 } from '@/components/forms'
 
