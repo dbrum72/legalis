@@ -6,6 +6,8 @@
       Design System Playground
     </h1>
 
+    <ButtonPlayground />
+
     <InputPlayground />
 
     <PasswordPlayground />
@@ -67,6 +69,7 @@ import RadioGroupPlayground from './forms/RadioGroupPlayground.vue'
 import CheckboxGroupPlayground from './forms/CheckboxGroupPlayground.vue'
 import DatePlayground from './forms/DatePlayground.vue'
 import FileUploadPlayground from './forms/FileUploadPlayground.vue'
+import ButtonPlayground from './ui/ButtonPlayground.vue'
 
 
 </script>
