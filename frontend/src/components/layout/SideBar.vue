@@ -15,5 +15,5 @@
 
 <script setup>
 import AppLogo from '@/components/ui/AppLogo/index.vue'
-import SideBarNav from '@/components/navigation/SideBarNav.vue'
+import SideBarNav from '@/components/navigation/SideBarNav/index.vue'
 </script>
