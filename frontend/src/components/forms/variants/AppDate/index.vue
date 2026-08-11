@@ -15,7 +15,7 @@
 <script setup>
 import { computed } from 'vue'
 
-import InputVariant from '@/components/forms/internal/InputVariant.vue'
+import { InputVariant } from '@/components/forms/internal'
 import { appDateProps } from './props.js'
 
 const props = defineProps(appDateProps)

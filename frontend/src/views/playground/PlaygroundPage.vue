@@ -52,7 +52,7 @@
 
 <script setup>
 import InputPlayground from './forms/InputPlayground.vue'
-import PageContainer from '@/components/layout/PageContainer/index.vue'
+import { PageContainer } from '@/components/layout'
 
 import PasswordPlayground from './forms/PasswordPlayground.vue'
 import SearchPlayground from './forms/SearchPlayground.vue'

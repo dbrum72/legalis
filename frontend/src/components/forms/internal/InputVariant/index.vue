@@ -22,26 +22,13 @@
 <script setup>
 import { computed } from 'vue'
 
-import AppInput from '@/components/forms/fields/AppInput/index.vue'
-import InputIcon from '@/components/forms/internal/InputIcon/index.vue'
-import AppIcon from '@/components/ui/AppIcon/index.vue'
+import { AppInput } from '@/components/forms'
+import { InputIcon } from '@/components/forms/internal'
+import { AppIcon } from '@/components/ui'
 
-const props = defineProps({
-    modelValue: {
-        type: [String, Number],
-        default: '',
-    },
+import { inputVariantProps } from './props.js'
 
-    config: {
-        type: Object,
-        default: () => ({}),
-    },
-
-    inputProps: {
-        type: Object,
-        default: () => ({}),
-    },
-})
+const props = defineProps(inputVariantProps)
 
 const emit = defineEmits([
     'update:modelValue',

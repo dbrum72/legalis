@@ -26,7 +26,7 @@
 <script setup>
 import { computed } from 'vue'
 
-import InputVariant from '@/components/forms/internal/InputVariant.vue'
+import { InputVariant } from '@/components/forms/internal'
 import { appPhoneProps } from './props.js'
 
 const props = defineProps(appPhoneProps)
