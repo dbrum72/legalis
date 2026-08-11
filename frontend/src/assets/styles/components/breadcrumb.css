@@ -37,6 +37,6 @@
 }
 
 .breadcrumb__link:hover {
-    color: var(--color-primary);
+    color: var(--color-brand);
 }
 

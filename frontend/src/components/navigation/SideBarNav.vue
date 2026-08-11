@@ -5,6 +5,6 @@
 </template>
 
 <script setup>
-import SideBarItem from '@/components/navigation/SideBarItem.vue'
+import SideBarItem from '@/components/navigation/SideBarItem/index.vue'
 import menuItems from '@/config/menu.js'
 </script>

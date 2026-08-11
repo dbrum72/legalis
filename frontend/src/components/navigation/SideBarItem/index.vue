@@ -11,10 +11,8 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 
-defineProps({
-    item: {
-        type: Object,
-        required: true,
-    },
-})
+import AppIcon from '@/components/ui/AppIcon/index.vue'
+import { sideBarItemProps } from './props.js'
+
+defineProps(sideBarItemProps)
 </script>

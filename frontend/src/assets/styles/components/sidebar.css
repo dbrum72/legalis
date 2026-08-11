@@ -50,12 +50,12 @@
 }
 
 .sidebar-item:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-surface-muted);
 }
 
 .sidebar-item.router-link-exact-active {
-    color: var(--color-primary);
-    background: var(--color-primary-soft);
+    color: var(--color-brand);
+    background: var(--color-surface-accent);
 }
 
 .sidebar-item__label {
