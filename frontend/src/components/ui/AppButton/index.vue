@@ -18,7 +18,7 @@
 <script setup>
 import { computed, useSlots } from 'vue'
 
-import AppIcon from '@/components/ui/AppIcon.vue'
+import AppIcon from '@/components/ui/AppIcon/index.vue'
 import { appButtonProps } from './props.js'
 
 const props = defineProps(appButtonProps)

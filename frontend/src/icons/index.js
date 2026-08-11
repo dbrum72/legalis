@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   CalendarDays,
   CircleX,
   Eye,
@@ -7,7 +8,8 @@ import {
   LayoutDashboard,
   Link,
   Mail,
-  Phone,  
+  Phone,
+  Save,
   Scale,
   Search,
   Settings,
@@ -35,4 +37,6 @@ export const icons = {
   email: Mail,
   phone: Phone,
   link: Link,
+  save: Save,
+  'arrow-right': ArrowRight,
 }

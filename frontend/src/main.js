@@ -6,7 +6,7 @@ import router from './router'
 
 import "./assets/styles/app.css";
 import PageContainer from '@/components/layout/PageContainer.vue'
-import AppIcon from '@/components/ui/AppIcon.vue'
+import AppIcon from '@/components/ui/AppIcon/index.vue'
 
 const app = createApp(App)
 

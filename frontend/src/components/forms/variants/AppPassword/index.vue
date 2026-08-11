@@ -24,7 +24,7 @@ import { computed, ref } from 'vue'
 import AppInput from '@/components/forms/fields/AppInput/index.vue'
 import { appPasswordProps } from './props.js'
 
-import AppIcon from '@/components/ui/AppIcon.vue'
+import AppIcon from '@/components/ui/AppIcon/index.vue'
 import {
     InputIcon,
     InputIconButton,

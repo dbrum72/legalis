@@ -12,33 +12,9 @@
 import { computed } from 'vue'
 
 import { icons } from '@/icons/index.js'
+import { appIconProps } from './props.js'
 
-const props = defineProps({
-  name: {
-    type: String,
-    required: true,
-  },
-
-  size: {
-    type: [Number, String],
-    default: 20,
-  },
-
-  strokeWidth: {
-    type: [Number, String],
-    default: 2,
-  },
-
-  decorative: {
-    type: Boolean,
-    default: true,
-  },
-
-  label: {
-    type: String,
-    default: undefined,
-  },
-})
+const props = defineProps(appIconProps)
 
 const iconComponent = computed(() =>
   icons[props.name] ?? icons.file

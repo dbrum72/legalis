@@ -24,7 +24,7 @@ import { computed } from 'vue'
 
 import AppInput from '@/components/forms/fields/AppInput/index.vue'
 import InputIcon from '@/components/forms/internal/InputIcon/index.vue'
-import AppIcon from '@/components/ui/AppIcon.vue'
+import AppIcon from '@/components/ui/AppIcon/index.vue'
 
 const props = defineProps({
     modelValue: {
