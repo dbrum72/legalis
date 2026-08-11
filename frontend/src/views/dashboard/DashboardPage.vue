@@ -41,6 +41,8 @@
 <script setup>
 import { ref } from 'vue'
 
+import PageContainer from '@/components/layout/PageContainer/index.vue'
+
 import {
   AppInput,
   AppTextarea,

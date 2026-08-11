@@ -5,7 +5,7 @@ import {
   createRouter,
 } from 'vue-router'
 
-import AppBreadcrumb from '@/components/navigation/AppBreadcrumb.vue'
+import { AppBreadcrumb } from '@/components/navigation'
 
 function createTestRouter(routes) {
   return createRouter({

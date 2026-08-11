@@ -13,6 +13,6 @@
 <script setup>
 import { RouterView } from 'vue-router'
 
-import HeaderBar from '@/components/layout/HeaderBar.vue'
-import SideBar from '@/components/layout/SideBar.vue'
+import HeaderBar from '@/components/layout/HeaderBar/index.vue'
+import SideBar from '@/components/layout/SideBar/index.vue'
 </script>
