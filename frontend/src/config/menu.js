@@ -10,6 +10,6 @@ export default [
         id: 'playground',
         name: 'playground',
         label: 'Playground',
-        icon: 'fa-solid fa-flask',
+        icon: 'playground',
     },
 ]

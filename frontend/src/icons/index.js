@@ -5,6 +5,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  FlaskConical,
   LayoutDashboard,
   Link,
   Mail,
@@ -28,7 +29,6 @@ export const icons = {
   wallet: Wallet,
   file: FileText,
   settings: Settings,
-
   search: Search,
   eye: Eye,
   'eye-off': EyeOff,
@@ -39,4 +39,5 @@ export const icons = {
   link: Link,
   save: Save,
   'arrow-right': ArrowRight,
+  playground: FlaskConical,
 }

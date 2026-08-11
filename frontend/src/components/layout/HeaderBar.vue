@@ -13,5 +13,5 @@
 </template>
 
 <script setup>
-import AppBreadcrumb from '@/components/navigation/AppBreadcrumb.vue'
+import AppBreadcrumb from '@/components/navigation/AppBreadcrumb/index.vue'
 </script>
