@@ -1,21 +1,18 @@
 <template>
-    <div class="app-layout">
-        <aside class="app-sidebar">
-            <SideBar />
-        </aside>
+  <div class="app-layout">
+    <SideBar />
 
-        <header class="app-header">
-            <HeaderBar />
-        </header>
+    <HeaderBar />
 
-        <main class="app-main">
-            <RouterView />
-        </main>
-    </div>
+    <main class="app-main">
+      <RouterView />
+    </main>
+  </div>
 </template>
 
 <script setup>
 import { RouterView } from 'vue-router'
+
 import HeaderBar from '@/components/layout/HeaderBar.vue'
 import SideBar from '@/components/layout/SideBar.vue'
 </script>

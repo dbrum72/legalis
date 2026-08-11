@@ -1,5 +1,5 @@
 <template>
-    <header class="app-header-bar">
+    <header class="app-header app-header-bar">
 
         <div class="app-header-bar__start">
             <AppBreadcrumb />

@@ -1,5 +1,5 @@
 <template>
-    <aside class="app-sidebar-nav">
+    <aside class="app-sidebar app-sidebar-nav">
 
         <header class="sidebar-header">
             <AppLogo />
