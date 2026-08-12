@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import { authGuard } from './guards/auth.js'
+
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const router = createRouter({
@@ -7,16 +9,30 @@ const router = createRouter({
 
     routes: [
         {
+            path: '/login',
+            name: 'login',
+            component: () => import('@/views/auth/LoginPage.vue'),
+            meta: {
+                guestOnly: true,
+            },
+        },
+        {
             path: '/',
             component: DefaultLayout,
+            meta: {
+                requiresAuth: true,
+            },
 
             children: [
                 {
                     path: '',
                     name: 'dashboard',
                     component: () => import('@/views/dashboard/DashboardPage.vue'),
-                    meta: { breadcrumb: 'Dashboard' },
+                    meta: {
+                        breadcrumb: 'Dashboard',
+                    },
                 },
+
                 {
                     path: 'playground',
                     name: 'playground',
@@ -26,5 +42,7 @@ const router = createRouter({
         },
     ],
 })
+
+router.beforeEach(authGuard)
 
 export default router

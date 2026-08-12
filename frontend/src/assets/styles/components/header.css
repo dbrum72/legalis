@@ -21,3 +21,19 @@
     align-items: center;
     gap: var(--space-3);
 }
+
+.app-header-bar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-header-bar__user-name {
+  max-width: 16rem;
+  overflow: hidden;
+  color: var(--color-text-soft);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

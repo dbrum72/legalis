@@ -1,0 +1,17 @@
+import apiClient from './client.js'
+
+export function login(credentials) {
+    return apiClient.post('/auth/login', credentials)
+}
+
+export function me() {
+    return apiClient.get('/auth/me')
+}
+
+export function refresh() {
+    return apiClient.post('/auth/refresh')
+}
+
+export function logout() {
+    return apiClient.post('/auth/logout')
+}
