@@ -30,11 +30,17 @@ class AuthController extends Controller implements HasMiddleware
         ], 403);
     }
 
-    public function me(): JsonResponse
+    public function me()
     {
-        return response()->json(
-            $this->guard()->user()
-        );
+        $user = $this->guard()->user();
+
+        return response()->json([
+            'user' => $user,
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user
+                ->getAllPermissions()
+                ->pluck('name'),
+        ]);
     }
 
     public function logout(): JsonResponse

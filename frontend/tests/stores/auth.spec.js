@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { createPinia, setActivePinia } from 'pinia'
 
 import { useAuthStore } from '@/stores/auth.js'
@@ -34,7 +35,10 @@ describe('auth store', () => {
         expect(store.user).toBeNull()
         expect(store.roles).toEqual([])
         expect(store.permissions).toEqual([])
+        expect(store.hydrated).toBe(false)
         expect(store.isAuthenticated).toBe(false)
+        expect(store.userName).toBe('')
+        expect(store.userEmail).toBe('')
     })
 
     it('aplica payload de autenticação', () => {
@@ -48,13 +52,22 @@ describe('auth store', () => {
                 email: 'super-admin@legalis.local',
             },
             roles: ['super-admin'],
-            permissions: ['clients.view'],
+            permissions: ['clients.view', 'clients.create'],
         })
 
         expect(store.token).toBe('jwt-token')
-        expect(store.user.email).toBe('super-admin@legalis.local')
+
+        expect(store.user).toEqual({
+            id: 1,
+            name: 'Super Admin',
+            email: 'super-admin@legalis.local',
+        })
+
         expect(store.roles).toEqual(['super-admin'])
-        expect(store.permissions).toEqual(['clients.view'])
+
+        expect(store.permissions).toEqual(['clients.view', 'clients.create'])
+
+        expect(store.isAuthenticated).toBe(true)
 
         expect(setAccessToken).toHaveBeenCalledWith('jwt-token')
     })
@@ -63,10 +76,15 @@ describe('auth store', () => {
         const store = useAuthStore()
 
         store.token = 'jwt-token'
+
         store.user = {
             id: 1,
+            name: 'Super Admin',
+            email: 'super-admin@legalis.local',
         }
+
         store.roles = ['super-admin']
+
         store.permissions = ['clients.view']
 
         store.clearAuth()
@@ -75,6 +93,7 @@ describe('auth store', () => {
         expect(store.user).toBeNull()
         expect(store.roles).toEqual([])
         expect(store.permissions).toEqual([])
+        expect(store.isAuthenticated).toBe(false)
 
         expect(removeAccessToken).toHaveBeenCalledTimes(1)
     })
@@ -95,14 +114,24 @@ describe('auth store', () => {
 
         const store = useAuthStore()
 
-        await store.login({
+        const credentials = {
             email: 'super-admin@legalis.local',
-            password: 'senha',
-        })
+            password: 'password',
+        }
+
+        const result = await store.login(credentials)
+
+        expect(login).toHaveBeenCalledWith(credentials)
 
         expect(store.token).toBe('jwt-token')
-        expect(store.user.name).toBe('Super Admin')
-        expect(store.isAuthenticated).toBe(true)
+
+        expect(store.user.email).toBe('super-admin@legalis.local')
+
+        expect(store.roles).toEqual(['super-admin'])
+
+        expect(store.permissions).toEqual(['clients.view'])
+
+        expect(result.access_token).toBe('jwt-token')
     })
 
     it('restaura token persistido', () => {
@@ -110,26 +139,55 @@ describe('auth store', () => {
 
         const store = useAuthStore()
 
-        store.restoreToken()
+        const result = store.restoreToken()
+
+        expect(getAccessToken).toHaveBeenCalledTimes(1)
 
         expect(store.token).toBe('persisted-token')
+
         expect(store.hydrated).toBe(true)
+
+        expect(result).toBe('persisted-token')
     })
 
     it('fetchMe atualiza usuário', async () => {
         me.mockResolvedValue({
             data: {
-                id: 1,
-                name: 'Super Admin',
-                email: 'super-admin@legalis.local',
+                user: {
+                    id: 1,
+                    name: 'Super Admin',
+                    email: 'super-admin@legalis.local',
+                },
+                roles: ['super-admin'],
+                permissions: ['clients.view'],
             },
         })
 
         const store = useAuthStore()
 
-        await store.fetchMe()
+        const result = await store.fetchMe()
 
-        expect(store.user.email).toBe('super-admin@legalis.local')
+        expect(me).toHaveBeenCalledTimes(1)
+
+        expect(store.user).toEqual({
+            id: 1,
+            name: 'Super Admin',
+            email: 'super-admin@legalis.local',
+        })
+
+        expect(store.roles).toEqual(['super-admin'])
+
+        expect(store.permissions).toEqual(['clients.view'])
+
+        expect(result).toEqual({
+            user: {
+                id: 1,
+                name: 'Super Admin',
+                email: 'super-admin@legalis.local',
+            },
+            roles: ['super-admin'],
+            permissions: ['clients.view'],
+        })
     })
 
     it('refresh substitui o token', async () => {
@@ -148,11 +206,21 @@ describe('auth store', () => {
 
         const store = useAuthStore()
 
-        await store.refresh()
+        store.token = 'old-token'
+
+        const result = await store.refresh()
+
+        expect(refresh).toHaveBeenCalledTimes(1)
 
         expect(store.token).toBe('new-token')
 
-        expect(setAccessToken).toHaveBeenCalledWith('new-token')
+        expect(store.user.email).toBe('super-admin@legalis.local')
+
+        expect(store.roles).toEqual(['super-admin'])
+
+        expect(store.permissions).toEqual(['clients.view'])
+
+        expect(result.access_token).toBe('new-token')
     })
 
     it('logout chama api e limpa estado', async () => {
@@ -165,9 +233,15 @@ describe('auth store', () => {
         const store = useAuthStore()
 
         store.token = 'jwt-token'
+
         store.user = {
             id: 1,
+            name: 'Super Admin',
         }
+
+        store.roles = ['super-admin']
+
+        store.permissions = ['clients.view']
 
         await store.logout()
 
@@ -176,6 +250,12 @@ describe('auth store', () => {
         expect(store.token).toBeNull()
 
         expect(store.user).toBeNull()
+
+        expect(store.roles).toEqual([])
+
+        expect(store.permissions).toEqual([])
+
+        expect(removeAccessToken).toHaveBeenCalled()
     })
 
     it('hydrate encerra sem token', async () => {
@@ -186,6 +266,9 @@ describe('auth store', () => {
         await store.hydrate()
 
         expect(store.hydrated).toBe(true)
+
+        expect(store.token).toBeNull()
+
         expect(me).not.toHaveBeenCalled()
     })
 
@@ -194,9 +277,13 @@ describe('auth store', () => {
 
         me.mockResolvedValue({
             data: {
-                id: 1,
-                name: 'Super Admin',
-                email: 'super-admin@legalis.local',
+                user: {
+                    id: 1,
+                    name: 'Super Admin',
+                    email: 'super-admin@legalis.local',
+                },
+                roles: ['super-admin'],
+                permissions: ['clients.view', 'clients.create'],
             },
         })
 
@@ -204,26 +291,43 @@ describe('auth store', () => {
 
         await store.hydrate()
 
+        expect(store.hydrated).toBe(true)
+
         expect(store.token).toBe('persisted-token')
 
-        expect(store.user.email).toBe('super-admin@legalis.local')
+        expect(store.user).toEqual({
+            id: 1,
+            name: 'Super Admin',
+            email: 'super-admin@legalis.local',
+        })
+
+        expect(store.roles).toEqual(['super-admin'])
+
+        expect(store.permissions).toEqual(['clients.view', 'clients.create'])
+
+        expect(store.isAuthenticated).toBe(true)
+
+        expect(me).toHaveBeenCalledTimes(1)
     })
 
     it('hydrate limpa autenticação quando me falha', async () => {
         getAccessToken.mockReturnValue('expired-token')
 
-        me.mockRejectedValue({
-            response: {
-                status: 401,
-            },
-        })
+        me.mockRejectedValue(new Error('Unauthorized'))
 
         const store = useAuthStore()
 
         await store.hydrate()
 
+        expect(store.hydrated).toBe(true)
+
         expect(store.token).toBeNull()
+
         expect(store.user).toBeNull()
+
+        expect(store.roles).toEqual([])
+
+        expect(store.permissions).toEqual([])
 
         expect(removeAccessToken).toHaveBeenCalled()
     })
@@ -231,19 +335,23 @@ describe('auth store', () => {
     it('verifica roles', () => {
         const store = useAuthStore()
 
-        store.roles = ['super-admin']
+        store.roles = ['super-admin', 'advogado']
 
         expect(store.hasRole('super-admin')).toBe(true)
 
-        expect(store.hasRole('advogado-junior')).toBe(false)
+        expect(store.hasRole('advogado')).toBe(true)
+
+        expect(store.hasRole('financeiro')).toBe(false)
     })
 
     it('verifica permissions', () => {
         const store = useAuthStore()
 
-        store.permissions = ['clients.view']
+        store.permissions = ['clients.view', 'clients.create']
 
         expect(store.hasPermission('clients.view')).toBe(true)
+
+        expect(store.hasPermission('clients.create')).toBe(true)
 
         expect(store.hasPermission('clients.delete')).toBe(false)
     })

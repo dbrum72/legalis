@@ -1,3 +1,5 @@
+import { computed, ref } from 'vue'
+
 import { defineStore } from 'pinia'
 
 import {
@@ -9,109 +11,139 @@ import {
 
 import { getAccessToken, removeAccessToken, setAccessToken } from '@/api/auth-token.js'
 
-export const useAuthStore = defineStore('auth', {
-    state: () => ({
-        token: null,
-        user: null,
-        roles: [],
-        permissions: [],
-        hydrated: false,
-    }),
+export const useAuthStore = defineStore('auth', () => {
+    const token = ref(null)
+    const user = ref(null)
+    const roles = ref([])
+    const permissions = ref([])
+    const hydrated = ref(false)
 
-    getters: {
-        isAuthenticated: (state) => Boolean(state.token && state.user),
+    const isAuthenticated = computed(() => Boolean(token.value && user.value))
 
-        userName: (state) => state.user?.name ?? '',
+    const userName = computed(() => user.value?.name ?? '')
 
-        userEmail: (state) => state.user?.email ?? '',
+    const userEmail = computed(() => user.value?.email ?? '')
 
-        hasRole: (state) => (role) => state.roles.includes(role),
+    function hasRole(role) {
+        return roles.value.includes(role)
+    }
 
-        hasPermission: (state) => (permission) => state.permissions.includes(permission),
-    },
+    function hasPermission(permission) {
+        return permissions.value.includes(permission)
+    }
 
-    actions: {
-        applyAuthPayload(payload) {
-            const token = payload?.access_token ?? payload?.token ?? null
+    function applyAuthPayload(payload) {
+        const accessToken = payload?.access_token ?? payload?.token ?? null
 
-            this.token = token
-            this.user = payload?.user ?? null
-            this.roles = Array.isArray(payload?.roles) ? payload.roles : []
-            this.permissions = Array.isArray(payload?.permissions) ? payload.permissions : []
+        token.value = accessToken
+        user.value = payload?.user ?? null
 
-            if (token) {
-                setAccessToken(token)
-            } else {
-                removeAccessToken()
-            }
-        },
+        roles.value = Array.isArray(payload?.roles) ? payload.roles : []
 
-        clearAuth() {
-            this.token = null
-            this.user = null
-            this.roles = []
-            this.permissions = []
+        permissions.value = Array.isArray(payload?.permissions) ? payload.permissions : []
 
+        if (accessToken) {
+            setAccessToken(accessToken)
+        } else {
             removeAccessToken()
-        },
+        }
+    }
 
-        restoreToken() {
-            this.token = getAccessToken()
-            this.hydrated = true
+    function clearAuth() {
+        token.value = null
+        user.value = null
+        roles.value = []
+        permissions.value = []
 
-            return this.token
-        },
+        removeAccessToken()
+    }
 
-        async login(credentials) {
-            const response = await loginRequest(credentials)
+    function restoreToken() {
+        token.value = getAccessToken()
+        hydrated.value = true
 
-            this.applyAuthPayload(response.data)
+        return token.value
+    }
 
-            return response.data
-        },
+    async function login(credentials) {
+        const response = await loginRequest(credentials)
 
-        async fetchMe() {
-            const response = await meRequest()
+        applyAuthPayload(response.data)
 
-            this.user = response.data
+        return response.data
+    }
 
-            return response.data
-        },
+    async function fetchMe() {
+        const response = await meRequest()
+        const payload = response.data
 
-        async refresh() {
-            const response = await refreshRequest()
+        user.value = payload?.user ?? null
 
-            this.applyAuthPayload(response.data)
+        roles.value = Array.isArray(payload?.roles) ? payload.roles : []
 
-            return response.data
-        },
+        permissions.value = Array.isArray(payload?.permissions) ? payload.permissions : []
 
-        async logout() {
-            try {
-                if (this.token) {
-                    await logoutRequest()
-                }
-            } finally {
-                this.clearAuth()
+        return payload
+    }
+
+    async function refresh() {
+        const response = await refreshRequest()
+
+        applyAuthPayload(response.data)
+
+        return response.data
+    }
+
+    async function logout() {
+        try {
+            if (token.value) {
+                await logoutRequest()
             }
-        },
+        } finally {
+            clearAuth()
+        }
+    }
 
-        async hydrate() {
-            if (this.hydrated) {
-                return
-            }
+    async function hydrate() {
+        if (hydrated.value) {
+            return
+        }
 
-            this.restoreToken()
+        restoreToken()
 
-            if (!this.token) {
-                return
-            }
+        if (!token.value) {
+            return
+        }
 
-            try {
-                await this.fetchMe()
-            } catch {
-                this.clearAuth()
-            }
-        },
-    },
+        try {
+            await fetchMe()
+        } catch {
+            clearAuth()
+        }
+    }
+
+    return {
+        token,
+        user,
+        roles,
+        permissions,
+        hydrated,
+
+        isAuthenticated,
+        userName,
+        userEmail,
+
+        hasRole,
+        hasPermission,
+
+        applyAuthPayload,
+        clearAuth,
+        restoreToken,
+
+        login,
+        fetchMe,
+        refresh,
+        logout,
+        hydrate,
+    }
 })
