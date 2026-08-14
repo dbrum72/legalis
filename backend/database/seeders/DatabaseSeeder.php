@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             RolePermissionSeeder::class,
             MaritalStatusSeeder::class,
+            QualificationSeeder::class,
         ]);
     }
 }

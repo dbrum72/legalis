@@ -65,6 +65,33 @@ const router = createRouter({
                         permission: 'clients.update',
                     },
                 },
+                {
+                    path: 'folders',
+                    name: 'folders',
+                    component: () => import('@/views/folders/FolderListPage.vue'),
+                    meta: {
+                        breadcrumb: 'Pastas',
+                        permission: 'folders.view',
+                    },
+                },
+                {
+                    path: 'folders/new',
+                    name: 'folders.create',
+                    component: () => import('@/views/folders/FolderSavePage.vue'),
+                    meta: {
+                        breadcrumb: 'Nova pasta',
+                        permission: 'folders.create',
+                    },
+                },
+                {
+                    path: 'folders/:id/edit',
+                    name: 'folders.edit',
+                    component: () => import('@/views/folders/FolderSavePage.vue'),
+                    meta: {
+                        breadcrumb: 'Editar pasta',
+                        permission: 'folders.update',
+                    },
+                },
             ],
         },
     ],

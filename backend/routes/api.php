@@ -4,7 +4,11 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\FolderController;
+use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\MaritalStatusController;
+use App\Http\Controllers\QualificationController;
+
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -40,3 +44,65 @@ Route::middleware('auth:api')
         '/marital-statuses',
         [MaritalStatusController::class, 'index']
     );
+
+Route::middleware('auth:api')
+    ->get(
+        '/qualifications',
+        [QualificationController::class, 'index']
+    );
+
+Route::middleware('auth:api')
+    ->group(function () {
+        Route::get(
+            '/folders',
+            [FolderController::class, 'index']
+        )->middleware('can:folders.view');
+
+        Route::post(
+            '/folders',
+            [FolderController::class, 'store']
+        )->middleware('can:folders.create');
+
+        Route::get(
+            '/folders/{folder}',
+            [FolderController::class, 'show']
+        )->middleware('can:folders.view');
+
+        Route::patch(
+            '/folders/{folder}',
+            [FolderController::class, 'update']
+        )->middleware('can:folders.update');
+
+        Route::delete(
+            '/folders/{folder}',
+            [FolderController::class, 'destroy']
+        )->middleware('can:folders.delete');
+
+        Route::post(
+            '/folders/{folder}/clients',
+            [
+                FolderClientController::class,
+                'store',
+            ]
+        )->middleware('can:folders.update');
+
+        Route::patch(
+            '/folders/{folder}/clients/{folderClient}',
+            [
+                FolderClientController::class,
+                'update',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware('can:folders.update');
+
+        Route::delete(
+            '/folders/{folder}/clients/{folderClient}',
+            [
+                FolderClientController::class,
+                'destroy',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware('can:folders.update');
+    });

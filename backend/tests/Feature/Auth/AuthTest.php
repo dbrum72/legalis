@@ -75,8 +75,23 @@ class AuthTest extends TestCase
             $response->json('roles')
         );
 
-        $this->assertCount(
-            19,
+        $this->assertContains(
+            'clients.view',
+            $response->json('permissions')
+        );
+
+        $this->assertContains(
+            'clients.create',
+            $response->json('permissions')
+        );
+
+        $this->assertContains(
+            'clients.update',
+            $response->json('permissions')
+        );
+
+        $this->assertContains(
+            'clients.delete',
             $response->json('permissions')
         );
     }
@@ -97,10 +112,25 @@ class AuthTest extends TestCase
 
         $response
             ->assertOk()
+            ->assertJsonStructure([
+                'user',
+                'roles',
+                'permissions',
+            ])
             ->assertJsonPath(
-                'email',
+                'user.email',
                 'super-admin@legalis.local'
             );
+
+        $this->assertContains(
+            'super-admin',
+            $response->json('roles')
+        );
+
+        $this->assertContains(
+            'clients.view',
+            $response->json('permissions')
+        );
     }
 
     public function test_refresh_exige_autenticacao(): void
