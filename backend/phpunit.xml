@@ -35,7 +35,7 @@
         <env name="DB_HOST" value="127.0.0.1"/>
         <env name="DB_PORT" value="3306"/>
         <env name="DB_DATABASE" value="db_legalis_testing"/>
-        <env name="DB_USERNAME" value="root"/>
-        <env name="DB_PASSWORD" value="d3v3l0p3r"/>
+        <env name="DB_USERNAME" value="developer"/>
+        <env name="DB_PASSWORD" value="developer"/>
     </php>
 </phpunit>

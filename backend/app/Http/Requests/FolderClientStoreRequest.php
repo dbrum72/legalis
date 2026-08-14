@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,26 +15,46 @@ class FolderClientStoreRequest extends FormRequest
 
     public function rules(): array
     {
-        $folder = $this->route('folder');
+        $organizationId = $this
+            ->container
+            ->make(
+                CurrentOrganization::class
+            )
+            ->id();
 
-        $folderId = $folder instanceof \App\Models\Folder
-            ? $folder->getKey()
-            : $folder;
+        $folderId = $this->route(
+            'folder'
+        );
 
         return [
             'client_id' => [
                 'required',
                 'integer',
-                'exists:clients,id',
 
-                Rule::unique('folder_clients')
-                    ->where(
-                        fn($query) => $query
-                            ->where('folder_id', $folderId)
-                            ->where(
-                                'qualification_id',
-                                $this->input('qualification_id')
-                            )
+                Rule::exists(
+                    'clients',
+                    'id',
+                )->where(
+                    'organization_id',
+                    $organizationId,
+                ),
+
+                Rule::unique(
+                    'folder_clients',
+                    'client_id',
+                )->where(
+                    fn($query) =>
+                    $query
+                        ->where(
+                            'folder_id',
+                            $folderId,
+                        )
+                        ->where(
+                            'qualification_id',
+                            $this->input(
+                                'qualification_id'
+                            ),
+                        )
                 ),
             ],
 

@@ -8,36 +8,39 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('folders', function (Blueprint $table) {
+        Schema::create('organization_user', function (Blueprint $table) {
             $table->id();
 
             $table
                 ->foreignId('organization_id')
                 ->constrained('organizations')
-                ->restrictOnDelete();
-
-            $table->string('name', 100);
+                ->cascadeOnDelete();
 
             $table
-                ->string('process_number', 25)
-                ->nullable();
+                ->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table
+                ->string('status', 20)
+                ->default('active');
 
             $table->timestamps();
 
-            $table->index([
+            $table->unique([
                 'organization_id',
-                'name',
+                'user_id',
             ]);
 
             $table->index([
-                'organization_id',
-                'process_number',
+                'user_id',
+                'status',
             ]);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('folders');
+        Schema::dropIfExists('organization_user');
     }
 };

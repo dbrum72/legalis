@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
+    'organization_id',
     'name',
     'document',
     'identity_document',
@@ -24,14 +26,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'whatsapp',
     'email',
 ])]
-
 class Client extends Model
 {
+    use HasFactory;
+
     protected function casts(): array
     {
         return [
             'whatsapp' => 'boolean',
         ];
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function maritalStatus(): BelongsTo
@@ -47,7 +55,10 @@ class Client extends Model
     public function folders(): BelongsToMany
     {
         return $this
-            ->belongsToMany(Folder::class,'folder_clients')
+            ->belongsToMany(
+                Folder::class,
+                'folder_clients',
+            )
             ->withPivot([
                 'id',
                 'qualification_id',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,8 +15,16 @@ class ClientRequest extends FormRequest
 
     public function rules(): array
     {
-        $clientId = $this->route('client')?->id
-            ?? $this->route('client');
+        $organizationId = $this
+            ->container
+            ->make(
+                CurrentOrganization::class
+            )
+            ->id();
+
+        $clientId = $this->route(
+            'client'
+        );
 
         return [
             'name' => [
@@ -28,8 +37,18 @@ class ClientRequest extends FormRequest
                 'required',
                 'string',
                 'max:14',
-                Rule::unique('clients', 'document')
-                    ->ignore($clientId),
+
+                Rule::unique(
+                    'clients',
+                    'document',
+                )
+                    ->where(
+                        'organization_id',
+                        $organizationId,
+                    )
+                    ->ignore(
+                        $clientId
+                    ),
             ],
 
             'identity_document' => [
