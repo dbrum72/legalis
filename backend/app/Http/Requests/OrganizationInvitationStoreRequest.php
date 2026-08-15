@@ -2,28 +2,78 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class OrganizationInvitationStoreRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
+    protected function prepareForValidation(): void
     {
-        return false;
+        $email = $this->input(
+            'email'
+        );
+
+        $role = $this->input(
+            'role'
+        );
+
+        $this->merge([
+            'email' =>
+            is_string($email)
+                ? mb_strtolower(
+                    trim($email)
+                )
+                : $email,
+
+            'role' =>
+            is_string($role)
+                ? trim($role)
+                : $role,
+        ]);
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
+        $organizationId =
+            app(
+                CurrentOrganization::class
+            )->id();
+
         return [
-            //
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+            ],
+
+            'role' => [
+                'required',
+                'string',
+                'max:100',
+
+                Rule::exists(
+                    'roles',
+                    'name'
+                )->where(
+                    fn($query) =>
+                    $query
+                        ->where(
+                            'organization_id',
+                            $organizationId
+                        )
+                        ->where(
+                            'guard_name',
+                            'api'
+                        )
+                ),
+            ],
         ];
     }
 }

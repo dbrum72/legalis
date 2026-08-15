@@ -21,7 +21,7 @@ class RolePermissionSeeder extends Seeder
         $previousTeamId =
             getPermissionsTeamId();
 
-        $allPermissions = [
+        $operationalPermissions = [
             'clients.view',
             'clients.create',
             'clients.update',
@@ -49,17 +49,35 @@ class RolePermissionSeeder extends Seeder
             'roles.update',
         ];
 
+        $organizationAdministrationPermissions = [
+            'organization-members.invite',
+        ];
+
         $roles = [
             'super-admin' =>
-            $allPermissions,
+            array_values(
+                array_unique(
+                    array_merge(
+                        $operationalPermissions,
+                        $organizationAdministrationPermissions,
+                    )
+                )
+            ),
 
             'socio-administrador' =>
-            $allPermissions,
+            array_values(
+                array_unique(
+                    array_merge(
+                        $operationalPermissions,
+                        $organizationAdministrationPermissions,
+                    )
+                )
+            ),
 
             'socio' =>
             array_values(
                 array_diff(
-                    $allPermissions,
+                    $operationalPermissions,
                     [
                         'roles.update',
                     ],
@@ -69,7 +87,7 @@ class RolePermissionSeeder extends Seeder
             'advogado-senior' =>
             array_values(
                 array_diff(
-                    $allPermissions,
+                    $operationalPermissions,
                     [
                         'roles.view',
                         'roles.update',
@@ -226,17 +244,19 @@ class RolePermissionSeeder extends Seeder
                                 continue;
                             }
 
-                            $this->clearUserPermissionRelations(
-                                $user
-                            );
+                            $this
+                                ->clearUserPermissionRelations(
+                                    $user
+                                );
 
                             $user->syncRoles([
                                 $role,
                             ]);
 
-                            $this->clearUserPermissionRelations(
-                                $user
-                            );
+                            $this
+                                ->clearUserPermissionRelations(
+                                    $user
+                                );
                         }
                     }
                 );

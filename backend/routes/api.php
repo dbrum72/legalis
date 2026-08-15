@@ -5,6 +5,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\MaritalStatusController;
+use App\Http\Controllers\OrganizationInvitationController;
 use App\Http\Controllers\QualificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -86,6 +87,16 @@ Route::middleware([
     'tenant',
 ])
     ->group(function () {
+        Route::post(
+            '/organization-invitations',
+            [
+                OrganizationInvitationController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:organization-members.invite'
+        );
+
         Route::prefix('clients')
             ->group(function () {
                 Route::get(

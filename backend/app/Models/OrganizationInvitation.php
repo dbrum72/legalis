@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'accepted_at',
     'revoked_at',
 ])]
+#[Hidden([
+    'token_hash',
+])]
 class OrganizationInvitation extends Model
 {
     use HasFactory;
@@ -30,6 +34,9 @@ class OrganizationInvitation extends Model
 
     public const STATUS_REVOKED =
     'revoked';
+
+    public const DEFAULT_EXPIRATION_DAYS =
+    7;
 
     protected function casts(): array
     {
