@@ -31,6 +31,7 @@ class OrganizationUserSeeder extends Seeder
                 $userIds,
                 [
                     'status' => 'active',
+                    'joined_at' => now(),
                 ],
                 false,
             );

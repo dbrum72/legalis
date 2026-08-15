@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Client extends Model
 {
     use HasFactory;
+    use BelongsToOrganization;
 
     protected function casts(): array
     {
@@ -37,19 +39,18 @@ class Client extends Model
         ];
     }
 
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class);
-    }
-
     public function maritalStatus(): BelongsTo
     {
-        return $this->belongsTo(MaritalStatus::class);
+        return $this->belongsTo(
+            MaritalStatus::class
+        );
     }
 
     public function folderClients(): HasMany
     {
-        return $this->hasMany(FolderClient::class);
+        return $this->hasMany(
+            FolderClient::class
+        );
     }
 
     public function folders(): BelongsToMany

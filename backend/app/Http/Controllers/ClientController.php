@@ -23,7 +23,9 @@ class ClientController extends Controller
             ->orderBy('name')
             ->get();
 
-        return response()->json($clients);
+        return response()->json(
+            $clients
+        );
     }
 
     public function store(
@@ -37,22 +39,22 @@ class ClientController extends Controller
                 $request->validated()
             );
 
-        $client->load('maritalStatus');
+        $client->load(
+            'maritalStatus'
+        );
 
         return response()->json(
             $client,
-            201
+            201,
         );
     }
 
     public function show(
-        string $client,
+        Client $client,
     ): JsonResponse {
-        $client = $this->findClient(
-            $client
+        $client->load(
+            'maritalStatus'
         );
-
-        $client->load('maritalStatus');
 
         return response()->json(
             $client
@@ -61,17 +63,15 @@ class ClientController extends Controller
 
     public function update(
         ClientRequest $request,
-        string $client,
+        Client $client,
     ): JsonResponse {
-        $client = $this->findClient(
-            $client
-        );
-
         $client->update(
             $request->validated()
         );
 
-        $client->load('maritalStatus');
+        $client->load(
+            'maritalStatus'
+        );
 
         return response()->json(
             $client
@@ -79,28 +79,13 @@ class ClientController extends Controller
     }
 
     public function destroy(
-        string $client,
+        Client $client,
     ): JsonResponse {
-        $client = $this->findClient(
-            $client
-        );
-
         $client->delete();
 
         return response()->json(
             null,
-            204
+            204,
         );
-    }
-
-    private function findClient(
-        string|int $clientId,
-    ): Client {
-        return $this
-            ->currentOrganization
-            ->get()
-            ->clients()
-            ->whereKey($clientId)
-            ->firstOrFail();
     }
 }

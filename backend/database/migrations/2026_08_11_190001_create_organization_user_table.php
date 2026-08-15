@@ -8,39 +8,53 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('organization_user', function (Blueprint $table) {
-            $table->id();
+        Schema::create(
+            'organization_user',
+            function (Blueprint $table) {
+                $table->id();
 
-            $table
-                ->foreignId('organization_id')
-                ->constrained('organizations')
-                ->cascadeOnDelete();
+                $table
+                    ->foreignId('organization_id')
+                    ->constrained('organizations')
+                    ->cascadeOnDelete();
 
-            $table
-                ->foreignId('user_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
+                $table
+                    ->foreignId('user_id')
+                    ->constrained('users')
+                    ->cascadeOnDelete();
 
-            $table
-                ->string('status', 20)
-                ->default('active');
+                $table
+                    ->string('status', 20)
+                    ->default('active');
 
-            $table->timestamps();
+                $table
+                    ->timestamp('joined_at')
+                    ->nullable();
 
-            $table->unique([
-                'organization_id',
-                'user_id',
-            ]);
+                $table->timestamps();
 
-            $table->index([
-                'user_id',
-                'status',
-            ]);
-        });
+                $table->unique([
+                    'organization_id',
+                    'user_id',
+                ]);
+
+                $table->index([
+                    'organization_id',
+                    'status',
+                ]);
+
+                $table->index([
+                    'user_id',
+                    'status',
+                ]);
+            }
+        );
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('organization_user');
+        Schema::dropIfExists(
+            'organization_user'
+        );
     }
 };

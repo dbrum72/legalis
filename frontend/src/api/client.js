@@ -2,6 +2,8 @@ import axios from 'axios'
 
 import { getAccessToken, removeAccessToken } from './auth-token.js'
 
+import { getCurrentTenant, removeCurrentTenant } from './tenant.js'
+
 const apiUrl = import.meta.env.VITE_API_URL
 
 if (!apiUrl) {
@@ -10,22 +12,30 @@ if (!apiUrl) {
 
 const apiClient = axios.create({
     baseURL: apiUrl,
+
     headers: {
         Accept: 'application/json',
     },
+
     timeout: 15_000,
 })
 
 apiClient.interceptors.request.use(
     (config) => {
         const token = getAccessToken()
+        const tenant = getCurrentTenant()
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
 
+        if (tenant) {
+            config.headers['X-Tenant'] = tenant
+        }
+
         return config
     },
+
     (error) => Promise.reject(error),
 )
 
@@ -37,6 +47,7 @@ apiClient.interceptors.response.use(
 
         if (status === 401) {
             removeAccessToken()
+            removeCurrentTenant()
         }
 
         return Promise.reject(error)

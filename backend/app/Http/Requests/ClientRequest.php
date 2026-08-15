@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Client;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -22,9 +23,13 @@ class ClientRequest extends FormRequest
             )
             ->id();
 
-        $clientId = $this->route(
-            'client'
-        );
+        $client =
+            $this->route('client');
+
+        $clientId =
+            $client instanceof Client
+            ? $client->getKey()
+            : $client;
 
         return [
             'name' => [

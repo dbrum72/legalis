@@ -22,17 +22,31 @@ class Organization extends Model
         return $this
             ->belongsToMany(User::class)
             ->as('membership')
-            ->withPivot('status')
+            ->withPivot([
+                'status',
+                'joined_at',
+            ])
             ->withTimestamps();
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(
+            OrganizationInvitation::class
+        );
     }
 
     public function clients(): HasMany
     {
-        return $this->hasMany(Client::class);
+        return $this->hasMany(
+            Client::class
+        );
     }
 
     public function folders(): HasMany
     {
-        return $this->hasMany(Folder::class);
+        return $this->hasMany(
+            Folder::class
+        );
     }
 }

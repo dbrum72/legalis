@@ -10,6 +10,7 @@ use App\Models\Qualification;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\OrganizationSeeder;
+use DomainException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -402,6 +403,93 @@ class FolderClientTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_dominio_nao_permite_cliente_de_outra_organizacao(): void
+    {
+        $folder =
+            $this->createFolder();
+
+        $otherOrganization =
+            Organization::factory()->create();
+
+        $client =
+            Client::factory()
+            ->for($otherOrganization)
+            ->create();
+
+        try {
+            FolderClient::query()
+                ->create([
+                    'folder_id' =>
+                    $folder->id,
+
+                    'client_id' =>
+                    $client->id,
+
+                    'qualification_id' =>
+                    $this->qualification->id,
+                ]);
+
+            $this->fail(
+                'Era esperada uma DomainException para vínculo cross-tenant.'
+            );
+        } catch (DomainException $exception) {
+            $this->assertSame(
+                'A pasta e o cliente devem pertencer à mesma organização.',
+                $exception->getMessage(),
+            );
+        }
+
+        $this->assertDatabaseMissing(
+            'folder_clients',
+            [
+                'folder_id' =>
+                $folder->id,
+
+                'client_id' =>
+                $client->id,
+            ],
+        );
+    }
+
+    public function test_dominio_permite_vinculo_da_mesma_organizacao(): void
+    {
+        $folder =
+            $this->createFolder();
+
+        $client =
+            $this->createClient();
+
+        $folderClient =
+            FolderClient::query()
+            ->create([
+                'folder_id' =>
+                $folder->id,
+
+                'client_id' =>
+                $client->id,
+
+                'qualification_id' =>
+                $this->qualification->id,
+            ]);
+
+        $this->assertDatabaseHas(
+            'folder_clients',
+            [
+                'id' =>
+                $folderClient->id,
+
+                'folder_id' =>
+                $folder->id,
+
+                'client_id' =>
+                $client->id,
+
+                'qualification_id' =>
+                $this->qualification->id,
+            ],
+        );
+    }
+
     public function test_atualiza_qualificacao_do_cliente(): void
     {
         $folderClient =
@@ -434,6 +522,43 @@ class FolderClientTest extends TestCase
                 'qualification.id',
                 $otherQualification->id,
             );
+    }
+
+    public function test_dominio_nao_permite_mover_vinculo_para_cliente_de_outra_organizacao(): void
+    {
+        $folderClient =
+            $this->createFolderClient();
+
+        $otherOrganization =
+            Organization::factory()->create();
+
+        $otherClient =
+            Client::factory()
+            ->for($otherOrganization)
+            ->create();
+
+        try {
+            $folderClient->update([
+                'client_id' =>
+                $otherClient->id,
+            ]);
+
+            $this->fail(
+                'Era esperada uma DomainException para alteração cross-tenant.'
+            );
+        } catch (DomainException $exception) {
+            $this->assertSame(
+                'A pasta e o cliente devem pertencer à mesma organização.',
+                $exception->getMessage(),
+            );
+        }
+
+        $folderClient->refresh();
+
+        $this->assertNotSame(
+            $otherClient->id,
+            $folderClient->client_id,
+        );
     }
 
     public function test_nao_atualiza_vinculo_de_outra_pasta(): void

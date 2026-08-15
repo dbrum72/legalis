@@ -2,24 +2,33 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-#[Fillable(['name','email','password'])]
-#[Hidden(['password'])]
+#[Fillable([
+    'name',
+    'email',
+    'password',
+])]
+#[Hidden([
+    'password',
+])]
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory;
+    use Notifiable;
+    use HasRoles;
 
-    protected string $guard_name = 'api';
+    protected string $guard_name =
+        'api';
 
     protected function getDefaultGuardName(): string
     {
@@ -29,18 +38,34 @@ class User extends Authenticatable implements JWTSubject
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at' =>
+                'datetime',
+
+            'password' =>
+                'hashed',
         ];
     }
 
     public function organizations(): BelongsToMany
     {
         return $this
-            ->belongsToMany(Organization::class)
+            ->belongsToMany(
+                Organization::class
+            )
             ->as('membership')
-            ->withPivot('status')
+            ->withPivot([
+                'status',
+                'joined_at',
+            ])
             ->withTimestamps();
+    }
+
+    public function sentOrganizationInvitations(): HasMany
+    {
+        return $this->hasMany(
+            OrganizationInvitation::class,
+            'invited_by'
+        );
     }
 
     public function getJWTIdentifier()

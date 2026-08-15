@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Organization;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\OrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -11,32 +13,52 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Organization $organization;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(
+            DatabaseSeeder::class
+        );
+
+        $this->organization =
+            Organization::query()
+            ->where(
+                'slug',
+                OrganizationSeeder::DEFAULT_SLUG,
+            )
+            ->firstOrFail();
     }
 
     public function test_login_rejeita_credenciais_invalidas(): void
     {
-        $response = $this->postJson('/api/auth/login', [
-            'email' => 'super-admin@legalis.local',
-            'password' => 'senha-incorreta',
-        ]);
+        $this
+            ->postJson(
+                '/api/auth/login',
+                [
+                    'email' =>
+                    'super-admin@legalis.local',
 
-        $response
+                    'password' =>
+                    'senha-incorreta',
+                ],
+            )
             ->assertForbidden()
             ->assertJson([
-                'msg' => 'Usuário e/ou senha inválidos.',
+                'msg' =>
+                'Usuário e/ou senha inválidos.',
             ]);
     }
 
     public function test_login_exige_email_e_senha(): void
     {
-        $response = $this->postJson('/api/auth/login', []);
-
-        $response
+        $this
+            ->postJson(
+                '/api/auth/login',
+                [],
+            )
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
                 'email',
@@ -44,12 +66,19 @@ class AuthTest extends TestCase
             ]);
     }
 
-    public function test_login_retorna_token_usuario_roles_e_permissions(): void
+    public function test_login_retorna_token_usuario_e_organizacoes(): void
     {
-        $response = $this->postJson('/api/auth/login', [
-            'email' => 'super-admin@legalis.local',
-            'password' => 'l3g@l1s',
-        ]);
+        $response =
+            $this->postJson(
+                '/api/auth/login',
+                [
+                    'email' =>
+                    'super-admin@legalis.local',
+
+                    'password' =>
+                    'l3g@l1s',
+                ],
+            );
 
         $response
             ->assertOk()
@@ -61,91 +90,149 @@ class AuthTest extends TestCase
                 'userName',
                 'userMail',
                 'user',
-                'roles',
-                'permissions',
+                'organizations',
             ])
-            ->assertJsonPath('token_type', 'bearer')
+            ->assertJsonPath(
+                'token_type',
+                'bearer',
+            )
             ->assertJsonPath(
                 'user.email',
-                'super-admin@legalis.local'
+                'super-admin@legalis.local',
+            )
+            ->assertJsonPath(
+                'organizations.0.slug',
+                $this->organization->slug,
             );
 
-        $this->assertContains(
-            'super-admin',
-            $response->json('roles')
-        );
-
-        $this->assertContains(
-            'clients.view',
-            $response->json('permissions')
-        );
-
-        $this->assertContains(
-            'clients.create',
-            $response->json('permissions')
-        );
-
-        $this->assertContains(
-            'clients.update',
-            $response->json('permissions')
-        );
-
-        $this->assertContains(
-            'clients.delete',
-            $response->json('permissions')
-        );
+        $response
+            ->assertJsonMissingPath(
+                'roles'
+            )
+            ->assertJsonMissingPath(
+                'permissions'
+            );
     }
 
     public function test_me_exige_autenticacao(): void
     {
-        $this->getJson('/api/auth/me')
+        $this
+            ->getJson(
+                '/api/auth/me'
+            )
             ->assertUnauthorized();
     }
 
-    public function test_me_retorna_usuario_autenticado(): void
+    public function test_me_retorna_usuario_e_organizacoes_sem_rbac(): void
     {
-        $token = $this->loginAsSuperAdmin();
+        $token =
+            $this->loginAsSuperAdmin();
 
-        $response = $this
+        $response =
+            $this
             ->withToken($token)
-            ->getJson('/api/auth/me');
+            ->getJson(
+                '/api/auth/me'
+            );
 
         $response
             ->assertOk()
-            ->assertJsonStructure([
-                'user',
-                'roles',
-                'permissions',
-            ])
             ->assertJsonPath(
                 'user.email',
-                'super-admin@legalis.local'
+                'super-admin@legalis.local',
+            )
+            ->assertJsonPath(
+                'organizations.0.slug',
+                $this->organization->slug,
+            )
+            ->assertJsonMissingPath(
+                'roles'
+            )
+            ->assertJsonMissingPath(
+                'permissions'
+            );
+    }
+
+    public function test_context_exige_x_tenant(): void
+    {
+        $token =
+            $this->loginAsSuperAdmin();
+
+        $this
+            ->withToken($token)
+            ->getJson(
+                '/api/auth/context'
+            )
+            ->assertBadRequest();
+    }
+
+    public function test_context_retorna_roles_e_permissions_da_organizacao(): void
+    {
+        $token =
+            $this->loginAsSuperAdmin();
+
+        $response =
+            $this
+            ->withToken($token)
+            ->withHeader(
+                'X-Tenant',
+                $this
+                    ->organization
+                    ->slug,
+            )
+            ->getJson(
+                '/api/auth/context'
+            );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'organization.id',
+                $this->organization->id,
             );
 
         $this->assertContains(
             'super-admin',
-            $response->json('roles')
+            $response->json(
+                'roles'
+            ),
         );
 
         $this->assertContains(
             'clients.view',
-            $response->json('permissions')
+            $response->json(
+                'permissions'
+            ),
+        );
+
+        $this->assertContains(
+            'folders.delete',
+            $response->json(
+                'permissions'
+            ),
         );
     }
 
     public function test_refresh_exige_autenticacao(): void
     {
-        $this->postJson('/api/auth/refresh')
+        $this
+            ->postJson(
+                '/api/auth/refresh'
+            )
             ->assertUnauthorized();
     }
 
-    public function test_refresh_emite_novo_token(): void
+    public function test_refresh_emite_novo_token_e_organizacoes(): void
     {
-        $token = $this->loginAsSuperAdmin();
+        $token =
+            $this->loginAsSuperAdmin();
 
-        $response = $this
+        $response =
+            $this
             ->withToken($token)
-            ->postJson('/api/auth/refresh');
+            ->postJson(
+                '/api/auth/refresh'
+            );
 
         $response
             ->assertOk()
@@ -157,48 +244,73 @@ class AuthTest extends TestCase
                 'userName',
                 'userMail',
                 'user',
-                'roles',
-                'permissions',
-            ]);
+                'organizations',
+            ])
+            ->assertJsonMissingPath(
+                'roles'
+            )
+            ->assertJsonMissingPath(
+                'permissions'
+            );
 
         $this->assertNotEmpty(
-            $response->json('access_token')
+            $response->json(
+                'access_token'
+            )
         );
     }
 
     public function test_logout_exige_autenticacao(): void
     {
-        $this->postJson('/api/auth/logout')
+        $this
+            ->postJson(
+                '/api/auth/logout'
+            )
             ->assertUnauthorized();
     }
 
     public function test_logout_invalida_token(): void
     {
-        $token = $this->loginAsSuperAdmin();
+        $token =
+            $this->loginAsSuperAdmin();
 
         $this
             ->withToken($token)
-            ->postJson('/api/auth/logout')
+            ->postJson(
+                '/api/auth/logout'
+            )
             ->assertOk()
             ->assertJson([
-                'msg' => 'Desconectado com sucesso.',
+                'msg' =>
+                'Desconectado com sucesso.',
             ]);
 
         $this
             ->withToken($token)
-            ->getJson('/api/auth/me')
+            ->getJson(
+                '/api/auth/me'
+            )
             ->assertUnauthorized();
     }
 
     private function loginAsSuperAdmin(): string
     {
-        $response = $this->postJson('/api/auth/login', [
-            'email' => 'super-admin@legalis.local',
-            'password' => 'l3g@l1s',
-        ]);
+        $response =
+            $this->postJson(
+                '/api/auth/login',
+                [
+                    'email' =>
+                    'super-admin@legalis.local',
+
+                    'password' =>
+                    'l3g@l1s',
+                ],
+            );
 
         $response->assertOk();
 
-        return $response->json('access_token');
+        return $response->json(
+            'access_token'
+        );
     }
 }

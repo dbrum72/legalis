@@ -46,16 +46,18 @@ class FolderTest extends TestCase
 
     public function test_usuario_sem_permissao_nao_pode_listar_pastas(): void
     {
-        $user = User::factory()->create();
+        $user =
+            User::factory()->create();
 
         $this->attachUser(
             $user,
             $this->organization,
         );
 
-        $token = auth('api')->login(
-            $user
-        );
+        $token =
+            auth('api')->login(
+                $user
+            );
 
         $this
             ->asTenant(
@@ -68,19 +70,24 @@ class FolderTest extends TestCase
 
     public function test_usuario_com_permissao_pode_listar_pastas(): void
     {
-        $user = User::factory()->create();
+        $user =
+            User::factory()->create();
 
         $this->attachUser(
             $user,
             $this->organization,
         );
 
-        $user->givePermissionTo(
-            'folders.view'
+        $this->givePermissionInOrganization(
+            $user,
+            $this->organization,
+            'folders.view',
         );
 
         Folder::factory()
-            ->for($this->organization)
+            ->for(
+                $this->organization
+            )
             ->create([
                 'name' =>
                 'Ação indenizatória',
@@ -89,9 +96,10 @@ class FolderTest extends TestCase
                 '5000000-00.2026.8.21.0001',
             ]);
 
-        $token = auth('api')->login(
-            $user
-        );
+        $token =
+            auth('api')->login(
+                $user
+            );
 
         $this
             ->asTenant(
@@ -109,17 +117,22 @@ class FolderTest extends TestCase
     public function test_index_retorna_apenas_pastas_da_organizacao_atual(): void
     {
         Folder::factory()
-            ->for($this->organization)
+            ->for(
+                $this->organization
+            )
             ->create([
                 'name' =>
                 'Pasta Organização A',
             ]);
 
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
         Folder::factory()
-            ->for($otherOrganization)
+            ->for(
+                $otherOrganization
+            )
             ->create([
                 'name' =>
                 'Pasta Organização B',
@@ -128,12 +141,15 @@ class FolderTest extends TestCase
         $token =
             $this->loginAsSuperAdmin();
 
-        $response = $this
+        $response =
+            $this
             ->asTenant(
                 $token,
                 $this->organization,
             )
-            ->getJson('/api/folders');
+            ->getJson(
+                '/api/folders'
+            );
 
         $response
             ->assertOk()
@@ -152,7 +168,8 @@ class FolderTest extends TestCase
         $token =
             $this->loginAsSuperAdmin();
 
-        $response = $this
+        $response =
+            $this
             ->asTenant(
                 $token,
                 $this->organization,
@@ -194,7 +211,8 @@ class FolderTest extends TestCase
     public function test_payload_nao_pode_escolher_organization_id(): void
     {
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
         $token =
             $this->loginAsSuperAdmin();
@@ -219,6 +237,17 @@ class FolderTest extends TestCase
                 'organization_id',
                 $this->organization->id,
             );
+
+        $this->assertDatabaseHas(
+            'folders',
+            [
+                'organization_id' =>
+                $this->organization->id,
+
+                'name' =>
+                'Pasta Teste',
+            ],
+        );
 
         $this->assertDatabaseMissing(
             'folders',
@@ -284,8 +313,11 @@ class FolderTest extends TestCase
 
     public function test_exibe_pasta(): void
     {
-        $folder = Folder::factory()
-            ->for($this->organization)
+        $folder =
+            Folder::factory()
+            ->for(
+                $this->organization
+            )
             ->create([
                 'name' =>
                 'Ação de cobrança',
@@ -312,10 +344,14 @@ class FolderTest extends TestCase
     public function test_nao_exibe_pasta_de_outra_organizacao(): void
     {
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
-        $folder = Folder::factory()
-            ->for($otherOrganization)
+        $folder =
+            Folder::factory()
+            ->for(
+                $otherOrganization
+            )
             ->create();
 
         $token =
@@ -334,8 +370,11 @@ class FolderTest extends TestCase
 
     public function test_atualiza_pasta(): void
     {
-        $folder = Folder::factory()
-            ->for($this->organization)
+        $folder =
+            Folder::factory()
+            ->for(
+                $this->organization
+            )
             ->create([
                 'name' =>
                 'Nome original',
@@ -369,10 +408,14 @@ class FolderTest extends TestCase
     public function test_nao_atualiza_pasta_de_outra_organizacao(): void
     {
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
-        $folder = Folder::factory()
-            ->for($otherOrganization)
+        $folder =
+            Folder::factory()
+            ->for(
+                $otherOrganization
+            )
             ->create([
                 'name' =>
                 'Nome original',
@@ -412,8 +455,11 @@ class FolderTest extends TestCase
 
     public function test_exclui_pasta(): void
     {
-        $folder = Folder::factory()
-            ->for($this->organization)
+        $folder =
+            Folder::factory()
+            ->for(
+                $this->organization
+            )
             ->create();
 
         $token =
@@ -441,10 +487,14 @@ class FolderTest extends TestCase
     public function test_nao_exclui_pasta_de_outra_organizacao(): void
     {
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
-        $folder = Folder::factory()
-            ->for($otherOrganization)
+        $folder =
+            Folder::factory()
+            ->for(
+                $otherOrganization
+            )
             ->create();
 
         $token =
@@ -469,9 +519,57 @@ class FolderTest extends TestCase
         );
     }
 
+    private function givePermissionInOrganization(
+        User $user,
+        Organization $organization,
+        string $permission,
+    ): void {
+        $previousTeamId =
+            getPermissionsTeamId();
+
+        try {
+            setPermissionsTeamId(
+                $organization->id
+            );
+
+            $this->clearPermissionRelations(
+                $user
+            );
+
+            $user->givePermissionTo(
+                $permission
+            );
+
+            $this->clearPermissionRelations(
+                $user
+            );
+        } finally {
+            setPermissionsTeamId(
+                $previousTeamId
+            );
+
+            $this->clearPermissionRelations(
+                $user
+            );
+        }
+    }
+
+    private function clearPermissionRelations(
+        User $user,
+    ): void {
+        $user->unsetRelation(
+            'roles'
+        );
+
+        $user->unsetRelation(
+            'permissions'
+        );
+    }
+
     private function loginAsSuperAdmin(): string
     {
-        $user = User::query()
+        $user =
+            User::query()
             ->where(
                 'email',
                 'super-admin@legalis.local',

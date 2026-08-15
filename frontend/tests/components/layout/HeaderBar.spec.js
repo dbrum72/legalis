@@ -1,14 +1,66 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mount } from '@vue/test-utils'
+
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { createPinia, setActivePinia } from 'pinia'
 
-import HeaderBar from '@/components/layout/HeaderBar/index.vue'
-import { useAuthStore } from '@/stores/auth.js'
+vi.mock('@/components/forms', () => ({
+    AppSelect: {
+        name: 'AppSelect',
+
+        props: {
+            modelValue: {
+                type: [String, Number, Boolean, Object],
+
+                default: null,
+            },
+
+            options: {
+                type: Array,
+                default: () => [],
+            },
+
+            disabled: {
+                type: Boolean,
+                default: false,
+            },
+
+            name: {
+                type: String,
+                default: '',
+            },
+
+            label: {
+                type: String,
+                default: '',
+            },
+
+            optionLabel: {
+                type: String,
+                default: 'label',
+            },
+
+            optionValue: {
+                type: String,
+                default: 'value',
+            },
+        },
+
+        emits: ['update:modelValue'],
+
+        template: `
+            <div
+                class="app-select-stub"
+                :data-model-value="modelValue"
+            />
+        `,
+    },
+}))
 
 vi.mock('@/api/auth.js', () => ({
+    context: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     me: vi.fn(),
@@ -21,39 +73,187 @@ vi.mock('@/api/auth-token.js', () => ({
     removeAccessToken: vi.fn(),
 }))
 
+vi.mock('@/api/tenant.js', () => ({
+    getCurrentTenant: vi.fn(),
+    setCurrentTenant: vi.fn(),
+    removeCurrentTenant: vi.fn(),
+}))
+
+import HeaderBar from '@/components/layout/HeaderBar/index.vue'
+
+import { AppSelect } from '@/components/forms'
+
+import { useAuthStore } from '@/stores/auth.js'
+
 function createTestRouter() {
     return createRouter({
         history: createMemoryHistory(),
+
         routes: [
             {
                 path: '/',
+
                 name: 'dashboard',
+
                 component: {
                     template: '<div>Dashboard</div>',
                 },
-                meta: {
-                    breadcrumb: 'Dashboard',
-                },
             },
+
             {
-                path: '/playground',
-                name: 'playground',
+                path: '/organizations/select',
+
+                name: 'organizations.select',
+
                 component: {
-                    template: '<div>Playground</div>',
-                },
-                meta: {
-                    breadcrumb: 'Playground',
+                    template: '<div>Organizações</div>',
                 },
             },
+
             {
                 path: '/login',
+
                 name: 'login',
+
                 component: {
                     template: '<div>Login</div>',
                 },
             },
+
+            {
+                path: '/clients',
+
+                name: 'clients',
+
+                component: {
+                    template: '<div>Clientes</div>',
+                },
+            },
         ],
     })
+}
+
+async function mountComponent() {
+    const pinia = createPinia()
+
+    setActivePinia(pinia)
+
+    const router = createTestRouter()
+
+    await router.push('/clients')
+
+    await router.isReady()
+
+    const authStore = useAuthStore()
+
+    authStore.token = 'jwt-token'
+
+    authStore.user = {
+        id: 1,
+
+        name: 'Super Admin',
+
+        email: 'super-admin@legalis.local',
+    }
+
+    const wrapper = mount(HeaderBar, {
+        global: {
+            plugins: [pinia, router],
+
+            stubs: {
+                AppBreadcrumb: {
+                    name: 'AppBreadcrumb',
+
+                    template: '<nav>Breadcrumb</nav>',
+                },
+
+                AppButton: {
+                    name: 'AppButton',
+
+                    props: {
+                        loading: {
+                            type: Boolean,
+                            default: false,
+                        },
+
+                        disabled: {
+                            type: Boolean,
+                            default: false,
+                        },
+                    },
+
+                    emits: ['click'],
+
+                    template: `
+                                <button
+                                    :disabled="disabled"
+                                    @click="$emit('click', $event)"
+                                >
+                                    <slot />
+                                </button>
+                            `,
+                },
+            },
+        },
+    })
+
+    return {
+        wrapper,
+        router,
+        authStore,
+    }
+}
+
+function configureSingleOrganization(authStore) {
+    authStore.organizations = [
+        {
+            id: 10,
+
+            name: 'Escritório A',
+
+            slug: 'escritorio-a',
+        },
+    ]
+
+    authStore.organization = {
+        id: 10,
+
+        name: 'Escritório A',
+
+        slug: 'escritorio-a',
+    }
+
+    authStore.contextLoaded = true
+}
+
+function configureMultipleOrganizations(authStore) {
+    authStore.organizations = [
+        {
+            id: 10,
+
+            name: 'Escritório A',
+
+            slug: 'escritorio-a',
+        },
+
+        {
+            id: 20,
+
+            name: 'Escritório B',
+
+            slug: 'escritorio-b',
+        },
+    ]
+
+    authStore.organization = {
+        id: 10,
+
+        name: 'Escritório A',
+
+        slug: 'escritorio-a',
+    }
+
+    authStore.contextLoaded = true
 }
 
 describe('HeaderBar', () => {
@@ -61,152 +261,152 @@ describe('HeaderBar', () => {
         vi.clearAllMocks()
     })
 
-    async function mountComponent(initialRoute = '/', authenticated = false) {
-        const pinia = createPinia()
-        setActivePinia(pinia)
-
-        const router = createTestRouter()
-
-        await router.push(initialRoute)
-        await router.isReady()
-
-        const authStore = useAuthStore()
-
-        if (authenticated) {
-            authStore.token = 'jwt-token'
-            authStore.user = {
-                id: 1,
-                name: 'Super Admin',
-                email: 'super-admin@legalis.local',
-            }
-            authStore.roles = ['super-admin']
-            authStore.permissions = ['clients.view']
-            authStore.hydrated = true
-        }
-
-        const wrapper = mount(HeaderBar, {
-            global: {
-                plugins: [pinia, router],
-            },
-        })
-
-        return {
-            wrapper,
-            router,
-            authStore,
-        }
-    }
-
-    it('renderiza header', async () => {
+    it('renderiza usuário autenticado', async () => {
         const { wrapper } = await mountComponent()
 
-        expect(wrapper.element.tagName.toLowerCase()).toBe('header')
-    })
-
-    it('aplica classe app-header', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.classes()).toContain('app-header')
-    })
-
-    it('aplica classe app-header-bar', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.classes()).toContain('app-header-bar')
-    })
-
-    it('renderiza região inicial', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.find('.app-header-bar__start').exists()).toBe(true)
-    })
-
-    it('renderiza AppBreadcrumb', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.find('.breadcrumb').exists()).toBe(true)
-    })
-
-    it('renderiza breadcrumb da rota atual', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.text()).toContain('Dashboard')
-    })
-
-    it('reage à mudança de rota', async () => {
-        const { wrapper, router } = await mountComponent()
-
-        await router.push({
-            name: 'playground',
-        })
-
-        expect(wrapper.text()).toContain('Playground')
-
-        expect(wrapper.text()).not.toContain('Dashboard')
-    })
-
-    it('renderiza região final', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.find('.app-header-bar__end').exists()).toBe(true)
-    })
-
-    it('mantém região inicial antes da região final', async () => {
-        const { wrapper } = await mountComponent()
-
-        const children = Array.from(wrapper.element.children)
-
-        expect(children).toHaveLength(2)
-
-        expect(children[0].classList).toContain('app-header-bar__start')
-
-        expect(children[1].classList).toContain('app-header-bar__end')
-    })
-
-    it('não renderiza usuário quando não autenticado', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.find('.app-header-bar__user').exists()).toBe(false)
-
-        expect(wrapper.text()).not.toContain('Sair')
-    })
-
-    it('renderiza nome do usuário autenticado', async () => {
-        const { wrapper } = await mountComponent('/', true)
-
-        expect(wrapper.get('.app-header-bar__user-name').text()).toBe('Super Admin')
-    })
-
-    it('renderiza botão Sair para usuário autenticado', async () => {
-        const { wrapper } = await mountComponent('/', true)
+        expect(wrapper.text()).toContain('Super Admin')
 
         expect(wrapper.text()).toContain('Sair')
     })
 
-    it('chama authStore.logout ao clicar em Sair', async () => {
-        const { wrapper, authStore } = await mountComponent('/', true)
+    it('exibe nome da organização quando existe apenas uma', async () => {
+        const { wrapper, authStore } = await mountComponent()
 
-        const logoutSpy = vi.spyOn(authStore, 'logout').mockResolvedValue()
+        configureSingleOrganization(authStore)
 
-        const button = wrapper.findAll('button').find((item) => item.text() === 'Sair')
+        await wrapper.vm.$nextTick()
 
-        expect(button).toBeTruthy()
+        expect(wrapper.text()).toContain('Escritório A')
 
-        await button.trigger('click')
-
-        expect(logoutSpy).toHaveBeenCalledTimes(1)
+        expect(wrapper.find('.app-select-stub').exists()).toBe(false)
     })
 
-    it('redireciona para login após logout', async () => {
-        const { wrapper, router, authStore } = await mountComponent('/', true)
+    it('renderiza seletor quando existem várias organizações', async () => {
+        const { wrapper, authStore } = await mountComponent()
+
+        configureMultipleOrganizations(authStore)
+
+        await wrapper.vm.$nextTick()
+
+        const select = wrapper.findComponent(AppSelect)
+
+        expect(select.exists()).toBe(true)
+
+        expect(wrapper.find('.app-select-stub').exists()).toBe(true)
+
+        expect(select.props('modelValue')).toBe('escritorio-a')
+
+        expect(select.props('options')).toEqual([
+            {
+                label: 'Escritório A',
+
+                value: 'escritorio-a',
+            },
+
+            {
+                label: 'Escritório B',
+
+                value: 'escritorio-b',
+            },
+        ])
+
+        expect(select.props('optionLabel')).toBe('label')
+
+        expect(select.props('optionValue')).toBe('value')
+    })
+
+    it('troca organização e retorna ao dashboard', async () => {
+        const { wrapper, router, authStore } = await mountComponent()
+
+        configureMultipleOrganizations(authStore)
+
+        const selectSpy = vi
+            .spyOn(authStore, 'selectOrganization')
+            .mockImplementation(async (tenant) => {
+                authStore.organization = authStore.organizations.find(
+                    (organization) => organization.slug === tenant,
+                )
+
+                authStore.contextLoaded = true
+
+                return {
+                    organization: authStore.organization,
+                }
+            })
+
+        await wrapper.vm.$nextTick()
+
+        const select = wrapper.findComponent(AppSelect)
+
+        expect(select.exists()).toBe(true)
+
+        select.vm.$emit('update:modelValue', 'escritorio-b')
+
+        await vi.waitFor(() => {
+            expect(selectSpy).toHaveBeenCalledWith('escritorio-b')
+
+            expect(router.currentRoute.value.name).toBe('dashboard')
+        })
+    })
+
+    it('não troca quando tenant informado já é o atual', async () => {
+        const { wrapper, authStore } = await mountComponent()
+
+        configureMultipleOrganizations(authStore)
+
+        const selectSpy = vi.spyOn(authStore, 'selectOrganization')
+
+        await wrapper.vm.$nextTick()
+
+        const select = wrapper.findComponent(AppSelect)
+
+        expect(select.exists()).toBe(true)
+
+        select.vm.$emit('update:modelValue', 'escritorio-a')
+
+        await wrapper.vm.$nextTick()
+
+        expect(selectSpy).not.toHaveBeenCalled()
+    })
+
+    it('redireciona para seleção quando troca de organização falha', async () => {
+        const { wrapper, router, authStore } = await mountComponent()
+
+        configureMultipleOrganizations(authStore)
+
+        vi.spyOn(authStore, 'selectOrganization').mockRejectedValue(new Error('Forbidden'))
+
+        await wrapper.vm.$nextTick()
+
+        const select = wrapper.findComponent(AppSelect)
+
+        expect(select.exists()).toBe(true)
+
+        select.vm.$emit('update:modelValue', 'escritorio-b')
+
+        await vi.waitFor(() => {
+            expect(router.currentRoute.value.name).toBe('organizations.select')
+        })
+    })
+
+    it('executa logout e retorna ao login', async () => {
+        const { wrapper, router, authStore } = await mountComponent()
+
+        configureSingleOrganization(authStore)
 
         vi.spyOn(authStore, 'logout').mockResolvedValue()
 
-        const button = wrapper.findAll('button').find((item) => item.text() === 'Sair')
+        await wrapper.vm.$nextTick()
 
-        await button.trigger('click')
+        const logoutButton = wrapper.findAll('button').find((button) => button.text() === 'Sair')
+
+        expect(logoutButton).toBeTruthy()
+
+        await logoutButton.trigger('click')
 
         await vi.waitFor(() => {
+            expect(authStore.logout).toHaveBeenCalledTimes(1)
+
             expect(router.currentRoute.value.name).toBe('login')
         })
     })

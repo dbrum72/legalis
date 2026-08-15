@@ -9,6 +9,16 @@ export function permissionGuard(to) {
         return true
     }
 
+    if (!authStore.contextLoaded) {
+        return {
+            name: 'organizations.select',
+
+            query: {
+                redirect: to.fullPath,
+            },
+        }
+    }
+
     if (authStore.hasPermission(permission)) {
         return true
     }

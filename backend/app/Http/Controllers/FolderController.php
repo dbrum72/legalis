@@ -41,17 +41,13 @@ class FolderController extends Controller
 
         return response()->json(
             $folder,
-            201
+            201,
         );
     }
 
     public function show(
-        string $folder,
+        Folder $folder,
     ): JsonResponse {
-        $folder = $this->findFolder(
-            $folder
-        );
-
         $folder->load([
             'folderClients.client',
             'folderClients.qualification',
@@ -64,12 +60,8 @@ class FolderController extends Controller
 
     public function update(
         FolderUpdateRequest $request,
-        string $folder,
+        Folder $folder,
     ): JsonResponse {
-        $folder = $this->findFolder(
-            $folder
-        );
-
         $folder->update(
             $request->validated()
         );
@@ -80,28 +72,13 @@ class FolderController extends Controller
     }
 
     public function destroy(
-        string $folder,
+        Folder $folder,
     ): JsonResponse {
-        $folder = $this->findFolder(
-            $folder
-        );
-
         $folder->delete();
 
         return response()->json(
             null,
-            204
+            204,
         );
-    }
-
-    private function findFolder(
-        string|int $folderId,
-    ): Folder {
-        return $this
-            ->currentOrganization
-            ->get()
-            ->folders()
-            ->whereKey($folderId)
-            ->firstOrFail();
     }
 }

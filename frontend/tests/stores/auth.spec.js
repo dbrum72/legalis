@@ -5,6 +5,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
 
 vi.mock('@/api/auth.js', () => ({
+    context: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     me: vi.fn(),
@@ -17,41 +18,81 @@ vi.mock('@/api/auth-token.js', () => ({
     removeAccessToken: vi.fn(),
 }))
 
-import { login, logout, me, refresh } from '@/api/auth.js'
+vi.mock('@/api/tenant.js', () => ({
+    getCurrentTenant: vi.fn(),
+    setCurrentTenant: vi.fn(),
+    removeCurrentTenant: vi.fn(),
+}))
+
+import { context, login, logout, me, refresh } from '@/api/auth.js'
 
 import { getAccessToken, removeAccessToken, setAccessToken } from '@/api/auth-token.js'
+
+import { getCurrentTenant, removeCurrentTenant, setCurrentTenant } from '@/api/tenant.js'
 
 describe('auth store', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
 
         vi.clearAllMocks()
+
+        getAccessToken.mockReturnValue(null)
+
+        getCurrentTenant.mockReturnValue(null)
     })
 
-    it('inicia desautenticada', () => {
+    it('inicia desautenticada e sem contexto', () => {
         const store = useAuthStore()
 
         expect(store.token).toBeNull()
+
         expect(store.user).toBeNull()
+
+        expect(store.organizations).toEqual([])
+
+        expect(store.organization).toBeNull()
+
         expect(store.roles).toEqual([])
+
         expect(store.permissions).toEqual([])
+
         expect(store.hydrated).toBe(false)
+
+        expect(store.contextLoaded).toBe(false)
+
         expect(store.isAuthenticated).toBe(false)
+
+        expect(store.hasOrganization).toBe(false)
+
+        expect(store.currentTenant).toBeNull()
+
         expect(store.userName).toBe('')
+
         expect(store.userEmail).toBe('')
     })
 
-    it('aplica payload de autenticação', () => {
+    it('aplica payload de autenticação sem carregar rbac', () => {
         const store = useAuthStore()
 
         store.applyAuthPayload({
             access_token: 'jwt-token',
+
             user: {
                 id: 1,
                 name: 'Super Admin',
                 email: 'super-admin@legalis.local',
             },
+
+            organizations: [
+                {
+                    id: 10,
+                    name: 'Escritório Legalis',
+                    slug: 'escritorio-legalis',
+                },
+            ],
+
             roles: ['super-admin'],
+
             permissions: ['clients.view', 'clients.create'],
         })
 
@@ -63,16 +104,100 @@ describe('auth store', () => {
             email: 'super-admin@legalis.local',
         })
 
-        expect(store.roles).toEqual(['super-admin'])
+        expect(store.organizations).toEqual([
+            {
+                id: 10,
+                name: 'Escritório Legalis',
+                slug: 'escritorio-legalis',
+            },
+        ])
 
-        expect(store.permissions).toEqual(['clients.view', 'clients.create'])
+        expect(store.roles).toEqual([])
+
+        expect(store.permissions).toEqual([])
 
         expect(store.isAuthenticated).toBe(true)
 
         expect(setAccessToken).toHaveBeenCalledWith('jwt-token')
     })
 
-    it('limpa autenticação', () => {
+    it('aplica payload de contexto', () => {
+        const store = useAuthStore()
+
+        store.applyContextPayload({
+            organization: {
+                id: 10,
+                name: 'Escritório Legalis',
+                slug: 'escritorio-legalis',
+            },
+
+            roles: ['super-admin'],
+
+            permissions: ['clients.view', 'clients.create'],
+        })
+
+        expect(store.organization).toEqual({
+            id: 10,
+            name: 'Escritório Legalis',
+            slug: 'escritorio-legalis',
+        })
+
+        expect(store.roles).toEqual(['super-admin'])
+
+        expect(store.permissions).toEqual(['clients.view', 'clients.create'])
+
+        expect(store.contextLoaded).toBe(true)
+
+        expect(store.hasOrganization).toBe(true)
+
+        expect(store.currentTenant).toBe('escritorio-legalis')
+    })
+
+    it('limpa apenas contexto', () => {
+        const store = useAuthStore()
+
+        store.organization = {
+            id: 10,
+            slug: 'escritorio-legalis',
+        }
+
+        store.roles = ['super-admin']
+
+        store.permissions = ['clients.view']
+
+        store.contextLoaded = true
+
+        store.clearContext()
+
+        expect(store.organization).toBeNull()
+
+        expect(store.roles).toEqual([])
+
+        expect(store.permissions).toEqual([])
+
+        expect(store.contextLoaded).toBe(false)
+
+        expect(removeCurrentTenant).not.toHaveBeenCalled()
+    })
+
+    it('limpa contexto e tenant quando solicitado', () => {
+        const store = useAuthStore()
+
+        store.organization = {
+            id: 10,
+            slug: 'escritorio-legalis',
+        }
+
+        store.clearContext({
+            removeTenant: true,
+        })
+
+        expect(store.organization).toBeNull()
+
+        expect(removeCurrentTenant).toHaveBeenCalledTimes(1)
+    })
+
+    it('limpa autenticação completa', () => {
         const store = useAuthStore()
 
         store.token = 'jwt-token'
@@ -80,7 +205,18 @@ describe('auth store', () => {
         store.user = {
             id: 1,
             name: 'Super Admin',
-            email: 'super-admin@legalis.local',
+        }
+
+        store.organizations = [
+            {
+                id: 10,
+                slug: 'escritorio-legalis',
+            },
+        ]
+
+        store.organization = {
+            id: 10,
+            slug: 'escritorio-legalis',
         }
 
         store.roles = ['super-admin']
@@ -90,32 +226,66 @@ describe('auth store', () => {
         store.clearAuth()
 
         expect(store.token).toBeNull()
+
         expect(store.user).toBeNull()
+
+        expect(store.organizations).toEqual([])
+
+        expect(store.organization).toBeNull()
+
         expect(store.roles).toEqual([])
+
         expect(store.permissions).toEqual([])
+
         expect(store.isAuthenticated).toBe(false)
 
         expect(removeAccessToken).toHaveBeenCalledTimes(1)
+
+        expect(removeCurrentTenant).toHaveBeenCalledTimes(1)
     })
 
-    it('executa login e atualiza estado', async () => {
+    it('executa login e seleciona automaticamente única organização', async () => {
         login.mockResolvedValue({
             data: {
                 access_token: 'jwt-token',
+
                 user: {
                     id: 1,
                     name: 'Super Admin',
                     email: 'super-admin@legalis.local',
                 },
+
+                organizations: [
+                    {
+                        id: 10,
+                        name: 'Escritório Legalis',
+                        slug: 'escritorio-legalis',
+                    },
+                ],
+            },
+        })
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 10,
+                    name: 'Escritório Legalis',
+                    slug: 'escritorio-legalis',
+                },
+
                 roles: ['super-admin'],
+
                 permissions: ['clients.view'],
             },
         })
+
+        getCurrentTenant.mockReturnValueOnce(null).mockReturnValue('escritorio-legalis')
 
         const store = useAuthStore()
 
         const credentials = {
             email: 'super-admin@legalis.local',
+
             password: 'password',
         }
 
@@ -127,11 +297,63 @@ describe('auth store', () => {
 
         expect(store.user.email).toBe('super-admin@legalis.local')
 
+        expect(store.organizations).toHaveLength(1)
+
+        expect(setCurrentTenant).toHaveBeenCalledWith('escritorio-legalis')
+
+        expect(context).toHaveBeenCalledTimes(1)
+
         expect(store.roles).toEqual(['super-admin'])
 
         expect(store.permissions).toEqual(['clients.view'])
 
+        expect(store.contextLoaded).toBe(true)
+
         expect(result.access_token).toBe('jwt-token')
+    })
+
+    it('login não escolhe organização quando existem várias e nenhuma está persistida', async () => {
+        login.mockResolvedValue({
+            data: {
+                access_token: 'jwt-token',
+
+                user: {
+                    id: 1,
+                    name: 'Super Admin',
+                },
+
+                organizations: [
+                    {
+                        id: 10,
+                        name: 'Organização A',
+                        slug: 'org-a',
+                    },
+                    {
+                        id: 20,
+                        name: 'Organização B',
+                        slug: 'org-b',
+                    },
+                ],
+            },
+        })
+
+        const store = useAuthStore()
+
+        await store.login({
+            email: 'admin@legalis.local',
+
+            password: 'password',
+        })
+
+        expect(store.organizations).toHaveLength(2)
+
+        expect(store.organization).toBeNull()
+
+        expect(store.contextLoaded).toBe(false)
+
+        expect(setCurrentTenant).not.toHaveBeenCalled()
+
+        expect(context).not.toHaveBeenCalled()
     })
 
     it('restaura token persistido', () => {
@@ -150,7 +372,7 @@ describe('auth store', () => {
         expect(result).toBe('persisted-token')
     })
 
-    it('fetchMe atualiza usuário', async () => {
+    it('fetchMe atualiza apenas identidade e organizações', async () => {
         me.mockResolvedValue({
             data: {
                 user: {
@@ -158,12 +380,26 @@ describe('auth store', () => {
                     name: 'Super Admin',
                     email: 'super-admin@legalis.local',
                 },
+
+                organizations: [
+                    {
+                        id: 10,
+                        name: 'Escritório Legalis',
+                        slug: 'escritorio-legalis',
+                    },
+                ],
+
                 roles: ['super-admin'],
+
                 permissions: ['clients.view'],
             },
         })
 
         const store = useAuthStore()
+
+        store.roles = ['role-anterior']
+
+        store.permissions = ['permission.anterior']
 
         const result = await store.fetchMe()
 
@@ -175,38 +411,181 @@ describe('auth store', () => {
             email: 'super-admin@legalis.local',
         })
 
-        expect(store.roles).toEqual(['super-admin'])
+        expect(store.organizations).toHaveLength(1)
 
-        expect(store.permissions).toEqual(['clients.view'])
+        expect(store.roles).toEqual(['role-anterior'])
 
-        expect(result).toEqual({
-            user: {
-                id: 1,
-                name: 'Super Admin',
-                email: 'super-admin@legalis.local',
-            },
-            roles: ['super-admin'],
-            permissions: ['clients.view'],
-        })
+        expect(store.permissions).toEqual(['permission.anterior'])
+
+        expect(result.user.email).toBe('super-admin@legalis.local')
     })
 
-    it('refresh substitui o token', async () => {
+    it('fetchContext atualiza rbac do tenant persistido', async () => {
+        getCurrentTenant.mockReturnValue('escritorio-legalis')
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 10,
+                    name: 'Escritório Legalis',
+                    slug: 'escritorio-legalis',
+                },
+
+                roles: ['super-admin'],
+
+                permissions: ['clients.view', 'clients.create'],
+            },
+        })
+
+        const store = useAuthStore()
+
+        const result = await store.fetchContext()
+
+        expect(context).toHaveBeenCalledTimes(1)
+
+        expect(store.organization.slug).toBe('escritorio-legalis')
+
+        expect(store.roles).toEqual(['super-admin'])
+
+        expect(store.permissions).toEqual(['clients.view', 'clients.create'])
+
+        expect(result.organization.id).toBe(10)
+    })
+
+    it('fetchContext não chama api sem tenant', async () => {
+        getCurrentTenant.mockReturnValue(null)
+
+        const store = useAuthStore()
+
+        const result = await store.fetchContext()
+
+        expect(result).toBeNull()
+
+        expect(context).not.toHaveBeenCalled()
+
+        expect(store.organization).toBeNull()
+
+        expect(store.roles).toEqual([])
+
+        expect(store.permissions).toEqual([])
+    })
+
+    it('seleciona organização e carrega contexto', async () => {
+        const store = useAuthStore()
+
+        store.organizations = [
+            {
+                id: 10,
+                name: 'Organização A',
+                slug: 'org-a',
+            },
+        ]
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 10,
+                    name: 'Organização A',
+                    slug: 'org-a',
+                },
+
+                roles: ['super-admin'],
+
+                permissions: ['folders.view'],
+            },
+        })
+
+        getCurrentTenant.mockReturnValue('org-a')
+
+        await store.selectOrganization('org-a')
+
+        expect(setCurrentTenant).toHaveBeenCalledWith('org-a')
+
+        expect(context).toHaveBeenCalledTimes(1)
+
+        expect(store.organization.slug).toBe('org-a')
+
+        expect(store.permissions).toEqual(['folders.view'])
+    })
+
+    it('rejeita organização inexistente', async () => {
+        const store = useAuthStore()
+
+        store.organizations = [
+            {
+                id: 10,
+                slug: 'org-a',
+            },
+        ]
+
+        await expect(store.selectOrganization('org-inexistente')).rejects.toThrow(
+            'Organização inválida.',
+        )
+
+        expect(context).not.toHaveBeenCalled()
+    })
+
+    it('remove tenant quando carregamento de contexto falha', async () => {
+        const store = useAuthStore()
+
+        store.organizations = [
+            {
+                id: 10,
+                slug: 'org-a',
+            },
+        ]
+
+        getCurrentTenant.mockReturnValue('org-a')
+
+        context.mockRejectedValue(new Error('Forbidden'))
+
+        await expect(store.selectOrganization('org-a')).rejects.toThrow('Forbidden')
+
+        expect(removeCurrentTenant).toHaveBeenCalled()
+
+        expect(store.organization).toBeNull()
+
+        expect(store.roles).toEqual([])
+
+        expect(store.permissions).toEqual([])
+    })
+
+    it('refresh substitui token sem alterar rbac atual', async () => {
         refresh.mockResolvedValue({
             data: {
                 access_token: 'new-token',
+
                 user: {
                     id: 1,
                     name: 'Super Admin',
                     email: 'super-admin@legalis.local',
                 },
-                roles: ['super-admin'],
-                permissions: ['clients.view'],
+
+                organizations: [
+                    {
+                        id: 10,
+                        slug: 'org-a',
+                    },
+                ],
+
+                roles: ['role-incorreta'],
+
+                permissions: ['permission.incorreta'],
             },
         })
 
         const store = useAuthStore()
 
         store.token = 'old-token'
+
+        store.organization = {
+            id: 10,
+            slug: 'org-a',
+        }
+
+        store.roles = ['super-admin']
+
+        store.permissions = ['clients.view']
 
         const result = await store.refresh()
 
@@ -223,7 +602,7 @@ describe('auth store', () => {
         expect(result.access_token).toBe('new-token')
     })
 
-    it('logout chama api e limpa estado', async () => {
+    it('logout chama api e limpa identidade e contexto', async () => {
         logout.mockResolvedValue({
             data: {
                 msg: 'Desconectado com sucesso',
@@ -239,6 +618,18 @@ describe('auth store', () => {
             name: 'Super Admin',
         }
 
+        store.organizations = [
+            {
+                id: 10,
+                slug: 'org-a',
+            },
+        ]
+
+        store.organization = {
+            id: 10,
+            slug: 'org-a',
+        }
+
         store.roles = ['super-admin']
 
         store.permissions = ['clients.view']
@@ -251,11 +642,17 @@ describe('auth store', () => {
 
         expect(store.user).toBeNull()
 
+        expect(store.organizations).toEqual([])
+
+        expect(store.organization).toBeNull()
+
         expect(store.roles).toEqual([])
 
         expect(store.permissions).toEqual([])
 
         expect(removeAccessToken).toHaveBeenCalled()
+
+        expect(removeCurrentTenant).toHaveBeenCalled()
     })
 
     it('hydrate encerra sem token', async () => {
@@ -270,10 +667,14 @@ describe('auth store', () => {
         expect(store.token).toBeNull()
 
         expect(me).not.toHaveBeenCalled()
+
+        expect(context).not.toHaveBeenCalled()
     })
 
-    it('hydrate carrega usuário quando existe token', async () => {
+    it('hydrate restaura usuário e contexto persistido', async () => {
         getAccessToken.mockReturnValue('persisted-token')
+
+        getCurrentTenant.mockReturnValue('escritorio-legalis')
 
         me.mockResolvedValue({
             data: {
@@ -282,7 +683,27 @@ describe('auth store', () => {
                     name: 'Super Admin',
                     email: 'super-admin@legalis.local',
                 },
+
+                organizations: [
+                    {
+                        id: 10,
+                        name: 'Escritório Legalis',
+                        slug: 'escritorio-legalis',
+                    },
+                ],
+            },
+        })
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 10,
+                    name: 'Escritório Legalis',
+                    slug: 'escritorio-legalis',
+                },
+
                 roles: ['super-admin'],
+
                 permissions: ['clients.view', 'clients.create'],
             },
         })
@@ -295,19 +716,102 @@ describe('auth store', () => {
 
         expect(store.token).toBe('persisted-token')
 
-        expect(store.user).toEqual({
-            id: 1,
-            name: 'Super Admin',
-            email: 'super-admin@legalis.local',
-        })
+        expect(store.user.email).toBe('super-admin@legalis.local')
+
+        expect(store.organization.slug).toBe('escritorio-legalis')
 
         expect(store.roles).toEqual(['super-admin'])
 
         expect(store.permissions).toEqual(['clients.view', 'clients.create'])
 
-        expect(store.isAuthenticated).toBe(true)
+        expect(store.contextLoaded).toBe(true)
 
         expect(me).toHaveBeenCalledTimes(1)
+
+        expect(context).toHaveBeenCalledTimes(1)
+    })
+
+    it('hydrate seleciona automaticamente organização única sem tenant persistido', async () => {
+        getAccessToken.mockReturnValue('persisted-token')
+
+        me.mockResolvedValue({
+            data: {
+                user: {
+                    id: 1,
+                    name: 'Super Admin',
+                },
+
+                organizations: [
+                    {
+                        id: 10,
+                        name: 'Organização única',
+                        slug: 'org-unica',
+                    },
+                ],
+            },
+        })
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 10,
+                    name: 'Organização única',
+                    slug: 'org-unica',
+                },
+
+                roles: ['super-admin'],
+
+                permissions: ['clients.view'],
+            },
+        })
+
+        getCurrentTenant.mockReturnValueOnce(null).mockReturnValue('org-unica')
+
+        const store = useAuthStore()
+
+        await store.hydrate()
+
+        expect(setCurrentTenant).toHaveBeenCalledWith('org-unica')
+
+        expect(context).toHaveBeenCalledTimes(1)
+
+        expect(store.organization.slug).toBe('org-unica')
+    })
+
+    it('hydrate não escolhe automaticamente quando há várias organizações', async () => {
+        getAccessToken.mockReturnValue('persisted-token')
+
+        me.mockResolvedValue({
+            data: {
+                user: {
+                    id: 1,
+                    name: 'Super Admin',
+                },
+
+                organizations: [
+                    {
+                        id: 10,
+                        slug: 'org-a',
+                    },
+                    {
+                        id: 20,
+                        slug: 'org-b',
+                    },
+                ],
+            },
+        })
+
+        const store = useAuthStore()
+
+        await store.hydrate()
+
+        expect(store.isAuthenticated).toBe(true)
+
+        expect(store.organization).toBeNull()
+
+        expect(store.contextLoaded).toBe(false)
+
+        expect(context).not.toHaveBeenCalled()
     })
 
     it('hydrate limpa autenticação quando me falha', async () => {
@@ -325,14 +829,20 @@ describe('auth store', () => {
 
         expect(store.user).toBeNull()
 
+        expect(store.organizations).toEqual([])
+
+        expect(store.organization).toBeNull()
+
         expect(store.roles).toEqual([])
 
         expect(store.permissions).toEqual([])
 
         expect(removeAccessToken).toHaveBeenCalled()
+
+        expect(removeCurrentTenant).toHaveBeenCalled()
     })
 
-    it('verifica roles', () => {
+    it('verifica roles do contexto atual', () => {
         const store = useAuthStore()
 
         store.roles = ['super-admin', 'advogado']
@@ -344,7 +854,7 @@ describe('auth store', () => {
         expect(store.hasRole('financeiro')).toBe(false)
     })
 
-    it('verifica permissions', () => {
+    it('verifica permissions do contexto atual', () => {
         const store = useAuthStore()
 
         store.permissions = ['clients.view', 'clients.create']

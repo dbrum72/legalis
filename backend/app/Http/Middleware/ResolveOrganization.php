@@ -20,7 +20,10 @@ class ResolveOrganization
         Closure $next,
     ): Response {
         $slug = trim(
-            (string) $request->header('X-Tenant', '')
+            (string) $request->header(
+                'X-Tenant',
+                '',
+            )
         );
 
         if ($slug === '') {
@@ -30,9 +33,16 @@ class ResolveOrganization
             );
         }
 
-        $organization = Organization::query()
-            ->where('slug', $slug)
-            ->where('status', 'active')
+        $organization =
+            Organization::query()
+            ->where(
+                'slug',
+                $slug,
+            )
+            ->where(
+                'status',
+                'active',
+            )
             ->first();
 
         if ($organization === null) {
@@ -42,7 +52,8 @@ class ResolveOrganization
             );
         }
 
-        $user = $request->user('api');
+        $user =
+            $request->user('api');
 
         if ($user === null) {
             return $this->error(
@@ -51,10 +62,16 @@ class ResolveOrganization
             );
         }
 
-        $hasActiveMembership = $organization
+        $hasActiveMembership =
+            $organization
             ->users()
-            ->whereKey($user->getKey())
-            ->wherePivot('status', 'active')
+            ->whereKey(
+                $user->getKey()
+            )
+            ->wherePivot(
+                'status',
+                'active',
+            )
             ->exists();
 
         if (!$hasActiveMembership) {
@@ -64,15 +81,48 @@ class ResolveOrganization
             );
         }
 
+        $previousTeamId =
+            getPermissionsTeamId();
+
         $this->currentOrganization->set(
             $organization
+        );
+
+        setPermissionsTeamId(
+            $organization->id
+        );
+
+        $this->clearPermissionRelations(
+            $user
         );
 
         try {
             return $next($request);
         } finally {
-            $this->currentOrganization->clear();
+            $this->clearPermissionRelations(
+                $user
+            );
+
+            setPermissionsTeamId(
+                $previousTeamId
+            );
+
+            $this
+                ->currentOrganization
+                ->clear();
         }
+    }
+
+    private function clearPermissionRelations(
+        $user,
+    ): void {
+        $user->unsetRelation(
+            'roles'
+        );
+
+        $user->unsetRelation(
+            'permissions'
+        );
     }
 
     private function error(
@@ -81,7 +131,8 @@ class ResolveOrganization
     ): JsonResponse {
         return response()->json(
             [
-                'message' => $message,
+                'message' =>
+                $message,
             ],
             $status,
         );

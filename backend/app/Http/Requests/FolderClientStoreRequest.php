@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Folder;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -22,9 +23,13 @@ class FolderClientStoreRequest extends FormRequest
             )
             ->id();
 
-        $folderId = $this->route(
-            'folder'
-        );
+        $folder =
+            $this->route('folder');
+
+        $folderId =
+            $folder instanceof Folder
+            ? $folder->getKey()
+            : $folder;
 
         return [
             'client_id' => [

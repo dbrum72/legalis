@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
+use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -13,33 +15,95 @@ class AuthController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('auth:api', except: ['login']),
+            new Middleware(
+                'auth:api',
+                except: [
+                    'login',
+                ],
+            ),
         ];
     }
 
-    public function login(LoginRequest $request): JsonResponse
-    {
-        $credentials = $request->validated();
+    public function login(
+        LoginRequest $request,
+    ): JsonResponse {
+        $credentials =
+            $request->validated();
 
-        if ($token = $this->guard()->attempt($credentials)) {
-            return $this->respondWithToken($token);
+        if (
+            $token =
+            $this
+            ->guard()
+            ->attempt(
+                $credentials
+            )
+        ) {
+            return $this
+                ->respondWithToken(
+                    $token
+                );
         }
 
-        return response()->json([
-            'msg' => 'Usuário e/ou senha inválidos.',
-        ], 403);
+        return response()->json(
+            [
+                'msg' =>
+                'Usuário e/ou senha inválidos.',
+            ],
+            403,
+        );
     }
 
-    public function me()
+    public function me(): JsonResponse
     {
-        $user = $this->guard()->user();
+        $user =
+            $this->guard()->user();
 
         return response()->json([
-            'user' => $user,
-            'roles' => $user->getRoleNames(),
-            'permissions' => $user
+            'user' =>
+            $user->toArray(),
+
+            'organizations' =>
+            $this
+                ->availableOrganizations(
+                    $user
+                ),
+        ]);
+    }
+
+    public function context(
+        CurrentOrganization $currentOrganization,
+    ): JsonResponse {
+        $user =
+            $this->guard()->user();
+
+        $organization =
+            $currentOrganization->get();
+
+        return response()->json([
+            'user' =>
+            $user->toArray(),
+
+            'organization' => [
+                'id' =>
+                $organization->id,
+
+                'name' =>
+                $organization->name,
+
+                'slug' =>
+                $organization->slug,
+            ],
+
+            'roles' =>
+            $user
+                ->getRoleNames()
+                ->values(),
+
+            'permissions' =>
+            $user
                 ->getAllPermissions()
-                ->pluck('name'),
+                ->pluck('name')
+                ->values(),
         ]);
     }
 
@@ -48,40 +112,102 @@ class AuthController extends Controller implements HasMiddleware
         $this->guard()->logout();
 
         return response()->json([
-            'msg' => 'Desconectado com sucesso.',
+            'msg' =>
+            'Desconectado com sucesso.',
         ]);
     }
 
     public function refresh(): JsonResponse
     {
-        return $this->respondWithToken(
-            $this->guard()->refresh()
-        );
+        return $this
+            ->respondWithToken(
+                $this
+                    ->guard()
+                    ->refresh()
+            );
     }
 
-    protected function respondWithToken(string $token): JsonResponse
-    {
-        $user = $this->guard()->user();
+    protected function respondWithToken(
+        string $token,
+    ): JsonResponse {
+        $user =
+            $this->guard()->user();
 
         return response()->json([
-            'token' => $token,
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => $this->guard()->factory()->getTTL() * 60,
+            'token' =>
+            $token,
 
-            'userName' => $user->name,
-            'userMail' => $user->email,
-            'user' => $user->toArray(),
+            'access_token' =>
+            $token,
 
-            'roles' => $user->getRoleNames(),
-            'permissions' => $user
-                ->getAllPermissions()
-                ->pluck('name'),
+            'token_type' =>
+            'bearer',
+
+            'expires_in' =>
+            $this
+                ->guard()
+                ->factory()
+                ->getTTL()
+                * 60,
+
+            'userName' =>
+            $user->name,
+
+            'userMail' =>
+            $user->email,
+
+            'user' =>
+            $user->toArray(),
+
+            'organizations' =>
+            $this
+                ->availableOrganizations(
+                    $user
+                ),
         ]);
+    }
+
+    private function availableOrganizations(
+        User $user,
+    ): array {
+        return $user
+            ->organizations()
+            ->where(
+                'organizations.status',
+                'active',
+            )
+            ->wherePivot(
+                'status',
+                'active',
+            )
+            ->orderBy(
+                'organizations.name',
+            )
+            ->get([
+                'organizations.id',
+                'organizations.name',
+                'organizations.slug',
+            ])
+            ->map(
+                fn($organization) => [
+                    'id' =>
+                    $organization->id,
+
+                    'name' =>
+                    $organization->name,
+
+                    'slug' =>
+                    $organization->slug,
+                ]
+            )
+            ->values()
+            ->all();
     }
 
     protected function guard()
     {
-        return Auth::guard('api');
+        return Auth::guard(
+            'api'
+        );
     }
 }

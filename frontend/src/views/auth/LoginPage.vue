@@ -68,14 +68,24 @@ import {
     AppLogo,
 } from '@/components/ui'
 
-import { useAuthStore } from '@/stores/auth.js'
+import {
+    useAuthStore,
+} from '@/stores/auth.js'
 
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
+const router =
+    useRouter()
 
-const loading = ref(false)
-const authError = ref('')
+const route =
+    useRoute()
+
+const authStore =
+    useAuthStore()
+
+const loading =
+    ref(false)
+
+const authError =
+    ref('')
 
 const form = reactive({
     email: '',
@@ -97,18 +107,44 @@ function validate() {
     clearErrors()
 
     if (!form.email.trim()) {
-        errors.email = 'Informe seu e-mail.'
+        errors.email =
+            'Informe seu e-mail.'
     }
 
     if (!form.password) {
-        errors.password = 'Informe sua senha.'
+        errors.password =
+            'Informe sua senha.'
     }
 
-    return !errors.email && !errors.password
+    return (
+        !errors.email &&
+        !errors.password
+    )
+}
+
+function resolveRedirect() {
+    const redirect =
+        route.query.redirect
+
+    if (
+        typeof redirect ===
+        'string' &&
+        redirect.startsWith('/') &&
+        !redirect.startsWith('//')
+    ) {
+        return redirect
+    }
+
+    return {
+        name: 'dashboard',
+    }
 }
 
 async function handleSubmit() {
-    if (loading.value || !validate()) {
+    if (
+        loading.value ||
+        !validate()
+    ) {
         return
     }
 
@@ -116,32 +152,63 @@ async function handleSubmit() {
 
     try {
         await authStore.login({
-            email: form.email.trim(),
-            password: form.password,
+            email:
+                form.email.trim(),
+
+            password:
+                form.password,
         })
 
-        const redirect =
-            typeof route.query.redirect === 'string' &&
-                route.query.redirect.startsWith('/') &&
-                !route.query.redirect.startsWith('//')
-                ? route.query.redirect
-                : { name: 'dashboard' }
+        if (
+            !authStore.contextLoaded
+        ) {
+            await router.replace({
+                name:
+                    'organizations.select',
 
-        await router.replace(redirect)
+                query:
+                    typeof route.query
+                        .redirect ===
+                        'string'
+                        ? {
+                            redirect:
+                                route
+                                    .query
+                                    .redirect,
+                        }
+                        : {},
+            })
+
+            return
+        }
+
+        await router.replace(
+            resolveRedirect(),
+        )
     } catch (error) {
-        const status = error.response?.status
+        const status =
+            error.response?.status
 
         if (status === 422) {
             const validationErrors =
-                error.response?.data?.errors ?? {}
+                error.response?.data
+                    ?.errors ??
+                {}
 
             errors.email =
-                validationErrors.email?.[0] ?? ''
+                validationErrors
+                    .email?.[0] ??
+                ''
 
             errors.password =
-                validationErrors.password?.[0] ?? ''
+                validationErrors
+                    .password?.[0] ??
+                ''
 
-            if (!errors.email && !errors.password) {
+            if (
+                !errors.email &&
+                !errors.password
+            ) {
                 authError.value =
                     'Verifique os dados informados.'
             }
@@ -149,9 +216,13 @@ async function handleSubmit() {
             return
         }
 
-        if (status === 401 || status === 403) {
+        if (
+            status === 401 ||
+            status === 403
+        ) {
             authError.value =
-                error.response?.data?.msg ??
+                error.response?.data
+                    ?.msg ??
                 'E-mail ou senha inválidos.'
 
             return

@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\OrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ClientTest extends TestCase
@@ -47,16 +48,18 @@ class ClientTest extends TestCase
 
     public function test_usuario_sem_permissao_nao_pode_listar_clientes(): void
     {
-        $user = User::factory()->create();
+        $user =
+            User::factory()->create();
 
         $this->attachUser(
             $user,
             $this->organization,
         );
 
-        $token = auth('api')->login(
-            $user
-        );
+        $token =
+            auth('api')->login(
+                $user
+            );
 
         $this
             ->asTenant(
@@ -73,7 +76,9 @@ class ClientTest extends TestCase
             $this->loginAsSuperAdmin();
 
         Client::factory()
-            ->for($this->organization)
+            ->for(
+                $this->organization
+            )
             ->create([
                 'name' =>
                 'Cliente do escritório',
@@ -98,28 +103,36 @@ class ClientTest extends TestCase
             $this->loginAsSuperAdmin();
 
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
         Client::factory()
-            ->for($this->organization)
+            ->for(
+                $this->organization
+            )
             ->create([
                 'name' =>
                 'Cliente Organização A',
             ]);
 
         Client::factory()
-            ->for($otherOrganization)
+            ->for(
+                $otherOrganization
+            )
             ->create([
                 'name' =>
                 'Cliente Organização B',
             ]);
 
-        $response = $this
+        $response =
+            $this
             ->asTenant(
                 $token,
                 $this->organization,
             )
-            ->getJson('/api/clients');
+            ->getJson(
+                '/api/clients'
+            );
 
         $response
             ->assertOk()
@@ -185,7 +198,8 @@ class ClientTest extends TestCase
             'cliente@teste.com',
         ];
 
-        $response = $this
+        $response =
+            $this
             ->asTenant(
                 $token,
                 $this->organization,
@@ -232,7 +246,8 @@ class ClientTest extends TestCase
             $this->loginAsSuperAdmin();
 
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
         $this
             ->asTenant(
@@ -284,7 +299,9 @@ class ClientTest extends TestCase
     public function test_documento_deve_ser_unico_na_mesma_organizacao(): void
     {
         Client::factory()
-            ->for($this->organization)
+            ->for(
+                $this->organization
+            )
             ->create([
                 'document' =>
                 '12345678901',
@@ -317,25 +334,28 @@ class ClientTest extends TestCase
     public function test_mesmo_documento_pode_existir_em_outra_organizacao(): void
     {
         Client::factory()
-            ->for($this->organization)
+            ->for(
+                $this->organization
+            )
             ->create([
                 'document' =>
                 '12345678901',
             ]);
 
+        $user =
+            $this->superAdmin();
+
         $otherOrganization =
-            Organization::factory()->create();
+            $this
+            ->createOrganizationForUserWithRole(
+                $user,
+                'super-admin',
+            );
 
-        $user = $this->superAdmin();
-
-        $this->attachUser(
-            $user,
-            $otherOrganization,
-        );
-
-        $token = auth('api')->login(
-            $user
-        );
+        $token =
+            auth('api')->login(
+                $user
+            );
 
         $this
             ->asTenant(
@@ -352,7 +372,22 @@ class ClientTest extends TestCase
                     '12345678901',
                 ],
             )
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath(
+                'organization_id',
+                $otherOrganization->id,
+            );
+
+        $this->assertDatabaseHas(
+            'clients',
+            [
+                'organization_id' =>
+                $this->organization->id,
+
+                'document' =>
+                '12345678901',
+            ],
+        );
 
         $this->assertDatabaseHas(
             'clients',
@@ -363,6 +398,16 @@ class ClientTest extends TestCase
                 'document' =>
                 '12345678901',
             ],
+        );
+
+        $this->assertSame(
+            2,
+            Client::withoutGlobalScopes()
+                ->where(
+                    'document',
+                    '12345678901',
+                )
+                ->count(),
         );
     }
 
@@ -400,8 +445,11 @@ class ClientTest extends TestCase
         $maritalStatus =
             MaritalStatus::firstOrFail();
 
-        $client = Client::factory()
-            ->for($this->organization)
+        $client =
+            Client::factory()
+            ->for(
+                $this->organization
+            )
             ->create([
                 'marital_status_id' =>
                 $maritalStatus->id,
@@ -428,10 +476,14 @@ class ClientTest extends TestCase
     public function test_nao_exibe_cliente_de_outra_organizacao(): void
     {
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
-        $client = Client::factory()
-            ->for($otherOrganization)
+        $client =
+            Client::factory()
+            ->for(
+                $otherOrganization
+            )
             ->create();
 
         $token =
@@ -450,8 +502,11 @@ class ClientTest extends TestCase
 
     public function test_atualiza_cliente(): void
     {
-        $client = Client::factory()
-            ->for($this->organization)
+        $client =
+            Client::factory()
+            ->for(
+                $this->organization
+            )
             ->create([
                 'name' =>
                 'Cliente Antigo',
@@ -502,10 +557,14 @@ class ClientTest extends TestCase
     public function test_nao_atualiza_cliente_de_outra_organizacao(): void
     {
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
-        $client = Client::factory()
-            ->for($otherOrganization)
+        $client =
+            Client::factory()
+            ->for(
+                $otherOrganization
+            )
             ->create([
                 'name' =>
                 'Cliente Original',
@@ -545,8 +604,11 @@ class ClientTest extends TestCase
 
     public function test_exclui_cliente(): void
     {
-        $client = Client::factory()
-            ->for($this->organization)
+        $client =
+            Client::factory()
+            ->for(
+                $this->organization
+            )
             ->create();
 
         $token =
@@ -574,10 +636,14 @@ class ClientTest extends TestCase
     public function test_nao_exclui_cliente_de_outra_organizacao(): void
     {
         $otherOrganization =
-            Organization::factory()->create();
+            Organization::factory()
+            ->create();
 
-        $client = Client::factory()
-            ->for($otherOrganization)
+        $client =
+            Client::factory()
+            ->for(
+                $otherOrganization
+            )
             ->create();
 
         $token =
@@ -599,6 +665,110 @@ class ClientTest extends TestCase
                 'id' =>
                 $client->id,
             ],
+        );
+    }
+
+    private function createOrganizationForUserWithRole(
+        User $user,
+        string $roleName,
+    ): Organization {
+        $organization =
+            Organization::factory()
+            ->create();
+
+        $this->attachUser(
+            $user,
+            $organization,
+        );
+
+        $sourceRole =
+            Role::query()
+            ->where(
+                'organization_id',
+                $this->organization->id,
+            )
+            ->where(
+                'name',
+                $roleName,
+            )
+            ->where(
+                'guard_name',
+                'api',
+            )
+            ->with('permissions')
+            ->firstOrFail();
+
+        $role =
+            Role::query()
+            ->create([
+                'organization_id' =>
+                $organization->id,
+
+                'name' =>
+                $sourceRole->name,
+
+                'guard_name' =>
+                $sourceRole->guard_name,
+
+                'description' =>
+                $sourceRole->description,
+            ]);
+
+        $role->syncPermissions(
+            $sourceRole->permissions
+        );
+
+        $this->assignRole(
+            $user,
+            $organization,
+            $role,
+        );
+
+        return $organization;
+    }
+
+    private function assignRole(
+        User $user,
+        Organization $organization,
+        Role $role,
+    ): void {
+        $previousTeamId =
+            getPermissionsTeamId();
+
+        try {
+            setPermissionsTeamId(
+                $organization->id
+            );
+
+            $this
+                ->clearPermissionRelations(
+                    $user
+                );
+
+            $user->syncRoles([
+                $role,
+            ]);
+        } finally {
+            setPermissionsTeamId(
+                $previousTeamId
+            );
+
+            $this
+                ->clearPermissionRelations(
+                    $user
+                );
+        }
+    }
+
+    private function clearPermissionRelations(
+        User $user,
+    ): void {
+        $user->unsetRelation(
+            'roles'
+        );
+
+        $user->unsetRelation(
+            'permissions'
         );
     }
 

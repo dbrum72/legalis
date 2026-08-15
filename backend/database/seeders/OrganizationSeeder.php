@@ -8,21 +8,42 @@ use Illuminate\Database\Seeder;
 class OrganizationSeeder extends Seeder
 {
     public const DEFAULT_NAME =
-        'Escritório Legalis';
+    'Escritório Legalis';
 
     public const DEFAULT_SLUG =
-        'escritorio-legalis';
+    'escritorio-legalis';
+
+    public const SECONDARY_NAME =
+    'Escritório Advocacia & Associados';
+
+    public const SECONDARY_SLUG =
+    'advocacia-associados';
 
     public function run(): void
     {
-        Organization::updateOrCreate(
-            [
-                'slug' => self::DEFAULT_SLUG,
-            ],
+        $organizations = [
             [
                 'name' => self::DEFAULT_NAME,
+                'slug' => self::DEFAULT_SLUG,
                 'status' => 'active',
             ],
-        );
+            [
+                'name' => self::SECONDARY_NAME,
+                'slug' => self::SECONDARY_SLUG,
+                'status' => 'active',
+            ],
+        ];
+
+        foreach ($organizations as $organization) {
+            Organization::updateOrCreate(
+                [
+                    'slug' => $organization['slug'],
+                ],
+                [
+                    'name' => $organization['name'],
+                    'status' => $organization['status'],
+                ],
+            );
+        }
     }
 }

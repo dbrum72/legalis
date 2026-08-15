@@ -1,149 +1,479 @@
-import { computed, ref } from 'vue'
+import {
+    computed,
+    ref,
+} from 'vue'
 
 import { defineStore } from 'pinia'
 
 import {
+    context as contextRequest,
     login as loginRequest,
     logout as logoutRequest,
     me as meRequest,
     refresh as refreshRequest,
 } from '@/api/auth.js'
 
-import { getAccessToken, removeAccessToken, setAccessToken } from '@/api/auth-token.js'
+import {
+    getAccessToken,
+    removeAccessToken,
+    setAccessToken,
+} from '@/api/auth-token.js'
 
-export const useAuthStore = defineStore('auth', () => {
-    const token = ref(null)
-    const user = ref(null)
-    const roles = ref([])
-    const permissions = ref([])
-    const hydrated = ref(false)
+import {
+    getCurrentTenant,
+    removeCurrentTenant,
+    setCurrentTenant,
+} from '@/api/tenant.js'
 
-    const isAuthenticated = computed(() => Boolean(token.value && user.value))
+import { useClientsStore } from '@/stores/clients.js'
+import { useFoldersStore } from '@/stores/folders.js'
 
-    const userName = computed(() => user.value?.name ?? '')
+export const useAuthStore = defineStore(
+    'auth',
+    () => {
+        const token = ref(null)
+        const user = ref(null)
 
-    const userEmail = computed(() => user.value?.email ?? '')
+        const organizations = ref([])
+        const organization = ref(null)
 
-    function hasRole(role) {
-        return roles.value.includes(role)
-    }
+        const roles = ref([])
+        const permissions = ref([])
 
-    function hasPermission(permission) {
-        return permissions.value.includes(permission)
-    }
+        const hydrated = ref(false)
+        const contextLoaded = ref(false)
 
-    function applyAuthPayload(payload) {
-        const accessToken = payload?.access_token ?? payload?.token ?? null
+        const isAuthenticated = computed(
+            () => Boolean(
+                token.value &&
+                user.value,
+            ),
+        )
 
-        token.value = accessToken
-        user.value = payload?.user ?? null
+        const hasOrganization = computed(
+            () => Boolean(
+                organization.value,
+            ),
+        )
 
-        roles.value = Array.isArray(payload?.roles) ? payload.roles : []
+        const hasOrganizations = computed(
+            () =>
+                organizations.value.length > 0,
+        )
 
-        permissions.value = Array.isArray(payload?.permissions) ? payload.permissions : []
+        const hasMultipleOrganizations = computed(
+            () =>
+                organizations.value.length > 1,
+        )
 
-        if (accessToken) {
-            setAccessToken(accessToken)
-        } else {
+        const needsOrganizationSelection = computed(
+            () =>
+                isAuthenticated.value &&
+                !contextLoaded.value &&
+                organizations.value.length !== 1,
+        )
+
+        const currentTenant = computed(
+            () =>
+                organization.value?.slug ??
+                null,
+        )
+
+        const userName = computed(
+            () =>
+                user.value?.name ??
+                '',
+        )
+
+        const userEmail = computed(
+            () =>
+                user.value?.email ??
+                '',
+        )
+
+        function hasRole(role) {
+            return roles.value.includes(
+                role,
+            )
+        }
+
+        function hasPermission(
+            permission,
+        ) {
+            return permissions.value.includes(
+                permission,
+            )
+        }
+
+        function applyIdentityPayload(
+            payload,
+        ) {
+            user.value =
+                payload?.user ??
+                null
+
+            organizations.value =
+                Array.isArray(
+                    payload?.organizations,
+                )
+                    ? payload.organizations
+                    : []
+        }
+
+        function applyAuthPayload(
+            payload,
+        ) {
+            const accessToken =
+                payload?.access_token ??
+                payload?.token ??
+                null
+
+            token.value =
+                accessToken
+
+            applyIdentityPayload(
+                payload,
+            )
+
+            if (accessToken) {
+                setAccessToken(
+                    accessToken,
+                )
+            } else {
+                removeAccessToken()
+            }
+        }
+
+        function applyContextPayload(
+            payload,
+        ) {
+            organization.value =
+                payload?.organization ??
+                null
+
+            roles.value =
+                Array.isArray(
+                    payload?.roles,
+                )
+                    ? payload.roles
+                    : []
+
+            permissions.value =
+                Array.isArray(
+                    payload?.permissions,
+                )
+                    ? payload.permissions
+                    : []
+
+            contextLoaded.value =
+                Boolean(
+                    organization.value,
+                )
+        }
+
+        function clearTenantStores() {
+            useClientsStore().clear()
+            useFoldersStore().clear()
+        }
+
+        function clearContext({
+            removeTenant = false,
+            clearStores = false,
+        } = {}) {
+            organization.value =
+                null
+
+            roles.value = []
+            permissions.value = []
+
+            contextLoaded.value =
+                false
+
+            if (clearStores) {
+                clearTenantStores()
+            }
+
+            if (removeTenant) {
+                removeCurrentTenant()
+            }
+        }
+
+        function clearAuth() {
+            token.value = null
+            user.value = null
+
+            organizations.value = []
+
+            clearContext({
+                removeTenant: true,
+                clearStores: true,
+            })
+
             removeAccessToken()
         }
-    }
 
-    function clearAuth() {
-        token.value = null
-        user.value = null
-        roles.value = []
-        permissions.value = []
+        function restoreToken() {
+            token.value =
+                getAccessToken()
 
-        removeAccessToken()
-    }
+            hydrated.value =
+                true
 
-    function restoreToken() {
-        token.value = getAccessToken()
-        hydrated.value = true
+            return token.value
+        }
 
-        return token.value
-    }
-
-    async function login(credentials) {
-        const response = await loginRequest(credentials)
-
-        applyAuthPayload(response.data)
-
-        return response.data
-    }
-
-    async function fetchMe() {
-        const response = await meRequest()
-        const payload = response.data
-
-        user.value = payload?.user ?? null
-
-        roles.value = Array.isArray(payload?.roles) ? payload.roles : []
-
-        permissions.value = Array.isArray(payload?.permissions) ? payload.permissions : []
-
-        return payload
-    }
-
-    async function refresh() {
-        const response = await refreshRequest()
-
-        applyAuthPayload(response.data)
-
-        return response.data
-    }
-
-    async function logout() {
-        try {
-            if (token.value) {
-                await logoutRequest()
+        function resolveOrganizationByTenant(
+            tenant,
+        ) {
+            if (!tenant) {
+                return null
             }
-        } finally {
-            clearAuth()
+
+            return (
+                organizations.value.find(
+                    (item) =>
+                        String(
+                            item.slug,
+                        ) ===
+                        String(
+                            tenant,
+                        ),
+                ) ??
+                null
+            )
         }
-    }
 
-    async function hydrate() {
-        if (hydrated.value) {
-            return
+        function resolveInitialOrganization() {
+            const persistedTenant =
+                getCurrentTenant()
+
+            if (persistedTenant) {
+                const persistedOrganization =
+                    resolveOrganizationByTenant(
+                        persistedTenant,
+                    )
+
+                if (
+                    persistedOrganization
+                ) {
+                    return persistedOrganization
+                }
+
+                removeCurrentTenant()
+            }
+
+            if (
+                organizations.value.length ===
+                1
+            ) {
+                return organizations.value[0]
+            }
+
+            return null
         }
 
-        restoreToken()
+        async function fetchContext(
+            tenant = getCurrentTenant(),
+        ) {
+            if (!tenant) {
+                clearContext()
 
-        if (!token.value) {
-            return
+                return null
+            }
+
+            const response =
+                await contextRequest()
+
+            applyContextPayload(
+                response.data,
+            )
+
+            return response.data
         }
 
-        try {
-            await fetchMe()
-        } catch {
-            clearAuth()
+        async function selectOrganization(
+            selectedOrganization,
+        ) {
+            const resolvedOrganization =
+                typeof selectedOrganization ===
+                'object'
+                    ? selectedOrganization
+                    : resolveOrganizationByTenant(
+                          selectedOrganization,
+                      )
+
+            if (
+                !resolvedOrganization?.slug
+            ) {
+                throw new Error(
+                    'Organização inválida.',
+                )
+            }
+
+            const tenant =
+                resolvedOrganization.slug
+
+            const isChangingTenant =
+                currentTenant.value !== null &&
+                currentTenant.value !== tenant
+
+            clearContext({
+                clearStores:
+                    isChangingTenant,
+            })
+
+            setCurrentTenant(
+                tenant,
+            )
+
+            try {
+                return await fetchContext(
+                    tenant,
+                )
+            } catch (error) {
+                removeCurrentTenant()
+
+                clearContext({
+                    clearStores: true,
+                })
+
+                throw error
+            }
         }
-    }
 
-    return {
-        token,
-        user,
-        roles,
-        permissions,
-        hydrated,
+        async function initializeContext() {
+            const initialOrganization =
+                resolveInitialOrganization()
 
-        isAuthenticated,
-        userName,
-        userEmail,
+            if (!initialOrganization) {
+                clearContext()
 
-        hasRole,
-        hasPermission,
+                return null
+            }
 
-        applyAuthPayload,
-        clearAuth,
-        restoreToken,
+            return selectOrganization(
+                initialOrganization,
+            )
+        }
 
-        login,
-        fetchMe,
-        refresh,
-        logout,
-        hydrate,
-    }
-})
+        async function login(
+            credentials,
+        ) {
+            const response =
+                await loginRequest(
+                    credentials,
+                )
+
+            applyAuthPayload(
+                response.data,
+            )
+
+            await initializeContext()
+
+            return response.data
+        }
+
+        async function fetchMe() {
+            const response =
+                await meRequest()
+
+            const payload =
+                response.data
+
+            applyIdentityPayload(
+                payload,
+            )
+
+            return payload
+        }
+
+        async function refresh() {
+            const response =
+                await refreshRequest()
+
+            applyAuthPayload(
+                response.data,
+            )
+
+            return response.data
+        }
+
+        async function logout() {
+            try {
+                if (token.value) {
+                    await logoutRequest()
+                }
+            } finally {
+                clearAuth()
+            }
+        }
+
+        async function hydrate() {
+            if (hydrated.value) {
+                return
+            }
+
+            restoreToken()
+
+            if (!token.value) {
+                return
+            }
+
+            try {
+                await fetchMe()
+                await initializeContext()
+            } catch {
+                clearAuth()
+            }
+        }
+
+        return {
+            token,
+            user,
+
+            organizations,
+            organization,
+
+            roles,
+            permissions,
+
+            hydrated,
+            contextLoaded,
+
+            isAuthenticated,
+            hasOrganization,
+            hasOrganizations,
+            hasMultipleOrganizations,
+            needsOrganizationSelection,
+            currentTenant,
+
+            userName,
+            userEmail,
+
+            hasRole,
+            hasPermission,
+
+            applyIdentityPayload,
+            applyAuthPayload,
+            applyContextPayload,
+
+            clearTenantStores,
+            clearContext,
+            clearAuth,
+            restoreToken,
+
+            resolveOrganizationByTenant,
+            resolveInitialOrganization,
+
+            fetchContext,
+            selectOrganization,
+            initializeContext,
+
+            login,
+            fetchMe,
+            refresh,
+            logout,
+            hydrate,
+        }
+    },
+)

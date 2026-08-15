@@ -8,6 +8,10 @@ export function me() {
     return apiClient.get('/auth/me')
 }
 
+export function context() {
+    return apiClient.get('/auth/context')
+}
+
 export function refresh() {
     return apiClient.post('/auth/refresh')
 }

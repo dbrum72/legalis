@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mount } from '@vue/test-utils'
+
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { createPinia, setActivePinia } from 'pinia'
 
 import LoginPage from '@/views/auth/LoginPage.vue'
+
 import { useAuthStore } from '@/stores/auth.js'
 
 vi.mock('@/api/auth.js', () => ({
+    context: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     me: vi.fn(),
@@ -21,25 +24,50 @@ vi.mock('@/api/auth-token.js', () => ({
     removeAccessToken: vi.fn(),
 }))
 
+vi.mock('@/api/tenant.js', () => ({
+    getCurrentTenant: vi.fn(),
+    setCurrentTenant: vi.fn(),
+    removeCurrentTenant: vi.fn(),
+}))
+
 function createTestRouter(initialRoute = '/login') {
     const router = createRouter({
         history: createMemoryHistory(),
+
         routes: [
             {
                 path: '/login',
+
                 name: 'login',
+
                 component: LoginPage,
             },
+
+            {
+                path: '/organizations/select',
+
+                name: 'organizations.select',
+
+                component: {
+                    template: '<div>Selecionar organização</div>',
+                },
+            },
+
             {
                 path: '/',
+
                 name: 'dashboard',
+
                 component: {
                     template: '<div>Dashboard</div>',
                 },
             },
+
             {
                 path: '/destino',
+
                 name: 'destination',
+
                 component: {
                     template: '<div>Destino</div>',
                 },
@@ -55,11 +83,13 @@ function createTestRouter(initialRoute = '/login') {
 
 async function mountPage(initialRoute = '/login') {
     const pinia = createPinia()
+
     setActivePinia(pinia)
 
     const { router } = createTestRouter(initialRoute)
 
     await router.push(initialRoute)
+
     await router.isReady()
 
     const wrapper = mount(LoginPage, {
@@ -71,8 +101,51 @@ async function mountPage(initialRoute = '/login') {
     return {
         wrapper,
         router,
+
         authStore: useAuthStore(),
     }
+}
+
+function mockLoginWithContext(authStore) {
+    return vi.spyOn(authStore, 'login').mockImplementation(async () => {
+        authStore.token = 'jwt-token'
+
+        authStore.user = {
+            id: 1,
+
+            name: 'Super Admin',
+
+            email: 'super-admin@legalis.local',
+        }
+
+        authStore.organizations = [
+            {
+                id: 10,
+
+                name: 'Escritório Legalis',
+
+                slug: 'escritorio-legalis',
+            },
+        ]
+
+        authStore.organization = {
+            id: 10,
+
+            name: 'Escritório Legalis',
+
+            slug: 'escritorio-legalis',
+        }
+
+        authStore.roles = ['super-admin']
+
+        authStore.permissions = ['clients.view']
+
+        authStore.contextLoaded = true
+
+        return {
+            access_token: 'jwt-token',
+        }
+    })
 }
 
 describe('LoginPage', () => {
@@ -127,7 +200,7 @@ describe('LoginPage', () => {
     it('executa login com email normalizado', async () => {
         const { wrapper, authStore } = await mountPage()
 
-        const loginSpy = vi.spyOn(authStore, 'login').mockResolvedValue({})
+        const loginSpy = mockLoginWithContext(authStore)
 
         await wrapper.get('#login-email').setValue('  admin@legalis.local  ')
 
@@ -137,14 +210,15 @@ describe('LoginPage', () => {
 
         expect(loginSpy).toHaveBeenCalledWith({
             email: 'admin@legalis.local',
+
             password: 'senha',
         })
     })
 
-    it('redireciona para dashboard após login sem redirect', async () => {
+    it('redireciona para dashboard após login com contexto carregado e sem redirect', async () => {
         const { wrapper, router, authStore } = await mountPage()
 
-        vi.spyOn(authStore, 'login').mockResolvedValue({})
+        mockLoginWithContext(authStore)
 
         await wrapper.get('#login-email').setValue('admin@legalis.local')
 
@@ -157,10 +231,10 @@ describe('LoginPage', () => {
         })
     })
 
-    it('redireciona para destino original após login', async () => {
+    it('redireciona para destino original após login com contexto carregado', async () => {
         const { wrapper, router, authStore } = await mountPage('/login?redirect=/destino')
 
-        vi.spyOn(authStore, 'login').mockResolvedValue({})
+        mockLoginWithContext(authStore)
 
         await wrapper.get('#login-email').setValue('admin@legalis.local')
 
@@ -173,10 +247,60 @@ describe('LoginPage', () => {
         })
     })
 
+    it('redireciona para seleção de organização quando login não carrega contexto', async () => {
+        const { wrapper, router, authStore } = await mountPage('/login?redirect=/destino')
+
+        vi.spyOn(authStore, 'login').mockImplementation(async () => {
+            authStore.token = 'jwt-token'
+
+            authStore.user = {
+                id: 1,
+
+                name: 'Super Admin',
+            }
+
+            authStore.organizations = [
+                {
+                    id: 10,
+
+                    name: 'Organização A',
+
+                    slug: 'org-a',
+                },
+
+                {
+                    id: 20,
+
+                    name: 'Organização B',
+
+                    slug: 'org-b',
+                },
+            ]
+
+            authStore.contextLoaded = false
+
+            return {
+                access_token: 'jwt-token',
+            }
+        })
+
+        await wrapper.get('#login-email').setValue('admin@legalis.local')
+
+        await wrapper.get('#login-password').setValue('senha')
+
+        await wrapper.get('form').trigger('submit')
+
+        await vi.waitFor(() => {
+            expect(router.currentRoute.value.name).toBe('organizations.select')
+
+            expect(router.currentRoute.value.query.redirect).toBe('/destino')
+        })
+    })
+
     it('ignora redirect externo', async () => {
         const { wrapper, router, authStore } = await mountPage('/login?redirect=//evil.example')
 
-        vi.spyOn(authStore, 'login').mockResolvedValue({})
+        mockLoginWithContext(authStore)
 
         await wrapper.get('#login-email').setValue('admin@legalis.local')
 
@@ -195,6 +319,7 @@ describe('LoginPage', () => {
         vi.spyOn(authStore, 'login').mockRejectedValue({
             response: {
                 status: 403,
+
                 data: {
                     msg: 'Usuário e/ou senha inválidos.',
                 },
@@ -218,6 +343,7 @@ describe('LoginPage', () => {
         vi.spyOn(authStore, 'login').mockRejectedValue({
             response: {
                 status: 422,
+
                 data: {
                     errors: {
                         email: ['O e-mail informado é inválido.'],
