@@ -2,12 +2,20 @@
 
 namespace App\Http\Requests;
 
+use App\Models\OrganizationInvitation;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class OrganizationInvitationStoreRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     protected function prepareForValidation(): void
     {
         $email = $this->input(
@@ -21,7 +29,7 @@ class OrganizationInvitationStoreRequest extends FormRequest
         $this->merge([
             'email' =>
             is_string($email)
-                ? mb_strtolower(
+                ? Str::lower(
                     trim($email)
                 )
                 : $email,
@@ -31,11 +39,6 @@ class OrganizationInvitationStoreRequest extends FormRequest
                 ? trim($role)
                 : $role,
         ]);
-    }
-
-    public function authorize(): bool
-    {
-        return true;
     }
 
     public function rules(): array
@@ -51,6 +54,28 @@ class OrganizationInvitationStoreRequest extends FormRequest
                 'string',
                 'email',
                 'max:255',
+
+                Rule::unique(
+                    'organization_invitations',
+                    'email'
+                )
+                    ->where(
+                        fn($query) =>
+                        $query
+                            ->where(
+                                'organization_id',
+                                $organizationId,
+                            )
+                            ->where(
+                                'status',
+                                OrganizationInvitation::STATUS_PENDING,
+                            )
+                            ->where(
+                                'expires_at',
+                                '>',
+                                now(),
+                            )
+                    ),
             ],
 
             'role' => [
@@ -61,19 +86,88 @@ class OrganizationInvitationStoreRequest extends FormRequest
                 Rule::exists(
                     'roles',
                     'name'
-                )->where(
-                    fn($query) =>
-                    $query
-                        ->where(
-                            'organization_id',
-                            $organizationId
-                        )
-                        ->where(
-                            'guard_name',
-                            'api'
-                        )
-                ),
+                )
+                    ->where(
+                        fn($query) =>
+                        $query
+                            ->where(
+                                'organization_id',
+                                $organizationId,
+                            )
+                            ->where(
+                                'guard_name',
+                                'api',
+                            )
+                    ),
             ],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (
+                Validator $validator
+            ): void {
+                if (
+                    $validator->errors()
+                    ->has('email')
+                ) {
+                    return;
+                }
+
+                $organization =
+                    app(
+                        CurrentOrganization::class
+                    )->get();
+
+                $email =
+                    $this->string(
+                        'email'
+                    )->toString();
+
+                $hasActiveMembership =
+                    $organization
+                    ->users()
+                    ->where(
+                        'users.email',
+                        $email,
+                    )
+                    ->wherePivot(
+                        'status',
+                        'active',
+                    )
+                    ->exists();
+
+                if ($hasActiveMembership) {
+                    $validator
+                        ->errors()
+                        ->add(
+                            'email',
+                            'Este usuário já possui vínculo ativo com a organização.'
+                        );
+                }
+            },
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.required' =>
+            'Informe o e-mail do convidado.',
+
+            'email.email' =>
+            'Informe um endereço de e-mail válido.',
+
+            'email.unique' =>
+            'Já existe um convite pendente válido para este e-mail.',
+
+            'role.required' =>
+            'Informe a função do convidado.',
+
+            'role.exists' =>
+            'A função informada não está disponível nesta organização.',
         ];
     }
 }

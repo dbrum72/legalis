@@ -23,6 +23,14 @@ const router = createRouter({
         },
 
         {
+            path: '/invitations/accept/:token',
+
+            name: 'invitations.accept',
+
+            component: () => import('@/views/auth/InvitationAcceptPage.vue'),
+        },
+
+        {
             path: '/organizations/select',
 
             name: 'organizations.select',
@@ -146,6 +154,21 @@ const router = createRouter({
                         breadcrumb: 'Editar pasta',
 
                         permission: 'folders.update',
+                    },
+                },
+
+                {
+                    path: 'team',
+
+                    name: 'organization-members',
+
+                    component: () =>
+                        import('@/views/organization-members/OrganizationMemberListPage.vue'),
+
+                    meta: {
+                        breadcrumb: 'Equipe',
+
+                        permission: 'organization-members.view',
                     },
                 },
             ],

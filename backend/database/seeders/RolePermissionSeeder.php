@@ -16,12 +16,13 @@ class RolePermissionSeeder extends Seeder
             PermissionRegistrar::class
         );
 
-        $registrar->forgetCachedPermissions();
+        $registrar
+            ->forgetCachedPermissions();
 
         $previousTeamId =
             getPermissionsTeamId();
 
-        $operationalPermissions = [
+        $basePermissions = [
             'clients.view',
             'clients.create',
             'clients.update',
@@ -50,34 +51,32 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $organizationAdministrationPermissions = [
+            'organization-members.view',
             'organization-members.invite',
+            'organization-members.update-role',
+            'organization-members.update-status',
         ];
+
+        $allPermissions = array_values(
+            array_unique(
+                array_merge(
+                    $basePermissions,
+                    $organizationAdministrationPermissions,
+                )
+            )
+        );
 
         $roles = [
             'super-admin' =>
-            array_values(
-                array_unique(
-                    array_merge(
-                        $operationalPermissions,
-                        $organizationAdministrationPermissions,
-                    )
-                )
-            ),
+            $allPermissions,
 
             'socio-administrador' =>
-            array_values(
-                array_unique(
-                    array_merge(
-                        $operationalPermissions,
-                        $organizationAdministrationPermissions,
-                    )
-                )
-            ),
+            $allPermissions,
 
             'socio' =>
             array_values(
                 array_diff(
-                    $operationalPermissions,
+                    $basePermissions,
                     [
                         'roles.update',
                     ],
@@ -87,7 +86,7 @@ class RolePermissionSeeder extends Seeder
             'advogado-senior' =>
             array_values(
                 array_diff(
-                    $operationalPermissions,
+                    $basePermissions,
                     [
                         'roles.view',
                         'roles.update',
@@ -205,8 +204,7 @@ class RolePermissionSeeder extends Seeder
                         );
 
                         foreach (
-                            $roles
-                            as $name => $rolePermissions
+                            $roles as $name => $rolePermissions
                         ) {
                             $role = Role::query()
                                 ->where(

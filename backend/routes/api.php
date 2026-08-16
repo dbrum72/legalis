@@ -6,6 +6,8 @@ use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\MaritalStatusController;
 use App\Http\Controllers\OrganizationInvitationController;
+use App\Http\Controllers\OrganizationMemberController;
+use App\Http\Controllers\OrganizationRoleController;
 use App\Http\Controllers\QualificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +63,22 @@ Route::prefix('auth')
             );
     });
 
+Route::get(
+    '/organization-invitations/accept/{token}',
+    [
+        OrganizationInvitationController::class,
+        'showAcceptance',
+    ]
+);
+
+Route::post(
+    '/organization-invitations/accept/{token}',
+    [
+        OrganizationInvitationController::class,
+        'accept',
+    ]
+);
+
 Route::middleware(
     'auth:api'
 )
@@ -95,6 +113,46 @@ Route::middleware([
             ]
         )->middleware(
             'can:organization-members.invite'
+        );
+
+        Route::get(
+            '/organization-members',
+            [
+                OrganizationMemberController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:organization-members.view'
+        );
+
+        Route::patch(
+            '/organization-members/{user}/role',
+            [
+                OrganizationMemberController::class,
+                'updateRole',
+            ]
+        )->middleware(
+            'can:organization-members.update-role'
+        );
+
+        Route::patch(
+            '/organization-members/{user}/status',
+            [
+                OrganizationMemberController::class,
+                'updateStatus',
+            ]
+        )->middleware(
+            'can:organization-members.update-status'
+        );
+
+        Route::get(
+            '/organization-roles',
+            [
+                OrganizationRoleController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:organization-members.view'
         );
 
         Route::prefix('clients')

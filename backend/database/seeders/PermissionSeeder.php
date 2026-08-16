@@ -41,7 +41,10 @@ class PermissionSeeder extends Seeder
             'roles.view',
             'roles.update',
 
+            'organization-members.view',
             'organization-members.invite',
+            'organization-members.update-role',
+            'organization-members.update-status',
         ];
 
         foreach ($permissions as $permission) {

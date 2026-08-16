@@ -1,0 +1,633 @@
+<template>
+    <PageContainer>
+        <div class="organization-members">
+            <header class="organization-members__header" aria-labelledby="organization-members-title">
+                <div class="organization-members__heading">
+                    <h1 id="organization-members-title" class="organization-members__title">
+                        Equipe
+                    </h1>
+
+                    <p class="organization-members__description">
+                        Gerencie os membros, funções e acessos do escritório.
+                    </p>
+                </div>
+
+                <AppButton v-if="canInvite" type="button" icon="email" @click="openInvitationDialog">
+                    Convidar membro
+                </AppButton>
+            </header>
+
+            <div v-if="loadError" class="organization-members__error" role="alert">
+                {{ loadError }}
+            </div>
+
+            <AppTable :columns="columns" :rows="membersStore.members" empty-text="Nenhum membro encontrado.">
+                <template #cell-role="{ value }">
+                    {{ roleLabel(value) }}
+                </template>
+
+                <template #cell-status="{ value }">
+                    <span class="organization-members__status" :class="statusClass(value)">
+                        {{ statusLabel(value) }}
+                    </span>
+                </template>
+
+                <template #cell-actions="{ row }">
+                    <div class="organization-members__actions">
+                        <AppButton v-if="canUpdateRole" type="button" size="sm" variant="outline"
+                            :aria-label="`Alterar função de ${row.name}`" @click="openRoleDialog(row)">
+                            Alterar função
+                        </AppButton>
+
+                        <AppButton v-if="canUpdateStatus" type="button" size="sm" :variant="row.status === 'active'
+                                ? 'ghost'
+                                : 'outline'
+                            " :aria-label="row.status === 'active'
+                                    ? `Desativar ${row.name}`
+                                    : `Reativar ${row.name}`
+                                " @click="requestStatusChange(row)">
+                            {{
+                                row.status === 'active'
+                                    ? 'Desativar'
+                                    : 'Reativar'
+                            }}
+                        </AppButton>
+                    </div>
+                </template>
+            </AppTable>
+
+            <AppDialog :open="invitationDialogOpen" title="Convidar membro" size="sm"
+                :close-on-backdrop="!invitationsStore.creating" :close-on-escape="!invitationsStore.creating"
+                @close="closeInvitationDialog">
+                <form class="organization-members__form" @submit.prevent="submitInvitation">
+                    <AppEmail v-model="invitationForm.email" id="invitation-email" name="email" label="E-mail"
+                        placeholder="nome@exemplo.com" required :disabled="invitationsStore.creating"
+                        :error="invitationErrors.email" />
+
+                    <AppSelect v-model="invitationForm.role" id="invitation-role" name="role" label="Função"
+                        placeholder="Selecione uma função" required :options="rolesStore.options"
+                        :disabled="invitationsStore.creating" :error="invitationErrors.role" />
+
+                    <div v-if="invitationError" class="organization-members__error" role="alert">
+                        {{ invitationError }}
+                    </div>
+
+                    <div class="organization-members__form-actions">
+                        <AppButton type="button" variant="ghost" :disabled="invitationsStore.creating"
+                            @click="closeInvitationDialog">
+                            Cancelar
+                        </AppButton>
+
+                        <AppButton type="submit" :loading="invitationsStore.creating"
+                            :disabled="invitationsStore.creating">
+                            Enviar convite
+                        </AppButton>
+                    </div>
+                </form>
+            </AppDialog>
+
+            <AppDialog :open="Boolean(memberRoleTarget)" title="Alterar função" size="sm"
+                :close-on-backdrop="!updatingRole" :close-on-escape="!updatingRole" @close="closeRoleDialog">
+                <form class="organization-members__form" @submit.prevent="submitRoleChange">
+                    <p v-if="memberRoleTarget" class="organization-members__dialog-description">
+                        Altere a função de
+                        <strong>{{ memberRoleTarget.name }}</strong>.
+                    </p>
+
+                    <AppSelect v-model="selectedRole" id="member-role" name="role" label="Função"
+                        placeholder="Selecione uma função" required :options="rolesStore.options"
+                        :disabled="updatingRole" :error="roleError" />
+
+                    <div v-if="roleGeneralError" class="organization-members__error" role="alert">
+                        {{ roleGeneralError }}
+                    </div>
+
+                    <div class="organization-members__form-actions">
+                        <AppButton type="button" variant="ghost" :disabled="updatingRole" @click="closeRoleDialog">
+                            Cancelar
+                        </AppButton>
+
+                        <AppButton type="submit" :loading="updatingRole" :disabled="updatingRole">
+                            Salvar
+                        </AppButton>
+                    </div>
+                </form>
+            </AppDialog>
+
+            <div v-if="statusError" class="organization-members__error" role="alert">
+                {{ statusError }}
+            </div>
+
+            <AppConfirmDialog :open="Boolean(memberStatusTarget)" :title="statusDialogTitle"
+                :message="statusDialogMessage" :confirm-label="statusDialogConfirmLabel" cancel-label="Cancelar"
+                :loading="updatingStatus" @confirm="confirmStatusChange" @cancel="cancelStatusChange" />
+        </div>
+    </PageContainer>
+</template>
+
+<script setup>
+import {
+    computed,
+    onMounted,
+    reactive,
+    ref,
+} from 'vue'
+
+import PageContainer from '@/components/layout/PageContainer/index.vue'
+
+import {
+    AppEmail,
+    AppSelect,
+} from '@/components/forms'
+
+import {
+    AppButton,
+    AppConfirmDialog,
+    AppDialog,
+    AppTable,
+} from '@/components/ui'
+
+import { useAuthStore } from '@/stores/auth.js'
+import { useOrganizationInvitationsStore } from '@/stores/organization-invitations.js'
+import { useOrganizationMembersStore } from '@/stores/organization-members.js'
+import { useOrganizationRolesStore } from '@/stores/organization-roles.js'
+
+const authStore = useAuthStore()
+const invitationsStore = useOrganizationInvitationsStore()
+const membersStore = useOrganizationMembersStore()
+const rolesStore = useOrganizationRolesStore()
+
+const loadError = ref('')
+
+const invitationDialogOpen = ref(false)
+const invitationError = ref('')
+
+const invitationErrors = reactive({
+    email: '',
+    role: '',
+})
+
+const invitationForm = reactive({
+    email: '',
+    role: null,
+})
+
+const memberRoleTarget = ref(null)
+const selectedRole = ref(null)
+const updatingRole = ref(false)
+const roleError = ref('')
+const roleGeneralError = ref('')
+
+const memberStatusTarget = ref(null)
+const updatingStatus = ref(false)
+const statusError = ref('')
+
+const columns = [
+    {
+        key: 'name',
+        label: 'Nome',
+    },
+    {
+        key: 'email',
+        label: 'E-mail',
+    },
+    {
+        key: 'role',
+        label: 'Função',
+    },
+    {
+        key: 'status',
+        label: 'Status',
+    },
+    {
+        key: 'actions',
+        label: 'Ações',
+        align: 'end',
+    },
+]
+
+const canInvite = computed(() =>
+    authStore.hasPermission(
+        'organization-members.invite',
+    ),
+)
+
+const canUpdateRole = computed(() =>
+    authStore.hasPermission(
+        'organization-members.update-role',
+    ),
+)
+
+const canUpdateStatus = computed(() =>
+    authStore.hasPermission(
+        'organization-members.update-status',
+    ),
+)
+
+const statusDialogTitle = computed(() =>
+    memberStatusTarget.value?.status === 'active'
+        ? 'Desativar membro'
+        : 'Reativar membro',
+)
+
+const statusDialogConfirmLabel = computed(() =>
+    memberStatusTarget.value?.status === 'active'
+        ? 'Desativar'
+        : 'Reativar',
+)
+
+const statusDialogMessage = computed(() => {
+    const member = memberStatusTarget.value
+
+    if (!member) {
+        return ''
+    }
+
+    if (member.status === 'active') {
+        return `Deseja realmente desativar o acesso de "${member.name}" ao escritório?`
+    }
+
+    return `Deseja reativar o acesso de "${member.name}" ao escritório?`
+})
+
+function roleLabel(roleName) {
+    if (!roleName) {
+        return '—'
+    }
+
+    return String(roleName)
+        .split('-')
+        .map((part) => {
+            if (!part) {
+                return ''
+            }
+
+            return `${part.charAt(0).toUpperCase()}${part.slice(1)}`
+        })
+        .join(' ')
+}
+
+function statusLabel(status) {
+    if (status === 'active') {
+        return 'Ativo'
+    }
+
+    if (status === 'inactive') {
+        return 'Inativo'
+    }
+
+    return status || '—'
+}
+
+function statusClass(status) {
+    return {
+        'organization-members__status--active':
+            status === 'active',
+
+        'organization-members__status--inactive':
+            status === 'inactive',
+    }
+}
+
+function clearInvitationErrors() {
+    invitationErrors.email = ''
+    invitationErrors.role = ''
+    invitationError.value = ''
+}
+
+function resetInvitationForm() {
+    invitationForm.email = ''
+    invitationForm.role = null
+
+    clearInvitationErrors()
+}
+
+function openInvitationDialog() {
+    resetInvitationForm()
+
+    invitationDialogOpen.value = true
+}
+
+function closeInvitationDialog() {
+    if (invitationsStore.creating) {
+        return
+    }
+
+    invitationDialogOpen.value = false
+
+    resetInvitationForm()
+}
+
+function applyInvitationValidationErrors(error) {
+    const errors =
+        error?.response?.data?.errors
+
+    if (!errors) {
+        return false
+    }
+
+    invitationErrors.email =
+        errors.email?.[0] ?? ''
+
+    invitationErrors.role =
+        errors.role?.[0] ?? ''
+
+    return true
+}
+
+async function submitInvitation() {
+    if (invitationsStore.creating) {
+        return
+    }
+
+    clearInvitationErrors()
+
+    try {
+        await invitationsStore.create({
+            email: invitationForm.email,
+            role: invitationForm.role,
+        })
+
+        invitationDialogOpen.value = false
+
+        resetInvitationForm()
+    } catch (error) {
+        if (
+            applyInvitationValidationErrors(
+                error,
+            )
+        ) {
+            return
+        }
+
+        invitationError.value =
+            'Não foi possível enviar o convite. Tente novamente.'
+    }
+}
+
+function openRoleDialog(member) {
+    memberRoleTarget.value = member
+    selectedRole.value = member.role
+
+    roleError.value = ''
+    roleGeneralError.value = ''
+}
+
+function resetRoleDialog() {
+    memberRoleTarget.value = null
+    selectedRole.value = null
+
+    roleError.value = ''
+    roleGeneralError.value = ''
+}
+
+function closeRoleDialog() {
+    if (updatingRole.value) {
+        return
+    }
+
+    resetRoleDialog()
+}
+
+async function submitRoleChange() {
+    if (
+        !memberRoleTarget.value ||
+        !selectedRole.value ||
+        updatingRole.value
+    ) {
+        return
+    }
+
+    updatingRole.value = true
+
+    roleError.value = ''
+    roleGeneralError.value = ''
+
+    let updated = false
+
+    try {
+        await membersStore.updateRole(
+            memberRoleTarget.value.id,
+            selectedRole.value,
+        )
+
+        updated = true
+    } catch (error) {
+        const validationErrors =
+            error?.response?.data?.errors
+
+        if (validationErrors?.role?.[0]) {
+            roleError.value =
+                validationErrors.role[0]
+        }
+
+        if (validationErrors?.member?.[0]) {
+            roleGeneralError.value =
+                validationErrors.member[0]
+        }
+
+        if (
+            !roleError.value &&
+            !roleGeneralError.value
+        ) {
+            roleGeneralError.value =
+                'Não foi possível alterar a função do membro.'
+        }
+    } finally {
+        updatingRole.value = false
+    }
+
+    if (updated) {
+        resetRoleDialog()
+    }
+}
+
+function requestStatusChange(member) {
+    statusError.value = ''
+
+    memberStatusTarget.value = member
+}
+
+function cancelStatusChange() {
+    if (updatingStatus.value) {
+        return
+    }
+
+    memberStatusTarget.value = null
+    statusError.value = ''
+}
+
+async function confirmStatusChange() {
+    const member =
+        memberStatusTarget.value
+
+    if (
+        !member ||
+        updatingStatus.value
+    ) {
+        return
+    }
+
+    const newStatus =
+        member.status === 'active'
+            ? 'inactive'
+            : 'active'
+
+    updatingStatus.value = true
+    statusError.value = ''
+
+    try {
+        await membersStore.updateStatus(
+            member.id,
+            newStatus,
+        )
+
+        memberStatusTarget.value = null
+    } catch {
+        statusError.value =
+            'Não foi possível alterar o status do membro. Tente novamente.'
+    } finally {
+        updatingStatus.value = false
+    }
+}
+
+onMounted(async () => {
+    loadError.value = ''
+
+    try {
+        await Promise.all([
+            membersStore.fetchMembers(),
+            rolesStore.fetchRoles(),
+        ])
+    } catch {
+        loadError.value =
+            'Não foi possível carregar os dados da equipe.'
+    }
+})
+</script>
+
+<style scoped>
+.organization-members {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.organization-members__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.organization-members__heading {
+    min-width: 0;
+}
+
+.organization-members__title {
+    margin: 0;
+    color: var(--color-text);
+}
+
+.organization-members__description,
+.organization-members__dialog-description {
+    margin:
+        var(--space-2) 0 0;
+
+    color: var(--color-text-muted);
+}
+
+.organization-members__dialog-description strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.organization-members__actions,
+.organization-members__form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.organization-members__actions {
+    flex-wrap: wrap;
+    white-space: nowrap;
+}
+
+.organization-members__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.organization-members__form-actions {
+    margin-top: var(--space-2);
+}
+
+.organization-members__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    padding:
+        var(--space-1) var(--space-2);
+
+    border-radius: var(--radius-full);
+
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.organization-members__status::before {
+    width: 0.45rem;
+    height: 0.45rem;
+
+    border-radius: 50%;
+
+    background: currentColor;
+
+    content: '';
+}
+
+.organization-members__status--active {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+}
+
+.organization-members__status--inactive {
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+}
+
+.organization-members__error {
+    padding:
+        var(--space-3) var(--space-4);
+
+    border: 1px solid var(--color-danger);
+    border-radius: var(--radius-md);
+
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+
+    font-size: var(--font-size-sm);
+}
+
+@media (max-width: 760px) {
+    .organization-members__header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .organization-members__actions {
+        flex-direction: column;
+        align-items: stretch;
+
+        white-space: normal;
+    }
+
+    .organization-members__form-actions {
+        flex-wrap: wrap;
+    }
+}
+</style>
