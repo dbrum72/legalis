@@ -35,11 +35,13 @@ function createTestRouter() {
                     template: '<div>Clientes</div>',
                 },
             },
+
             {
                 path: '/clients/new',
                 name: 'clients.create',
                 component: ClientSavePage,
             },
+
             {
                 path: '/clients/:id/edit',
                 name: 'clients.edit',
@@ -171,13 +173,23 @@ describe('ClientSavePage', () => {
 
         const maritalStatusesStore = useMaritalStatusesStore()
 
-        clientsStore.clients = [
-            {
-                id: 10,
-                name: 'Cliente Existente',
-                document: '12345678901',
-            },
-        ]
+        clientsStore.client = {
+            id: 10,
+            name: 'Cliente Existente',
+            document: '12345678901',
+            identity_document: '1234567890',
+            identity_issuer: 'SSP/RS',
+            marital_status_id: 2,
+            profession: 'Advogada',
+            address: 'Rua das Flores, 100',
+            address_complement: 'Sala 201',
+            district: 'Centro',
+            city: 'Pelotas',
+            postal_code: '96000000',
+            phone: '53999999999',
+            whatsapp: true,
+            email: 'cliente@example.com',
+        }
 
         vi.spyOn(maritalStatusesStore, 'fetchMaritalStatuses').mockResolvedValue([])
 
@@ -193,15 +205,17 @@ describe('ClientSavePage', () => {
             },
         })
 
-        await vi.waitFor(() => {
-            expect(maritalStatusesStore.fetchMaritalStatuses).toHaveBeenCalled()
-        })
+        await flushPromises()
 
         expect(fetchClientSpy).not.toHaveBeenCalled()
 
         expect(wrapper.text()).toContain('Editar cliente')
 
         expect(wrapper.text()).toContain('Salvar alterações')
+
+        expect(wrapper.get('input[name="name"]').element.value).toBe('Cliente Existente')
+
+        expect(wrapper.get('input[name="identity_document"]').element.value).toBe('1234567890')
     })
 
     it('carrega cliente remoto quando não está em cache', async () => {
@@ -221,6 +235,18 @@ describe('ClientSavePage', () => {
             id: 10,
             name: 'Cliente Existente',
             document: '12345678901',
+            identity_document: '1234567890',
+            identity_issuer: 'SSP/RS',
+            marital_status_id: 2,
+            profession: 'Advogada',
+            address: 'Rua das Flores, 100',
+            address_complement: 'Sala 201',
+            district: 'Centro',
+            city: 'Pelotas',
+            postal_code: '96000000',
+            phone: '53999999999',
+            whatsapp: true,
+            email: 'cliente@example.com',
         })
 
         await router.push('/clients/10/edit')
@@ -246,6 +272,7 @@ describe('ClientSavePage', () => {
         vi.spyOn(clientsStore, 'create').mockRejectedValue({
             response: {
                 status: 422,
+
                 data: {
                     errors: {
                         document: ['Documento já cadastrado.'],

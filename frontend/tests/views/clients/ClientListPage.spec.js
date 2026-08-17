@@ -13,22 +13,33 @@ import { useClientsStore } from '@/stores/clients.js'
 
 vi.mock('@/api/clients.js', () => ({
     listClients: vi.fn(),
+
     getClient: vi.fn(),
+
     createClient: vi.fn(),
+
     updateClient: vi.fn(),
+
     deleteClient: vi.fn(),
 }))
 
 vi.mock('@/api/auth.js', () => ({
     login: vi.fn(),
+
     logout: vi.fn(),
+
     me: vi.fn(),
+
     refresh: vi.fn(),
+
+    context: vi.fn(),
 }))
 
 vi.mock('@/api/auth-token.js', () => ({
     getAccessToken: vi.fn(),
+
     setAccessToken: vi.fn(),
+
     removeAccessToken: vi.fn(),
 }))
 
@@ -39,21 +50,39 @@ function createTestRouter() {
         routes: [
             {
                 path: '/clients',
+
                 name: 'clients',
+
                 component: {
                     template: '<div>Clientes</div>',
                 },
             },
+
             {
                 path: '/clients/new',
+
                 name: 'clients.create',
+
                 component: {
                     template: '<div>Novo cliente</div>',
                 },
             },
+
+            {
+                path: '/clients/:id',
+
+                name: 'clients.show',
+
+                component: {
+                    template: '<div>Detalhes do cliente</div>',
+                },
+            },
+
             {
                 path: '/clients/:id/edit',
+
                 name: 'clients.edit',
+
                 component: {
                     template: '<div>Editar cliente</div>',
                 },
@@ -70,9 +99,11 @@ async function mountPage({ permissions = [], clients = [] } = {}) {
     const router = createTestRouter()
 
     await router.push('/clients')
+
     await router.isReady()
 
     const authStore = useAuthStore()
+
     const clientsStore = useClientsStore()
 
     authStore.permissions = permissions
@@ -101,6 +132,16 @@ async function mountPage({ permissions = [], clients = [] } = {}) {
     }
 }
 
+function findButton(wrapper, label) {
+    return wrapper.findAll('button').find((button) => button.text().trim() === label)
+}
+
+function findTeleportedButton(label) {
+    return Array.from(document.querySelectorAll('button')).find(
+        (button) => button.textContent.trim() === label,
+    )
+}
+
 describe('ClientListPage', () => {
     beforeEach(() => {
         vi.clearAllMocks()
@@ -125,23 +166,36 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 1,
+
                     name: 'Maria da Silva',
+
                     document: '12345678901',
+
                     phone: '53999999999',
+
                     email: 'maria@example.com',
+
                     marital_status: {
                         id: 1,
+
                         name: 'solteiro(a)',
                     },
                 },
+
                 {
                     id: 2,
+
                     name: 'João Souza',
+
                     document: '12345678000199',
+
                     phone: null,
+
                     email: null,
+
                     marital_status: {
                         id: 2,
+
                         name: 'casado(a)',
                     },
                 },
@@ -172,10 +226,15 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 1,
+
                     name: 'Cliente Sem Estado Civil',
+
                     document: '12345678901',
+
                     phone: null,
+
                     email: null,
+
                     marital_status: null,
                 },
             ],
@@ -202,6 +261,56 @@ describe('ClientListPage', () => {
         expect(wrapper.text()).toContain('Novo cliente')
     })
 
+    it('mostra Visualizar para cliente listado', async () => {
+        const { wrapper } = await mountPage({
+            permissions: ['clients.view'],
+
+            clients: [
+                {
+                    id: 10,
+
+                    name: 'Cliente A',
+
+                    document: '12345678901',
+
+                    marital_status: null,
+                },
+            ],
+        })
+
+        expect(findButton(wrapper, 'Visualizar')).toBeTruthy()
+    })
+
+    it('navega para detalhes do cliente selecionado', async () => {
+        const { wrapper, router } = await mountPage({
+            permissions: ['clients.view'],
+
+            clients: [
+                {
+                    id: 10,
+
+                    name: 'Cliente A',
+
+                    document: '12345678901',
+
+                    marital_status: null,
+                },
+            ],
+        })
+
+        const button = findButton(wrapper, 'Visualizar')
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        await vi.waitFor(() => {
+            expect(router.currentRoute.value.name).toBe('clients.show')
+
+            expect(router.currentRoute.value.params.id).toBe('10')
+        })
+    })
+
     it('não mostra Editar sem clients.update', async () => {
         const { wrapper } = await mountPage({
             permissions: ['clients.view'],
@@ -209,8 +318,11 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 1,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
@@ -226,8 +338,11 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 1,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
@@ -243,8 +358,11 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 1,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
@@ -260,8 +378,11 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 1,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
@@ -277,12 +398,17 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 1,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
         })
+
+        expect(wrapper.text()).toContain('Visualizar')
 
         expect(wrapper.text()).toContain('Editar')
 
@@ -294,7 +420,7 @@ describe('ClientListPage', () => {
             permissions: ['clients.view', 'clients.create'],
         })
 
-        const button = wrapper.findAll('button').find((item) => item.text() === 'Novo cliente')
+        const button = findButton(wrapper, 'Novo cliente')
 
         expect(button).toBeTruthy()
 
@@ -312,16 +438,21 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 10,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     phone: null,
+
                     email: null,
+
                     marital_status: null,
                 },
             ],
         })
 
-        const button = wrapper.findAll('button').find((item) => item.text() === 'Editar')
+        const button = findButton(wrapper, 'Editar')
 
         expect(button).toBeTruthy()
 
@@ -341,14 +472,17 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 10,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
         })
 
-        const deleteButton = wrapper.findAll('button').find((item) => item.text() === 'Excluir')
+        const deleteButton = findButton(wrapper, 'Excluir')
 
         expect(deleteButton).toBeTruthy()
 
@@ -368,8 +502,11 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 10,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
@@ -377,13 +514,11 @@ describe('ClientListPage', () => {
 
         const removeSpy = vi.spyOn(clientsStore, 'remove')
 
-        const deleteButton = wrapper.findAll('button').find((item) => item.text() === 'Excluir')
+        const deleteButton = findButton(wrapper, 'Excluir')
 
         await deleteButton.trigger('click')
 
-        const cancelButton = Array.from(document.querySelectorAll('button')).find(
-            (button) => button.textContent.trim() === 'Cancelar',
-        )
+        const cancelButton = findTeleportedButton('Cancelar')
 
         expect(cancelButton).toBeTruthy()
 
@@ -403,8 +538,11 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 10,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
@@ -412,13 +550,11 @@ describe('ClientListPage', () => {
 
         const removeSpy = vi.spyOn(clientsStore, 'remove').mockResolvedValue()
 
-        const deleteButton = wrapper.findAll('button').find((item) => item.text() === 'Excluir')
+        const deleteButton = findButton(wrapper, 'Excluir')
 
         await deleteButton.trigger('click')
 
-        const confirmButton = Array.from(document.querySelectorAll('button')).find(
-            (button) => button.textContent.trim() === 'Excluir',
-        )
+        const confirmButton = findTeleportedButton('Excluir')
 
         expect(confirmButton).toBeTruthy()
 
@@ -442,8 +578,11 @@ describe('ClientListPage', () => {
             clients: [
                 {
                     id: 10,
+
                     name: 'Cliente A',
+
                     document: '12345678901',
+
                     marital_status: null,
                 },
             ],
@@ -451,13 +590,11 @@ describe('ClientListPage', () => {
 
         vi.spyOn(clientsStore, 'remove').mockRejectedValue(new Error('Falha ao excluir'))
 
-        const deleteButton = wrapper.findAll('button').find((item) => item.text() === 'Excluir')
+        const deleteButton = findButton(wrapper, 'Excluir')
 
         await deleteButton.trigger('click')
 
-        const confirmButton = Array.from(document.querySelectorAll('button')).find(
-            (button) => button.textContent.trim() === 'Excluir',
-        )
+        const confirmButton = findTeleportedButton('Excluir')
 
         confirmButton.click()
 

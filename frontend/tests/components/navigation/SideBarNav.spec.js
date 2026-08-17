@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { mount } from '@vue/test-utils'
 
-import { createMemoryHistory, createRouter } from 'vue-router'
-
 import { createPinia, setActivePinia } from 'pinia'
+
+import { createMemoryHistory, createRouter } from 'vue-router'
 
 import SideBarNav from '@/components/navigation/SideBarNav/index.vue'
 
@@ -17,19 +17,31 @@ function createTestRouter() {
         routes: [
             {
                 path: '/',
-
                 name: 'dashboard',
-
                 component: {
                     template: '<div>Dashboard</div>',
                 },
             },
 
             {
-                path: '/team',
+                path: '/clients',
+                name: 'clients',
+                component: {
+                    template: '<div>Clientes</div>',
+                },
+            },
 
+            {
+                path: '/folders',
+                name: 'folders',
+                component: {
+                    template: '<div>Pastas</div>',
+                },
+            },
+
+            {
+                path: '/organization-members',
                 name: 'organization-members',
-
                 component: {
                     template: '<div>Equipe</div>',
                 },
@@ -37,9 +49,7 @@ function createTestRouter() {
 
             {
                 path: '/playground',
-
                 name: 'playground',
-
                 component: {
                     template: '<div>Playground</div>',
                 },
@@ -48,138 +58,188 @@ function createTestRouter() {
     })
 }
 
+async function mountNav({ permissions = [], route = '/' } = {}) {
+    const pinia = createPinia()
+
+    setActivePinia(pinia)
+
+    const authStore = useAuthStore()
+
+    authStore.permissions = permissions
+
+    const router = createTestRouter()
+
+    await router.push(route)
+
+    await router.isReady()
+
+    const wrapper = mount(SideBarNav, {
+        global: {
+            plugins: [pinia, router],
+        },
+    })
+
+    return {
+        wrapper,
+        router,
+        authStore,
+    }
+}
+
+function linkByLabel(wrapper, label) {
+    return wrapper.findAll('a').find((link) => link.text().trim() === label)
+}
+
 describe('SideBarNav', () => {
     beforeEach(() => {
-        const pinia = createPinia()
-
-        setActivePinia(pinia)
+        setActivePinia(createPinia())
     })
 
-    async function mountComponent(initialRoute = '/', permissions = []) {
-        const pinia = createPinia()
+    it('renderiza elemento de navegacao principal', async () => {
+        const { wrapper } = await mountNav()
 
-        setActivePinia(pinia)
+        const nav = wrapper.get('nav')
 
-        const router = createTestRouter()
+        expect(nav.classes()).toContain('sidebar-nav')
 
-        await router.push(initialRoute)
-
-        await router.isReady()
-
-        const authStore = useAuthStore()
-
-        authStore.permissions = permissions
-
-        const wrapper = mount(SideBarNav, {
-            global: {
-                plugins: [pinia, router],
-            },
-        })
-
-        return {
-            wrapper,
-            router,
-            authStore,
-        }
-    }
-
-    it('renderiza nav', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.get('nav').exists()).toBe(true)
+        expect(nav.attributes('aria-label')).toBe('Navegação principal')
     })
 
-    it('aplica classe sidebar-nav', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.get('nav').classes()).toContain('sidebar-nav')
-    })
-
-    it('aplica aria-label da navegação principal', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.get('nav').attributes('aria-label')).toBe('Navegação principal')
-    })
-
-    it('renderiza itens públicos do menu sem permissão de equipe', async () => {
-        const { wrapper } = await mountComponent()
-
-        expect(wrapper.findAll('.sidebar-item')).toHaveLength(2)
+    it('sempre mostra Dashboard', async () => {
+        const { wrapper } = await mountNav()
 
         expect(wrapper.text()).toContain('Dashboard')
-
-        expect(wrapper.text()).toContain('Playground')
     })
 
-    it('não renderiza equipe sem permission', async () => {
-        const { wrapper } = await mountComponent()
+    it('nao mostra Clientes sem clients.view', async () => {
+        const { wrapper } = await mountNav()
+
+        expect(wrapper.text()).not.toContain('Clientes')
+    })
+
+    it('mostra Clientes com clients.view', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['clients.view'],
+        })
+
+        expect(wrapper.text()).toContain('Clientes')
+    })
+
+    it('nao mostra Pastas sem folders.view', async () => {
+        const { wrapper } = await mountNav()
+
+        expect(wrapper.text()).not.toContain('Pastas')
+    })
+
+    it('mostra Pastas com folders.view', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['folders.view'],
+        })
+
+        expect(wrapper.text()).toContain('Pastas')
+    })
+
+    it('nao mostra Equipe sem organization-members.view', async () => {
+        const { wrapper } = await mountNav()
 
         expect(wrapper.text()).not.toContain('Equipe')
     })
 
-    it('renderiza equipe quando possui organization-members.view', async () => {
-        const { wrapper } = await mountComponent('/', ['organization-members.view'])
-
-        expect(wrapper.findAll('.sidebar-item')).toHaveLength(3)
+    it('mostra Equipe com organization-members.view', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['organization-members.view'],
+        })
 
         expect(wrapper.text()).toContain('Equipe')
     })
 
-    it('renderiza Dashboard', async () => {
-        const { wrapper } = await mountComponent()
+    it('filtra itens de forma independente pelas permissoes', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['clients.view', 'organization-members.view'],
+        })
 
         expect(wrapper.text()).toContain('Dashboard')
+
+        expect(wrapper.text()).toContain('Clientes')
+
+        expect(wrapper.text()).not.toContain('Pastas')
+
+        expect(wrapper.text()).toContain('Equipe')
     })
 
-    it('renderiza Playground', async () => {
-        const { wrapper } = await mountComponent()
+    it('nao exibe Playground na navegacao operacional', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['clients.view', 'folders.view', 'organization-members.view'],
+        })
 
-        expect(wrapper.text()).toContain('Playground')
+        expect(wrapper.text()).not.toContain('Playground')
     })
 
-    it('renderiza ícone dashboard', async () => {
-        const { wrapper } = await mountComponent()
+    it('Dashboard aponta para a rota dashboard', async () => {
+        const { wrapper } = await mountNav()
 
-        expect(wrapper.find('.lucide-layout-dashboard').exists()).toBe(true)
+        const link = linkByLabel(wrapper, 'Dashboard')
+
+        expect(link).toBeTruthy()
+
+        expect(link.attributes('href')).toBe('/')
     })
 
-    it('renderiza ícone playground', async () => {
-        const { wrapper } = await mountComponent()
+    it('Clientes aponta para a rota clients', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['clients.view'],
+        })
 
-        expect(wrapper.find('.lucide-flask-conical').exists()).toBe(true)
+        const link = linkByLabel(wrapper, 'Clientes')
+
+        expect(link).toBeTruthy()
+
+        expect(link.attributes('href')).toBe('/clients')
     })
 
-    it('renderiza ícone de equipe quando possui permission', async () => {
-        const { wrapper } = await mountComponent('/', ['organization-members.view'])
+    it('Pastas aponta para a rota folders', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['folders.view'],
+        })
 
-        expect(wrapper.find('.lucide-users').exists()).toBe(true)
+        const link = linkByLabel(wrapper, 'Pastas')
+
+        expect(link).toBeTruthy()
+
+        expect(link.attributes('href')).toBe('/folders')
     })
 
-    it('marca dashboard como ativo na rota dashboard', async () => {
-        const { wrapper } = await mountComponent('/')
+    it('Equipe aponta para a rota organization-members', async () => {
+        const { wrapper } = await mountNav({
+            permissions: ['organization-members.view'],
+        })
 
-        const links = wrapper.findAll('.sidebar-item')
+        const link = linkByLabel(wrapper, 'Equipe')
 
-        expect(links[0].classes()).toContain('router-link-exact-active')
+        expect(link).toBeTruthy()
+
+        expect(link.attributes('href')).toBe('/organization-members')
     })
 
-    it('marca playground como ativo na rota playground', async () => {
-        const { wrapper } = await mountComponent('/playground')
+    it('marca Dashboard como ativo na rota inicial', async () => {
+        const { wrapper } = await mountNav({
+            route: '/',
+        })
 
-        const links = wrapper.findAll('.sidebar-item')
+        const link = linkByLabel(wrapper, 'Dashboard')
 
-        expect(links[1].classes()).toContain('router-link-exact-active')
+        expect(link.classes()).toContain('router-link-exact-active')
     })
 
-    it('marca equipe como ativa na rota de membros', async () => {
-        const { wrapper } = await mountComponent('/team', ['organization-members.view'])
+    it('marca Clientes como ativo em sua rota', async () => {
+        const { wrapper } = await mountNav({
+            route: '/clients',
 
-        const links = wrapper.findAll('.sidebar-item')
+            permissions: ['clients.view'],
+        })
 
-        expect(links).toHaveLength(3)
+        const link = linkByLabel(wrapper, 'Clientes')
 
-        expect(links[1].text()).toContain('Equipe')
-
-        expect(links[1].classes()).toContain('router-link-exact-active')
+        expect(link.classes()).toContain('router-link-exact-active')
     })
 })

@@ -24,6 +24,10 @@
 
                 <template #cell-actions="{ row }">
                     <div class="client-list__actions">
+                        <AppButton type="button" size="sm" variant="ghost" @click="showClient(row)">
+                            Visualizar
+                        </AppButton>
+
                         <AppButton v-if="canUpdate" type="button" size="sm" variant="outline" @click="editClient(row)">
                             Editar
                         </AppButton>
@@ -50,10 +54,12 @@
 import {
     computed,
     onMounted,
-    ref
+    ref,
 } from 'vue'
 
-import { useRouter } from 'vue-router'
+import {
+    useRouter,
+} from 'vue-router'
 
 import PageContainer from '@/components/layout/PageContainer/index.vue'
 
@@ -66,36 +72,50 @@ import {
 import { useAuthStore } from '@/stores/auth.js'
 import { useClientsStore } from '@/stores/clients.js'
 
-const router = useRouter()
+const router =
+    useRouter()
 
-const authStore = useAuthStore()
-const clientsStore = useClientsStore()
+const authStore =
+    useAuthStore()
 
-const clientToDelete = ref(null)
-const deleting = ref(false)
-const deleteError = ref('')
+const clientsStore =
+    useClientsStore()
+
+const clientToDelete =
+    ref(null)
+
+const deleting =
+    ref(false)
+
+const deleteError =
+    ref('')
 
 const columns = [
     {
         key: 'name',
         label: 'Nome',
     },
+
     {
         key: 'document',
         label: 'Documento',
     },
+
     {
         key: 'phone',
         label: 'Telefone',
     },
+
     {
         key: 'email',
         label: 'E-mail',
     },
+
     {
         key: 'marital_status',
         label: 'Estado civil',
     },
+
     {
         key: 'actions',
         label: 'Ações',
@@ -103,35 +123,56 @@ const columns = [
     },
 ]
 
-const deleteMessage = computed(() => {
-    if (!clientToDelete.value) {
-        return ''
-    }
+const deleteMessage =
+    computed(() => {
+        if (!clientToDelete.value) {
+            return ''
+        }
 
-    return `Deseja realmente excluir o cliente "${clientToDelete.value.name}"?`
-})
+        return `Deseja realmente excluir o cliente "${clientToDelete.value.name}"?`
+    })
 
-const canCreate = computed(() =>
-    authStore.hasPermission('clients.create'),
-)
+const canCreate =
+    computed(() =>
+        authStore.hasPermission(
+            'clients.create',
+        ),
+    )
 
-const canUpdate = computed(() =>
-    authStore.hasPermission('clients.update'),
-)
+const canUpdate =
+    computed(() =>
+        authStore.hasPermission(
+            'clients.update',
+        ),
+    )
 
-const canDelete = computed(() =>
-    authStore.hasPermission('clients.delete'),
-)
+const canDelete =
+    computed(() =>
+        authStore.hasPermission(
+            'clients.delete',
+        ),
+    )
 
 function createClient() {
-    router.push({
+    return router.push({
         name: 'clients.create',
     })
 }
 
+function showClient(client) {
+    return router.push({
+        name: 'clients.show',
+
+        params: {
+            id: client.id,
+        },
+    })
+}
+
 function editClient(client) {
-    router.push({
+    return router.push({
         name: 'clients.edit',
+
         params: {
             id: client.id,
         },
@@ -139,8 +180,11 @@ function editClient(client) {
 }
 
 function requestDelete(client) {
-    clientToDelete.value = client
-    deleteError.value = ''
+    clientToDelete.value =
+        client
+
+    deleteError.value =
+        ''
 }
 
 function cancelDelete() {
@@ -148,8 +192,11 @@ function cancelDelete() {
         return
     }
 
-    clientToDelete.value = null
-    deleteError.value = ''
+    clientToDelete.value =
+        null
+
+    deleteError.value =
+        ''
 }
 
 async function confirmDelete() {
@@ -160,20 +207,25 @@ async function confirmDelete() {
         return
     }
 
-    deleting.value = true
-    deleteError.value = ''
+    deleting.value =
+        true
+
+    deleteError.value =
+        ''
 
     try {
         await clientsStore.remove(
             clientToDelete.value.id,
         )
 
-        clientToDelete.value = null
+        clientToDelete.value =
+            null
     } catch {
         deleteError.value =
             'Não foi possível excluir o cliente. Tente novamente.'
     } finally {
-        deleting.value = false
+        deleting.value =
+            false
     }
 }
 
@@ -198,20 +250,25 @@ onMounted(async () => {
 
 .client-list__title {
     margin: 0;
-    color: var(--color-text);
+
+    color:
+        var(--color-text);
 }
 
 .client-list__description {
     margin:
         var(--space-2) 0 0;
 
-    color: var(--color-text-muted);
+    color:
+        var(--color-text-muted);
 }
 
 .client-list__actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-2);
+
     white-space: nowrap;
 }
 
@@ -219,18 +276,31 @@ onMounted(async () => {
     padding:
         var(--space-3) var(--space-4);
 
-    border: 1px solid var(--color-danger);
-    border-radius: var(--radius-md);
+    border:
+        1px solid var(--color-danger);
 
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
+    border-radius:
+        var(--radius-md);
 
-    font-size: var(--font-size-sm);
+    background:
+        var(--color-danger-soft);
+
+    color:
+        var(--color-danger);
+
+    font-size:
+        var(--font-size-sm);
 }
 
 @media (max-width: 640px) {
     .client-list__header {
-        flex-direction: column;
+        flex-direction:
+            column;
+    }
+
+    .client-list__actions {
+        white-space:
+            normal;
     }
 }
 </style>

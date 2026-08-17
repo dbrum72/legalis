@@ -137,117 +137,172 @@ import {
 } from '@/components/ui'
 
 import { useClientsStore } from '@/stores/clients.js'
+
 import {
     useMaritalStatusesStore,
 } from '@/stores/marital-statuses.js'
 
-const route = useRoute()
-const router = useRouter()
+const route =
+    useRoute()
 
-const clientsStore = useClientsStore()
+const router =
+    useRouter()
+
+const clientsStore =
+    useClientsStore()
+
 const maritalStatusesStore =
     useMaritalStatusesStore()
 
-const submitting = ref(false)
-const submitError = ref('')
+const submitting =
+    ref(false)
 
-const form = reactive({
-    name: '',
-    document: '',
-    identity_document: '',
-    identity_issuer: '',
-    marital_status_id: '',
-    profession: '',
-    address: '',
-    address_complement: '',
-    district: '',
-    city: '',
-    postal_code: '',
-    phone: '',
-    whatsapp: false,
-    email: '',
-})
+const submitError =
+    ref('')
 
-const errors = reactive({
-    name: '',
-    document: '',
-    identity_document: '',
-    identity_issuer: '',
-    marital_status_id: '',
-    profession: '',
-    address: '',
-    address_complement: '',
-    district: '',
-    city: '',
-    postal_code: '',
-    phone: '',
-    whatsapp: '',
-    email: '',
-})
-
-const isEditing = computed(() =>
-    route.name === 'clients.edit',
-)
-
-const clientId = computed(() =>
-    isEditing.value
-        ? Number(route.params.id)
-        : null,
-)
-
-const pageTitle = computed(() =>
-    isEditing.value
-        ? 'Editar cliente'
-        : 'Novo cliente',
-)
-
-const pageDescription = computed(() =>
-    isEditing.value
-        ? 'Atualize os dados cadastrais do cliente.'
-        : 'Informe os dados para cadastrar um novo cliente.',
-)
-
-const submitLabel = computed(() =>
-    isEditing.value
-        ? 'Salvar alterações'
-        : 'Cadastrar cliente',
-)
-
-function clearErrors() {
-    Object.keys(errors).forEach((key) => {
-        errors[key] = ''
+const form =
+    reactive({
+        name: '',
+        document: '',
+        identity_document: '',
+        identity_issuer: '',
+        marital_status_id: '',
+        profession: '',
+        address: '',
+        address_complement: '',
+        district: '',
+        city: '',
+        postal_code: '',
+        phone: '',
+        whatsapp: false,
+        email: '',
     })
 
-    submitError.value = ''
+const errors =
+    reactive({
+        name: '',
+        document: '',
+        identity_document: '',
+        identity_issuer: '',
+        marital_status_id: '',
+        profession: '',
+        address: '',
+        address_complement: '',
+        district: '',
+        city: '',
+        postal_code: '',
+        phone: '',
+        whatsapp: '',
+        email: '',
+    })
+
+const isEditing =
+    computed(() =>
+        route.name ===
+        'clients.edit',
+    )
+
+const clientId =
+    computed(() =>
+        isEditing.value
+            ? Number(
+                route.params.id,
+            )
+            : null,
+    )
+
+const pageTitle =
+    computed(() =>
+        isEditing.value
+            ? 'Editar cliente'
+            : 'Novo cliente',
+    )
+
+const pageDescription =
+    computed(() =>
+        isEditing.value
+            ? 'Atualize os dados cadastrais do cliente.'
+            : 'Informe os dados para cadastrar um novo cliente.',
+    )
+
+const submitLabel =
+    computed(() =>
+        isEditing.value
+            ? 'Salvar alterações'
+            : 'Cadastrar cliente',
+    )
+
+function clearErrors() {
+    Object
+        .keys(errors)
+        .forEach(
+            (key) => {
+                errors[key] =
+                    ''
+            },
+        )
+
+    submitError.value =
+        ''
 }
 
 function applyClient(client) {
-    form.name = client?.name ?? ''
-    form.document = client?.document ?? ''
+    form.name =
+        client?.name ??
+        ''
+
+    form.document =
+        client?.document ??
+        ''
+
     form.identity_document =
-        client?.identity_document ?? ''
+        client?.identity_document ??
+        ''
+
     form.identity_issuer =
-        client?.identity_issuer ?? ''
+        client?.identity_issuer ??
+        ''
+
     form.marital_status_id =
-        client?.marital_status_id ?? ''
+        client?.marital_status_id ??
+        ''
+
     form.profession =
-        client?.profession ?? ''
+        client?.profession ??
+        ''
+
     form.address =
-        client?.address ?? ''
+        client?.address ??
+        ''
+
     form.address_complement =
-        client?.address_complement ?? ''
+        client?.address_complement ??
+        ''
+
     form.district =
-        client?.district ?? ''
+        client?.district ??
+        ''
+
     form.city =
-        client?.city ?? ''
+        client?.city ??
+        ''
+
     form.postal_code =
-        client?.postal_code ?? ''
+        client?.postal_code ??
+        ''
+
     form.phone =
-        client?.phone ?? ''
+        client?.phone ??
+        ''
+
     form.whatsapp =
-        Boolean(client?.whatsapp)
+        Boolean(
+            client?.whatsapp,
+        )
+
     form.email =
-        client?.email ?? ''
+        client?.email ??
+        ''
 }
 
 function nullable(value) {
@@ -263,59 +318,108 @@ function nullable(value) {
 
 function buildPayload() {
     return {
-        name: form.name.trim(),
-        document: form.document.trim(),
+        name:
+            form.name.trim(),
+
+        document:
+            form.document.trim(),
 
         identity_document:
             nullable(
-                form.identity_document.trim(),
+                form
+                    .identity_document
+                    .trim(),
             ),
 
         identity_issuer:
             nullable(
-                form.identity_issuer.trim(),
+                form
+                    .identity_issuer
+                    .trim(),
             ),
 
         marital_status_id:
-            nullable(form.marital_status_id),
+            nullable(
+                form.marital_status_id,
+            ),
 
         profession:
-            nullable(form.profession.trim()),
+            nullable(
+                form
+                    .profession
+                    .trim(),
+            ),
 
         address:
-            nullable(form.address.trim()),
+            nullable(
+                form
+                    .address
+                    .trim(),
+            ),
 
         address_complement:
             nullable(
-                form.address_complement.trim(),
+                form
+                    .address_complement
+                    .trim(),
             ),
 
         district:
-            nullable(form.district.trim()),
+            nullable(
+                form
+                    .district
+                    .trim(),
+            ),
 
         city:
-            nullable(form.city.trim()),
+            nullable(
+                form
+                    .city
+                    .trim(),
+            ),
 
         postal_code:
-            nullable(form.postal_code.trim()),
+            nullable(
+                form
+                    .postal_code
+                    .trim(),
+            ),
 
         phone:
-            nullable(form.phone.trim()),
+            nullable(
+                form
+                    .phone
+                    .trim(),
+            ),
 
-        whatsapp: Boolean(form.whatsapp),
+        whatsapp:
+            Boolean(
+                form.whatsapp,
+            ),
 
         email:
-            nullable(form.email.trim()),
+            nullable(
+                form
+                    .email
+                    .trim(),
+            ),
     }
 }
 
 function applyValidationErrors(
     validationErrors = {},
 ) {
-    Object.keys(errors).forEach((key) => {
-        errors[key] =
-            validationErrors[key]?.[0] ?? ''
-    })
+    Object
+        .keys(errors)
+        .forEach(
+            (key) => {
+                errors[key] =
+                    validationErrors[
+                    key
+                    ]?.[0] ??
+                    ''
+            },
+        )
 }
 
 async function handleSubmit() {
@@ -326,7 +430,8 @@ async function handleSubmit() {
     clearErrors()
 
     if (!form.name.trim()) {
-        errors.name = 'Informe o nome.'
+        errors.name =
+            'Informe o nome.'
     }
 
     if (!form.document.trim()) {
@@ -334,14 +439,19 @@ async function handleSubmit() {
             'Informe o CPF ou CNPJ.'
     }
 
-    if (errors.name || errors.document) {
+    if (
+        errors.name ||
+        errors.document
+    ) {
         return
     }
 
-    submitting.value = true
+    submitting.value =
+        true
 
     try {
-        const payload = buildPayload()
+        const payload =
+            buildPayload()
 
         if (isEditing.value) {
             await clientsStore.update(
@@ -349,7 +459,9 @@ async function handleSubmit() {
                 payload,
             )
         } else {
-            await clientsStore.create(payload)
+            await clientsStore.create(
+                payload,
+            )
         }
 
         await router.replace({
@@ -361,7 +473,9 @@ async function handleSubmit() {
 
         if (status === 422) {
             applyValidationErrors(
-                error.response?.data?.errors,
+                error.response
+                    ?.data
+                    ?.errors,
             )
 
             return
@@ -370,14 +484,43 @@ async function handleSubmit() {
         submitError.value =
             'Não foi possível salvar o cliente. Tente novamente.'
     } finally {
-        submitting.value = false
+        submitting.value =
+            false
     }
 }
 
 function goBack() {
-    router.push({
+    return router.push({
         name: 'clients',
     })
+}
+
+async function loadClientForEditing() {
+    const currentClient =
+        clientsStore.client
+
+    if (
+        currentClient &&
+        Number(
+            currentClient.id,
+        ) ===
+        clientId.value
+    ) {
+        applyClient(
+            currentClient,
+        )
+
+        return
+    }
+
+    const loadedClient =
+        await clientsStore.fetchClient(
+            clientId.value,
+        )
+
+    applyClient(
+        loadedClient,
+    )
 }
 
 onMounted(async () => {
@@ -386,25 +529,11 @@ onMounted(async () => {
 
     if (!isEditing.value) {
         clientsStore.clearCurrent()
+
         return
     }
 
-    const cached =
-        clientsStore.getById(
-            clientId.value,
-        )
-
-    if (cached) {
-        applyClient(cached)
-        return
-    }
-
-    const client =
-        await clientsStore.fetchClient(
-            clientId.value,
-        )
-
-    applyClient(client)
+    await loadClientForEditing()
 })
 </script>
 
@@ -423,14 +552,17 @@ onMounted(async () => {
 
 .client-form-page__title {
     margin: 0;
-    color: var(--color-text);
+
+    color:
+        var(--color-text);
 }
 
 .client-form-page__description {
     margin:
         var(--space-2) 0 0;
 
-    color: var(--color-text-muted);
+    color:
+        var(--color-text-muted);
 }
 
 .client-form-page__form {
@@ -447,52 +579,79 @@ onMounted(async () => {
 
 .client-form-page__section-title {
     margin: 0;
-    color: var(--color-text);
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
+
+    color:
+        var(--color-text);
+
+    font-size:
+        var(--font-size-lg);
+
+    font-weight:
+        var(--font-weight-semibold);
 }
 
 .client-form-page__grid {
     display: grid;
+
     grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+        repeat(2,
+            minmax(0, 1fr));
+
     gap:
         var(--space-5) var(--space-6);
 }
 
 .client-form-page__field-full {
-    grid-column: 1 / -1;
+    grid-column:
+        1 / -1;
 }
 
 .client-form-page__actions {
     display: flex;
     justify-content: flex-end;
     gap: var(--space-3);
-    padding-top: var(--space-2);
+
+    padding-top:
+        var(--space-2);
+
     border-top:
         1px solid var(--color-divider);
 }
 
 .client-form-page__error {
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--color-danger);
-    border-radius: var(--radius-md);
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
-    font-size: var(--font-size-sm);
+    padding:
+        var(--space-3) var(--space-4);
+
+    border:
+        1px solid var(--color-danger);
+
+    border-radius:
+        var(--radius-md);
+
+    background:
+        var(--color-danger-soft);
+
+    color:
+        var(--color-danger);
+
+    font-size:
+        var(--font-size-sm);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
     .client-form-page__grid {
-        grid-template-columns: 1fr;
+        grid-template-columns:
+            1fr;
     }
 
     .client-form-page__field-full {
-        grid-column: auto;
+        grid-column:
+            auto;
     }
 
     .client-form-page__actions {
-        flex-direction: column-reverse;
+        flex-wrap:
+            wrap;
     }
 }
 </style>

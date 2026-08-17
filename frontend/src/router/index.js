@@ -102,6 +102,20 @@ const router = createRouter({
                 },
 
                 {
+                    path: 'clients/:id',
+
+                    name: 'clients.show',
+
+                    component: () => import('@/views/clients/ClientShowPage.vue'),
+
+                    meta: {
+                        breadcrumb: 'Detalhes do cliente',
+
+                        permission: 'clients.view',
+                    },
+                },
+
+                {
                     path: 'clients/:id/edit',
 
                     name: 'clients.edit',
