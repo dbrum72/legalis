@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\MaritalStatusController;
@@ -105,6 +106,14 @@ Route::middleware([
     'tenant',
 ])
     ->group(function () {
+        Route::get(
+            '/dashboard',
+            [
+                DashboardController::class,
+                'index',
+            ]
+        );
+
         Route::post(
             '/organization-invitations',
             [

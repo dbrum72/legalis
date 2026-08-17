@@ -16,9 +16,9 @@ import { getCurrentTenant, removeCurrentTenant, setCurrentTenant } from '@/api/t
 
 import { useClientsStore } from '@/stores/clients.js'
 
-import { useFoldersStore } from '@/stores/folders.js'
+import { useDashboardStore } from '@/stores/dashboard.js'
 
-import { useOrganizationInvitationsStore } from '@/stores/organization-invitations.js'
+import { useFoldersStore } from '@/stores/folders.js'
 
 import { useOrganizationMembersStore } from '@/stores/organization-members.js'
 
@@ -100,9 +100,9 @@ export const useAuthStore = defineStore('auth', () => {
     function clearTenantStores() {
         useClientsStore().clear()
 
-        useFoldersStore().clear()
+        useDashboardStore().clear()
 
-        useOrganizationInvitationsStore().clear()
+        useFoldersStore().clear()
 
         useOrganizationMembersStore().clear()
 
