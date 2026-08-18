@@ -109,6 +109,10 @@
                 <AppCard>
                     <FolderDeadlines :folder-id="folder.id" />
                 </AppCard>
+
+                <AppCard>
+                    <FolderEvents :folder-id="folder.id" />
+                </AppCard>
             </template>
         </div>
     </PageContainer>
@@ -136,10 +140,16 @@ import {
 
 import FolderDeadlines from '@/views/folders/components/FolderDeadlines.vue'
 import FolderDocuments from '@/views/folders/components/FolderDocuments.vue'
+import FolderEvents from '@/views/folders/components/FolderEvents.vue'
 import FolderMovements from '@/views/folders/components/FolderMovements.vue'
 
-import { useAuthStore } from '@/stores/auth.js'
-import { useFoldersStore } from '@/stores/folders.js'
+import {
+    useAuthStore,
+} from '@/stores/auth.js'
+
+import {
+    useFoldersStore,
+} from '@/stores/folders.js'
 
 const route =
     useRoute()

@@ -18,6 +18,7 @@ import { useClientsStore } from '@/stores/clients.js'
 import { useFolderDeadlinesStore } from '@/stores/folder-deadlines.js'
 import { useDashboardStore } from '@/stores/dashboard.js'
 import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
+import { useFolderEventsStore } from '@/stores/folder-events.js'
 import { useFolderMovementsStore } from '@/stores/folder-movements.js'
 import { useFoldersStore } from '@/stores/folders.js'
 import { useOrganizationMembersStore } from '@/stores/organization-members.js'
@@ -104,6 +105,8 @@ export const useAuthStore = defineStore('auth', () => {
         useFolderDeadlinesStore().clear()
 
         useFolderDocumentsStore().clear()
+        
+        useFolderEventsStore().clear()
 
         useFolderMovementsStore().clear()
 

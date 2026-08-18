@@ -407,4 +407,16 @@ describe('FolderShowPage', () => {
 
         expect(router.currentRoute.value.name).toBe('folders')
     })
+
+    it('renderiza agenda da pasta com o id atual', async () => {
+        const { wrapper } = await mountPage()
+
+        const component = wrapper.findComponent({
+            name: 'FolderEvents',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        expect(component.props('folderId')).toBe(10)
+    })
 })

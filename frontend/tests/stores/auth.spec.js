@@ -5,6 +5,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth.js'
 import { useFolderDeadlinesStore } from '@/stores/folder-deadlines.js'
 import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
+import { useFolderEventsStore } from '@/stores/folder-events.js'
 import { useFolderMovementsStore } from '@/stores/folder-movements.js'
 
 vi.mock('@/api/auth.js', () => ({
@@ -1117,5 +1118,99 @@ describe('auth store', () => {
         expect(folderDeadlinesStore.deadlines).toEqual([])
 
         expect(folderDeadlinesStore.count).toBe(0)
+    })
+
+    it('limpa eventos da pasta ao trocar de organização', async () => {
+        const store = useAuthStore()
+
+        const folderEventsStore = useFolderEventsStore()
+
+        folderEventsStore.events = [
+            {
+                id: 1,
+                folder_id: 10,
+                type: 'hearing',
+                title: 'Evento da organização anterior',
+                starts_at: '2026-09-10T14:00:00.000000Z',
+                status: 'scheduled',
+            },
+        ]
+
+        store.organizations = [
+            {
+                id: 10,
+                name: 'Organização A',
+                slug: 'org-a',
+            },
+
+            {
+                id: 20,
+                name: 'Organização B',
+                slug: 'org-b',
+            },
+        ]
+
+        store.organization = {
+            id: 10,
+            name: 'Organização A',
+            slug: 'org-a',
+        }
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 20,
+                    name: 'Organização B',
+                    slug: 'org-b',
+                },
+
+                roles: ['advogado'],
+
+                permissions: ['folders.view'],
+            },
+        })
+
+        getCurrentTenant.mockReturnValue('org-b')
+
+        await store.selectOrganization('org-b')
+
+        expect(folderEventsStore.events).toEqual([])
+
+        expect(folderEventsStore.count).toBe(0)
+    })
+
+    it('limpa eventos da pasta ao limpar autenticação', () => {
+        const store = useAuthStore()
+
+        const folderEventsStore = useFolderEventsStore()
+
+        folderEventsStore.events = [
+            {
+                id: 1,
+                folder_id: 10,
+                type: 'hearing',
+                title: 'Evento privado',
+                starts_at: '2026-09-10T14:00:00.000000Z',
+                status: 'scheduled',
+            },
+        ]
+
+        store.token = 'jwt-token'
+
+        store.user = {
+            id: 1,
+            name: 'Usuário',
+        }
+
+        store.organization = {
+            id: 10,
+            slug: 'org-a',
+        }
+
+        store.clearAuth()
+
+        expect(folderEventsStore.events).toEqual([])
+
+        expect(folderEventsStore.count).toBe(0)
     })
 })

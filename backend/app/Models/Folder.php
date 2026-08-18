@@ -60,4 +60,11 @@ class Folder extends Model
             ])
             ->withTimestamps();
     }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(
+            FolderEvent::class
+        );
+    }
 }

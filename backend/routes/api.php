@@ -7,6 +7,7 @@ use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FolderDeadlineController;
 use App\Http\Controllers\FolderDocumentController;
+use App\Http\Controllers\FolderEventController;
 use App\Http\Controllers\FolderMovementController;
 use App\Http\Controllers\MaritalStatusController;
 use App\Http\Controllers\OrganizationInvitationController;
@@ -464,6 +465,56 @@ Route::middleware([
             '/folders/{folder}/deadlines/{deadline}',
             [
                 FolderDeadlineController::class,
+                'destroy',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Folder Events
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/folders/{folder}/events',
+            [
+                FolderEventController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:folders.view'
+        );
+
+        Route::post(
+            '/folders/{folder}/events',
+            [
+                FolderEventController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:folders.update'
+        );
+
+        Route::patch(
+            '/folders/{folder}/events/{event}/complete',
+            [
+                FolderEventController::class,
+                'complete',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        Route::delete(
+            '/folders/{folder}/events/{event}',
+            [
+                FolderEventController::class,
                 'destroy',
             ]
         )
