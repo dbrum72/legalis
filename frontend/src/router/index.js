@@ -158,6 +158,20 @@ const router = createRouter({
                 },
 
                 {
+                    path: 'folders/:id',
+
+                    name: 'folders.show',
+
+                    component: () => import('@/views/folders/FolderShowPage.vue'),
+
+                    meta: {
+                        breadcrumb: 'Detalhes da pasta',
+
+                        permission: 'folders.view',
+                    },
+                },
+
+                {
                     path: 'folders/:id/edit',
 
                     name: 'folders.edit',

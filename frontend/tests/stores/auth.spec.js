@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 import { useAuthStore } from '@/stores/auth.js'
+import { useFolderDeadlinesStore } from '@/stores/folder-deadlines.js'
+import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
+import { useFolderMovementsStore } from '@/stores/folder-movements.js'
 
 vi.mock('@/api/auth.js', () => ({
     context: vi.fn(),
@@ -864,5 +867,255 @@ describe('auth store', () => {
         expect(store.hasPermission('clients.create')).toBe(true)
 
         expect(store.hasPermission('clients.delete')).toBe(false)
+    })
+
+    it('limpa documentos da pasta ao trocar de organização', async () => {
+        const store = useAuthStore()
+
+        const folderDocumentsStore = useFolderDocumentsStore()
+
+        folderDocumentsStore.documents = [
+            {
+                id: 1,
+                folder_id: 10,
+                name: 'Documento da organização anterior',
+            },
+        ]
+
+        store.organizations = [
+            {
+                id: 10,
+                name: 'Organização A',
+                slug: 'org-a',
+            },
+            {
+                id: 20,
+                name: 'Organização B',
+                slug: 'org-b',
+            },
+        ]
+
+        store.organization = {
+            id: 10,
+            name: 'Organização A',
+            slug: 'org-a',
+        }
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 20,
+                    name: 'Organização B',
+                    slug: 'org-b',
+                },
+
+                roles: ['advogado'],
+
+                permissions: ['folders.view'],
+            },
+        })
+
+        getCurrentTenant.mockReturnValue('org-b')
+
+        await store.selectOrganization('org-b')
+
+        expect(folderDocumentsStore.documents).toEqual([])
+
+        expect(folderDocumentsStore.count).toBe(0)
+    })
+
+    it('limpa documentos da pasta ao limpar autenticação', () => {
+        const store = useAuthStore()
+
+        const folderDocumentsStore = useFolderDocumentsStore()
+
+        folderDocumentsStore.documents = [
+            {
+                id: 1,
+                folder_id: 10,
+                name: 'Documento privado',
+            },
+        ]
+
+        store.token = 'jwt-token'
+
+        store.user = {
+            id: 1,
+            name: 'Usuário',
+        }
+
+        store.organization = {
+            id: 10,
+            slug: 'org-a',
+        }
+
+        store.clearAuth()
+
+        expect(folderDocumentsStore.documents).toEqual([])
+
+        expect(folderDocumentsStore.count).toBe(0)
+    })
+
+    it('limpa movimentações da pasta ao trocar de organização', async () => {
+        const store = useAuthStore()
+
+        const folderMovementsStore = useFolderMovementsStore()
+
+        store.organizations = [
+            {
+                id: 1,
+                slug: 'org-a',
+                name: 'Organização A',
+            },
+            {
+                id: 2,
+                slug: 'org-b',
+                name: 'Organização B',
+            },
+        ]
+
+        store.organization = {
+            id: 1,
+            slug: 'org-a',
+            name: 'Organização A',
+        }
+
+        folderMovementsStore.movements = [
+            {
+                id: 1,
+                folder_id: 10,
+                title: 'Movimentação da organização anterior',
+            },
+        ]
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 2,
+                    slug: 'org-b',
+                    name: 'Organização B',
+                },
+
+                roles: [],
+                permissions: [],
+            },
+        })
+
+        await store.selectOrganization('org-b')
+
+        expect(folderMovementsStore.movements).toEqual([])
+
+        expect(folderMovementsStore.count).toBe(0)
+    })
+
+    it('limpa movimentações da pasta ao limpar autenticação', () => {
+        const store = useAuthStore()
+
+        const folderMovementsStore = useFolderMovementsStore()
+
+        folderMovementsStore.movements = [
+            {
+                id: 1,
+                folder_id: 10,
+                title: 'Movimentação privada',
+            },
+        ]
+
+        store.clearAuth()
+
+        expect(folderMovementsStore.movements).toEqual([])
+
+        expect(folderMovementsStore.count).toBe(0)
+    })
+
+    it('limpa prazos da pasta ao trocar de organização', async () => {
+        const store = useAuthStore()
+
+        const folderDeadlinesStore = useFolderDeadlinesStore()
+
+        folderDeadlinesStore.deadlines = [
+            {
+                id: 1,
+                folder_id: 10,
+                title: 'Prazo da organização anterior',
+                due_at: '2026-08-25T12:00:00.000000Z',
+                status: 'pending',
+            },
+        ]
+
+        store.organizations = [
+            {
+                id: 10,
+                name: 'Organização A',
+                slug: 'org-a',
+            },
+            {
+                id: 20,
+                name: 'Organização B',
+                slug: 'org-b',
+            },
+        ]
+
+        store.organization = {
+            id: 10,
+            name: 'Organização A',
+            slug: 'org-a',
+        }
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 20,
+                    name: 'Organização B',
+                    slug: 'org-b',
+                },
+
+                roles: ['advogado'],
+
+                permissions: ['folders.view'],
+            },
+        })
+
+        getCurrentTenant.mockReturnValue('org-b')
+
+        await store.selectOrganization('org-b')
+
+        expect(folderDeadlinesStore.deadlines).toEqual([])
+
+        expect(folderDeadlinesStore.count).toBe(0)
+    })
+
+    it('limpa prazos da pasta ao limpar autenticação', () => {
+        const store = useAuthStore()
+
+        const folderDeadlinesStore = useFolderDeadlinesStore()
+
+        folderDeadlinesStore.deadlines = [
+            {
+                id: 1,
+                folder_id: 10,
+                title: 'Prazo privado',
+                due_at: '2026-08-25T12:00:00.000000Z',
+                status: 'pending',
+            },
+        ]
+
+        store.token = 'jwt-token'
+
+        store.user = {
+            id: 1,
+            name: 'Usuário',
+        }
+
+        store.organization = {
+            id: 10,
+            slug: 'org-a',
+        }
+
+        store.clearAuth()
+
+        expect(folderDeadlinesStore.deadlines).toEqual([])
+
+        expect(folderDeadlinesStore.count).toBe(0)
     })
 })

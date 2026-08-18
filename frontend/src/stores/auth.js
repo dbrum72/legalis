@@ -15,13 +15,12 @@ import { getAccessToken, removeAccessToken, setAccessToken } from '@/api/auth-to
 import { getCurrentTenant, removeCurrentTenant, setCurrentTenant } from '@/api/tenant.js'
 
 import { useClientsStore } from '@/stores/clients.js'
-
+import { useFolderDeadlinesStore } from '@/stores/folder-deadlines.js'
 import { useDashboardStore } from '@/stores/dashboard.js'
-
+import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
+import { useFolderMovementsStore } from '@/stores/folder-movements.js'
 import { useFoldersStore } from '@/stores/folders.js'
-
 import { useOrganizationMembersStore } from '@/stores/organization-members.js'
-
 import { useOrganizationRolesStore } from '@/stores/organization-roles.js'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -101,6 +100,12 @@ export const useAuthStore = defineStore('auth', () => {
         useClientsStore().clear()
 
         useDashboardStore().clear()
+
+        useFolderDeadlinesStore().clear()
+
+        useFolderDocumentsStore().clear()
+
+        useFolderMovementsStore().clear()
 
         useFoldersStore().clear()
 

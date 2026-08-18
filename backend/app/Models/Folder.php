@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name',
     'process_number',
 ])]
-
 class Folder extends Model
 {
     use HasFactory;
@@ -24,6 +23,27 @@ class Folder extends Model
     {
         return $this->hasMany(
             FolderClient::class
+        );
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(
+            FolderDocument::class
+        );
+    }
+
+    public function movements(): HasMany
+    {
+        return $this->hasMany(
+            FolderMovement::class
+        );
+    }
+
+    public function deadlines(): HasMany
+    {
+        return $this->hasMany(
+            FolderDeadline::class
         );
     }
 

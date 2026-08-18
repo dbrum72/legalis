@@ -52,6 +52,13 @@ function createTestRouter() {
                 },
             },
             {
+                path: '/folders/:id',
+                name: 'folders.show',
+                component: {
+                    template: '<div>Detalhes da pasta</div>',
+                },
+            },
+            {
                 path: '/folders/:id/edit',
                 name: 'folders.edit',
                 component: {
@@ -197,6 +204,48 @@ describe('FolderListPage', () => {
         expect(wrapper.text()).toContain('Nova pasta')
     })
 
+    it('mostra Visualizar para pasta listada', async () => {
+        const { wrapper } = await mountPage({
+            permissions: ['folders.view'],
+
+            folders: [
+                {
+                    id: 10,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            ],
+        })
+
+        expect(findButton(wrapper, 'Visualizar')).toBeTruthy()
+    })
+
+    it('navega para detalhes da pasta selecionada', async () => {
+        const { wrapper, router } = await mountPage({
+            permissions: ['folders.view'],
+
+            folders: [
+                {
+                    id: 10,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            ],
+        })
+
+        const button = findButton(wrapper, 'Visualizar')
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        await vi.waitFor(() => {
+            expect(router.currentRoute.value.name).toBe('folders.show')
+
+            expect(router.currentRoute.value.params.id).toBe('10')
+        })
+    })
+
     it('não mostra Editar sem folders.update', async () => {
         const { wrapper } = await mountPage({
             permissions: ['folders.view'],
@@ -273,6 +322,8 @@ describe('FolderListPage', () => {
                 },
             ],
         })
+
+        expect(wrapper.text()).toContain('Visualizar')
 
         expect(wrapper.text()).toContain('Editar')
 

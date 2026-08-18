@@ -5,6 +5,9 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\FolderDeadlineController;
+use App\Http\Controllers\FolderDocumentController;
+use App\Http\Controllers\FolderMovementController;
 use App\Http\Controllers\MaritalStatusController;
 use App\Http\Controllers\OrganizationInvitationController;
 use App\Http\Controllers\OrganizationMemberController;
@@ -106,6 +109,12 @@ Route::middleware([
     'tenant',
 ])
     ->group(function () {
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
+        |--------------------------------------------------------------------------
+        */
+
         Route::get(
             '/dashboard',
             [
@@ -113,6 +122,12 @@ Route::middleware([
                 'index',
             ]
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Organization
+        |--------------------------------------------------------------------------
+        */
 
         Route::post(
             '/organization-invitations',
@@ -163,6 +178,12 @@ Route::middleware([
         )->middleware(
             'can:organization-members.view'
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clients
+        |--------------------------------------------------------------------------
+        */
 
         Route::prefix('clients')
             ->group(function () {
@@ -217,6 +238,12 @@ Route::middleware([
                 );
             });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Folders
+        |--------------------------------------------------------------------------
+        */
+
         Route::get(
             '/folders',
             [
@@ -267,6 +294,12 @@ Route::middleware([
             'can:folders.delete'
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Folder Clients
+        |--------------------------------------------------------------------------
+        */
+
         Route::post(
             '/folders/{folder}/clients',
             [
@@ -293,6 +326,144 @@ Route::middleware([
             '/folders/{folder}/clients/{folderClient}',
             [
                 FolderClientController::class,
+                'destroy',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Folder Documents
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/folders/{folder}/documents',
+            [
+                FolderDocumentController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:folders.view'
+        );
+
+        Route::post(
+            '/folders/{folder}/documents',
+            [
+                FolderDocumentController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:folders.update'
+        );
+
+        Route::get(
+            '/folders/{folder}/documents/{document}/download',
+            [
+                FolderDocumentController::class,
+                'download',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.view'
+            );
+
+        Route::delete(
+            '/folders/{folder}/documents/{document}',
+            [
+                FolderDocumentController::class,
+                'destroy',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Folder Movements
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/folders/{folder}/movements',
+            [
+                FolderMovementController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:folders.view'
+        );
+
+        Route::post(
+            '/folders/{folder}/movements',
+            [
+                FolderMovementController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:folders.update'
+        );
+
+        Route::delete(
+            '/folders/{folder}/movements/{movement}',
+            [
+                FolderMovementController::class,
+                'destroy',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Folder Deadlines
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/folders/{folder}/deadlines',
+            [
+                FolderDeadlineController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:folders.view'
+        );
+
+        Route::post(
+            '/folders/{folder}/deadlines',
+            [
+                FolderDeadlineController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:folders.update'
+        );
+
+        Route::patch(
+            '/folders/{folder}/deadlines/{deadline}/complete',
+            [
+                FolderDeadlineController::class,
+                'complete',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        Route::delete(
+            '/folders/{folder}/deadlines/{deadline}',
+            [
+                FolderDeadlineController::class,
                 'destroy',
             ]
         )

@@ -24,6 +24,10 @@
 
                 <template #cell-actions="{ row }">
                     <div class="folder-list__actions">
+                        <AppButton type="button" size="sm" variant="ghost" @click="showFolder(row)">
+                            Visualizar
+                        </AppButton>
+
                         <AppButton v-if="canUpdate" type="button" size="sm" variant="outline" @click="editFolder(row)">
                             Editar
                         </AppButton>
@@ -66,24 +70,35 @@ import {
 import { useAuthStore } from '@/stores/auth.js'
 import { useFoldersStore } from '@/stores/folders.js'
 
-const router = useRouter()
+const router =
+    useRouter()
 
-const authStore = useAuthStore()
-const foldersStore = useFoldersStore()
+const authStore =
+    useAuthStore()
 
-const folderToDelete = ref(null)
-const deleting = ref(false)
-const deleteError = ref('')
+const foldersStore =
+    useFoldersStore()
+
+const folderToDelete =
+    ref(null)
+
+const deleting =
+    ref(false)
+
+const deleteError =
+    ref('')
 
 const columns = [
     {
         key: 'name',
         label: 'Nome',
     },
+
     {
         key: 'process_number',
         label: 'Número do processo',
     },
+
     {
         key: 'actions',
         label: 'Ações',
@@ -91,41 +106,56 @@ const columns = [
     },
 ]
 
-const canCreate = computed(() =>
-    authStore.hasPermission(
-        'folders.create',
-    ),
-)
+const canCreate =
+    computed(() =>
+        authStore.hasPermission(
+            'folders.create',
+        ),
+    )
 
-const canUpdate = computed(() =>
-    authStore.hasPermission(
-        'folders.update',
-    ),
-)
+const canUpdate =
+    computed(() =>
+        authStore.hasPermission(
+            'folders.update',
+        ),
+    )
 
-const canDelete = computed(() =>
-    authStore.hasPermission(
-        'folders.delete',
-    ),
-)
+const canDelete =
+    computed(() =>
+        authStore.hasPermission(
+            'folders.delete',
+        ),
+    )
 
-const deleteMessage = computed(() => {
-    if (!folderToDelete.value) {
-        return ''
-    }
+const deleteMessage =
+    computed(() => {
+        if (!folderToDelete.value) {
+            return ''
+        }
 
-    return `Deseja realmente excluir a pasta "${folderToDelete.value.name}"?`
-})
+        return `Deseja realmente excluir a pasta "${folderToDelete.value.name}"?`
+    })
 
 function createFolder() {
-    router.push({
+    return router.push({
         name: 'folders.create',
     })
 }
 
+function showFolder(folder) {
+    return router.push({
+        name: 'folders.show',
+
+        params: {
+            id: folder.id,
+        },
+    })
+}
+
 function editFolder(folder) {
-    router.push({
+    return router.push({
         name: 'folders.edit',
+
         params: {
             id: folder.id,
         },
@@ -133,8 +163,11 @@ function editFolder(folder) {
 }
 
 function requestDelete(folder) {
-    folderToDelete.value = folder
-    deleteError.value = ''
+    folderToDelete.value =
+        folder
+
+    deleteError.value =
+        ''
 }
 
 function cancelDelete() {
@@ -142,8 +175,11 @@ function cancelDelete() {
         return
     }
 
-    folderToDelete.value = null
-    deleteError.value = ''
+    folderToDelete.value =
+        null
+
+    deleteError.value =
+        ''
 }
 
 async function confirmDelete() {
@@ -154,20 +190,25 @@ async function confirmDelete() {
         return
     }
 
-    deleting.value = true
-    deleteError.value = ''
+    deleting.value =
+        true
+
+    deleteError.value =
+        ''
 
     try {
         await foldersStore.remove(
             folderToDelete.value.id,
         )
 
-        folderToDelete.value = null
+        folderToDelete.value =
+            null
     } catch {
         deleteError.value =
             'Não foi possível excluir a pasta. Tente novamente.'
     } finally {
-        deleting.value = false
+        deleting.value =
+            false
     }
 }
 
@@ -192,20 +233,25 @@ onMounted(async () => {
 
 .folder-list__title {
     margin: 0;
-    color: var(--color-text);
+
+    color:
+        var(--color-text);
 }
 
 .folder-list__description {
     margin:
         var(--space-2) 0 0;
 
-    color: var(--color-text-muted);
+    color:
+        var(--color-text-muted);
 }
 
 .folder-list__actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-2);
+
     white-space: nowrap;
 }
 
@@ -213,18 +259,31 @@ onMounted(async () => {
     padding:
         var(--space-3) var(--space-4);
 
-    border: 1px solid var(--color-danger);
-    border-radius: var(--radius-md);
+    border:
+        1px solid var(--color-danger);
 
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
+    border-radius:
+        var(--radius-md);
 
-    font-size: var(--font-size-sm);
+    background:
+        var(--color-danger-soft);
+
+    color:
+        var(--color-danger);
+
+    font-size:
+        var(--font-size-sm);
 }
 
 @media (max-width: 640px) {
     .folder-list__header {
-        flex-direction: column;
+        flex-direction:
+            column;
+    }
+
+    .folder-list__actions {
+        white-space:
+            normal;
     }
 }
 </style>
