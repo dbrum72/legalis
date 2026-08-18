@@ -67,4 +67,11 @@ class Folder extends Model
             FolderEvent::class
         );
     }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(
+            FolderTask::class
+        );
+    }
 }

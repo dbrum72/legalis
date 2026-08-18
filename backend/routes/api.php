@@ -9,6 +9,7 @@ use App\Http\Controllers\FolderDeadlineController;
 use App\Http\Controllers\FolderDocumentController;
 use App\Http\Controllers\FolderEventController;
 use App\Http\Controllers\FolderMovementController;
+use App\Http\Controllers\FolderTaskController;
 use App\Http\Controllers\MaritalStatusController;
 use App\Http\Controllers\OrganizationInvitationController;
 use App\Http\Controllers\OrganizationMemberController;
@@ -515,6 +516,56 @@ Route::middleware([
             '/folders/{folder}/events/{event}',
             [
                 FolderEventController::class,
+                'destroy',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Folder Tasks
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/folders/{folder}/tasks',
+            [
+                FolderTaskController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:folders.view'
+        );
+
+        Route::post(
+            '/folders/{folder}/tasks',
+            [
+                FolderTaskController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:folders.update'
+        );
+
+        Route::patch(
+            '/folders/{folder}/tasks/{task}/complete',
+            [
+                FolderTaskController::class,
+                'complete',
+            ]
+        )
+            ->scopeBindings()
+            ->middleware(
+                'can:folders.update'
+            );
+
+        Route::delete(
+            '/folders/{folder}/tasks/{task}',
+            [
+                FolderTaskController::class,
                 'destroy',
             ]
         )

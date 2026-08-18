@@ -7,6 +7,7 @@ import { useFolderDeadlinesStore } from '@/stores/folder-deadlines.js'
 import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
 import { useFolderEventsStore } from '@/stores/folder-events.js'
 import { useFolderMovementsStore } from '@/stores/folder-movements.js'
+import { useFolderTasksStore } from '@/stores/folder-tasks.js'
 
 vi.mock('@/api/auth.js', () => ({
     context: vi.fn(),
@@ -1212,5 +1213,97 @@ describe('auth store', () => {
         expect(folderEventsStore.events).toEqual([])
 
         expect(folderEventsStore.count).toBe(0)
+    })
+
+    it('limpa tarefas da pasta ao trocar de organização', async () => {
+        const store = useAuthStore()
+
+        const folderTasksStore = useFolderTasksStore()
+
+        folderTasksStore.tasks = [
+            {
+                id: 1,
+                folder_id: 10,
+                title: 'Tarefa da organização anterior',
+                priority: 'high',
+                status: 'pending',
+            },
+        ]
+
+        store.organizations = [
+            {
+                id: 10,
+                name: 'Organização A',
+                slug: 'org-a',
+            },
+
+            {
+                id: 20,
+                name: 'Organização B',
+                slug: 'org-b',
+            },
+        ]
+
+        store.organization = {
+            id: 10,
+            name: 'Organização A',
+            slug: 'org-a',
+        }
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 20,
+                    name: 'Organização B',
+                    slug: 'org-b',
+                },
+
+                roles: ['advogado'],
+
+                permissions: ['folders.view'],
+            },
+        })
+
+        getCurrentTenant.mockReturnValue('org-b')
+
+        await store.selectOrganization('org-b')
+
+        expect(folderTasksStore.tasks).toEqual([])
+
+        expect(folderTasksStore.count).toBe(0)
+    })
+
+    it('limpa tarefas da pasta ao limpar autenticação', () => {
+        const store = useAuthStore()
+
+        const folderTasksStore = useFolderTasksStore()
+
+        folderTasksStore.tasks = [
+            {
+                id: 1,
+                folder_id: 10,
+                title: 'Tarefa privada',
+                priority: 'medium',
+                status: 'pending',
+            },
+        ]
+
+        store.token = 'jwt-token'
+
+        store.user = {
+            id: 1,
+            name: 'Usuário',
+        }
+
+        store.organization = {
+            id: 10,
+            slug: 'org-a',
+        }
+
+        store.clearAuth()
+
+        expect(folderTasksStore.tasks).toEqual([])
+
+        expect(folderTasksStore.count).toBe(0)
     })
 })

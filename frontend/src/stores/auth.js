@@ -20,6 +20,7 @@ import { useDashboardStore } from '@/stores/dashboard.js'
 import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
 import { useFolderEventsStore } from '@/stores/folder-events.js'
 import { useFolderMovementsStore } from '@/stores/folder-movements.js'
+import { useFolderTasksStore } from '@/stores/folder-tasks.js'
 import { useFoldersStore } from '@/stores/folders.js'
 import { useOrganizationMembersStore } from '@/stores/organization-members.js'
 import { useOrganizationRolesStore } from '@/stores/organization-roles.js'
@@ -109,6 +110,8 @@ export const useAuthStore = defineStore('auth', () => {
         useFolderEventsStore().clear()
 
         useFolderMovementsStore().clear()
+
+        useFolderTasksStore().clear()
 
         useFoldersStore().clear()
 

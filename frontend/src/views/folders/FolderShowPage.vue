@@ -113,6 +113,10 @@
                 <AppCard>
                     <FolderEvents :folder-id="folder.id" />
                 </AppCard>
+
+                <AppCard>
+                    <FolderTasks :folder-id="folder.id" />
+                </AppCard>
             </template>
         </div>
     </PageContainer>
@@ -142,6 +146,7 @@ import FolderDeadlines from '@/views/folders/components/FolderDeadlines.vue'
 import FolderDocuments from '@/views/folders/components/FolderDocuments.vue'
 import FolderEvents from '@/views/folders/components/FolderEvents.vue'
 import FolderMovements from '@/views/folders/components/FolderMovements.vue'
+import FolderTasks from '@/views/folders/components/FolderTasks.vue'
 
 import {
     useAuthStore,

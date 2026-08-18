@@ -419,4 +419,16 @@ describe('FolderShowPage', () => {
 
         expect(component.props('folderId')).toBe(10)
     })
+
+    it('renderiza tarefas da pasta com o id atual', async () => {
+        const { wrapper } = await mountPage()
+
+        const component = wrapper.findComponent({
+            name: 'FolderTasks',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        expect(component.props('folderId')).toBe(10)
+    })
 })
