@@ -244,9 +244,14 @@ const props = defineProps({
             Number,
             String,
         ],
+
         required: true,
     },
 })
+
+const emit = defineEmits([
+    'changed',
+])
 
 const authStore =
     useAuthStore()
@@ -416,6 +421,25 @@ function displayDateTime(value) {
     ).format(date)
 }
 
+function localDateTimeToUtc(value) {
+    if (!value) {
+        return null
+    }
+
+    const date =
+        new Date(value)
+
+    if (
+        Number.isNaN(
+            date.getTime(),
+        )
+    ) {
+        return null
+    }
+
+    return date.toISOString()
+}
+
 async function loadEvents() {
     loadError.value =
         ''
@@ -451,6 +475,20 @@ async function submitCreate() {
         return
     }
 
+    const startsAtUtc =
+        localDateTimeToUtc(
+            startsAt,
+        )
+
+    const endsAtUtc =
+        localDateTimeToUtc(
+            form.ends_at.trim(),
+        )
+
+    if (!startsAtUtc) {
+        return
+    }
+
     const payload = {
         type,
 
@@ -460,10 +498,10 @@ async function submitCreate() {
             form.description.trim(),
 
         starts_at:
-            startsAt,
+            startsAtUtc,
 
         ends_at:
-            form.ends_at.trim(),
+            endsAtUtc,
 
         location:
             form.location.trim(),
@@ -482,6 +520,10 @@ async function submitCreate() {
 
         isCreating.value =
             false
+
+        emit(
+            'changed',
+        )
     } catch {
         createError.value =
             'Não foi possível criar o compromisso. Tente novamente.'
@@ -511,6 +553,10 @@ async function completeEvent(
         await folderEventsStore.completeEvent(
             props.folderId,
             event.id,
+        )
+
+        emit(
+            'changed',
         )
     } catch {
         completeError.value =
@@ -565,6 +611,10 @@ async function confirmDelete() {
 
         eventToDelete.value =
             null
+
+        emit(
+            'changed',
+        )
     } catch {
         deleteError.value =
             'Não foi possível excluir o compromisso. Tente novamente.'
@@ -687,7 +737,9 @@ onMounted(
 
 .folder-events__control {
     width: 100%;
-    min-height: 2.75rem;
+
+    min-height:
+        2.75rem;
 
     box-sizing:
         border-box;
@@ -790,7 +842,9 @@ onMounted(
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    margin-top: var(--space-2);
+
+    margin-top:
+        var(--space-2);
 }
 
 .folder-events__badge {
@@ -857,7 +911,9 @@ onMounted(
 
 .folder-events__end-date {
     display: block;
-    margin-top: var(--space-1);
+
+    margin-top:
+        var(--space-1);
 }
 
 .folder-events__item-description {

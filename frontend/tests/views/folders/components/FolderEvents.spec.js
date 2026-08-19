@@ -259,7 +259,7 @@ describe('FolderEvents', () => {
         expect(wrapper.find('textarea[name="description"]').exists()).toBe(true)
     })
 
-    it('envia novo compromisso para a store', async () => {
+    it('envia novo compromisso para a store em UTC', async () => {
         const { wrapper, folderEventsStore } = await mountComponent({
             permissions: ['folders.update'],
         })
@@ -305,9 +305,9 @@ describe('FolderEvents', () => {
 
             description: 'Audiência designada para tentativa de conciliação.',
 
-            starts_at: '2026-09-20T14:00',
+            starts_at: new Date('2026-09-20T14:00').toISOString(),
 
-            ends_at: '2026-09-20T15:00',
+            ends_at: new Date('2026-09-20T15:00').toISOString(),
 
             location: 'Fórum de Pelotas',
         })
@@ -588,5 +588,84 @@ describe('FolderEvents', () => {
         })
 
         expect(document.querySelector('.app-confirm-dialog')).not.toBeNull()
+    })
+
+    it('emite changed após criar compromisso com sucesso', async () => {
+        const { wrapper, folderEventsStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderEventsStore, 'createEvent').mockResolvedValue({
+            id: 3,
+            folder_id: 10,
+            type: 'hearing',
+            title: 'Nova audiência',
+            status: 'scheduled',
+        })
+
+        const button = findButton(wrapper, 'Novo compromisso')
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        await wrapper.get('select[name="type"]').setValue('hearing')
+
+        await wrapper.get('input[name="title"]').setValue('Nova audiência')
+
+        await wrapper.get('input[name="starts_at"]').setValue('2026-09-20T14:00')
+
+        await wrapper.get('form').trigger('submit')
+
+        await vi.waitFor(() => {
+            expect(wrapper.emitted('changed')).toHaveLength(1)
+        })
+    })
+
+    it('emite changed após concluir compromisso com sucesso', async () => {
+        const { wrapper, folderEventsStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderEventsStore, 'completeEvent').mockResolvedValue({
+            id: 1,
+            folder_id: 10,
+            title: 'Audiência de instrução',
+            status: 'completed',
+        })
+
+        const button = findButton(wrapper, 'Concluir')
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        await vi.waitFor(() => {
+            expect(wrapper.emitted('changed')).toHaveLength(1)
+        })
+    })
+
+    it('emite changed após excluir compromisso com sucesso', async () => {
+        const { wrapper, folderEventsStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderEventsStore, 'removeEvent').mockResolvedValue()
+
+        const button = findButtons(wrapper, 'Excluir')[0]
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        const confirmButton = findTeleportedButton('Excluir')
+
+        expect(confirmButton).toBeTruthy()
+
+        confirmButton.click()
+
+        await vi.waitFor(() => {
+            expect(wrapper.emitted('changed')).toHaveLength(1)
+        })
     })
 })

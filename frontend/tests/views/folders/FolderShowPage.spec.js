@@ -33,6 +33,38 @@ function defaultFolder() {
 
         process_number: '5001234-56.2026.8.21.0022',
 
+        summary: {
+            documents_count: 4,
+
+            pending_tasks_count: 2,
+
+            pending_deadlines_count: 3,
+
+            next_event: {
+                id: 51,
+
+                type: 'hearing',
+
+                title: 'Audiência de instrução',
+
+                starts_at: '2026-09-10T14:00:00.000000Z',
+
+                ends_at: '2026-09-10T15:30:00.000000Z',
+
+                location: '3ª Vara Cível de Pelotas',
+            },
+
+            latest_movement: {
+                id: 61,
+
+                occurred_at: '2026-09-08T13:00:00.000000Z',
+
+                title: 'Despacho publicado',
+
+                description: 'Juízo determinou manifestação da parte autora.',
+            },
+        },
+
         folder_clients: [
             {
                 id: 101,
@@ -430,5 +462,111 @@ describe('FolderShowPage', () => {
         expect(component.exists()).toBe(true)
 
         expect(component.props('folderId')).toBe(10)
+    })
+
+    it('renderiza resumo operacional da pasta', async () => {
+        const { wrapper } = await mountPage()
+
+        const text = wrapper.text()
+
+        expect(text).toContain('Visão operacional')
+
+        expect(text).toContain('Documentos')
+
+        expect(text).toContain('4')
+
+        expect(text).toContain('Tarefas pendentes')
+
+        expect(text).toContain('2')
+
+        expect(text).toContain('Prazos pendentes')
+
+        expect(text).toContain('3')
+    })
+
+    it('renderiza próximo compromisso no resumo operacional', async () => {
+        const { wrapper } = await mountPage()
+
+        const text = wrapper.text()
+
+        expect(text).toContain('Próximo compromisso')
+
+        expect(text).toContain('Audiência de instrução')
+
+        expect(text).toContain('3ª Vara Cível de Pelotas')
+    })
+
+    it('renderiza última movimentação no resumo operacional', async () => {
+        const { wrapper } = await mountPage()
+
+        const text = wrapper.text()
+
+        expect(text).toContain('Última movimentação')
+
+        expect(text).toContain('Despacho publicado')
+    })
+
+    it('renderiza estado vazio para destaques operacionais ausentes', async () => {
+        const folder = defaultFolder()
+
+        folder.summary.next_event = null
+
+        folder.summary.latest_movement = null
+
+        const { wrapper } = await mountPage({
+            folder,
+        })
+
+        const text = wrapper.text()
+
+        expect(text).toContain('Nenhum compromisso agendado.')
+
+        expect(text).toContain('Nenhuma movimentação registrada.')
+    })
+
+    it('renderiza resumo operacional com segurança quando summary estiver ausente', async () => {
+        const folder = defaultFolder()
+
+        delete folder.summary
+
+        const { wrapper } = await mountPage({
+            folder,
+        })
+
+        const text = wrapper.text()
+
+        expect(text).toContain('Visão operacional')
+
+        expect(text).toContain('Documentos')
+
+        expect(text).toContain('Tarefas pendentes')
+
+        expect(text).toContain('Prazos pendentes')
+
+        expect(text).toContain('Nenhum compromisso agendado.')
+
+        expect(text).toContain('Nenhuma movimentação registrada.')
+    })
+
+    it('recarrega a pasta quando a agenda é alterada', async () => {
+        const { wrapper, fetchFolderSpy } = await mountPage()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(1)
+
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+
+        const component = wrapper.findComponent({
+            name: 'FolderEvents',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        await component.vm.$emit('changed')
+
+        await flushPromises()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(2)
+
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
     })
 })
