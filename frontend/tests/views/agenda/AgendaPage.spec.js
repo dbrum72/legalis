@@ -969,4 +969,888 @@ describe('AgendaPage', () => {
 
         expect(wrapper.text()).toContain('Nenhum item encontrado neste período.')
     })
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filtro por tipo
+    |--------------------------------------------------------------------------
+    */
+
+    it('renderiza filtro de tipo como select e inicia em Todos', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        const label = wrapper.get('label[for="agenda-filter-type"]')
+
+        const select = wrapper.get('[data-testid="agenda-filter-type"]')
+
+        expect(label.text()).toContain('Tipo')
+
+        expect(select.element.tagName).toBe('SELECT')
+
+        expect(select.element.value).toBe('all')
+    })
+
+    it('filtra apenas prazos pelo select de tipo', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-type"]').setValue('deadline')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-201"]').exists()).toBe(
+            true,
+        )
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-101"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-301"]').exists()).toBe(false)
+    })
+
+    it('filtra apenas tarefas pelo select de tipo', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-type"]').setValue('task')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-101"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-201"]').exists()).toBe(
+            false,
+        )
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-301"]').exists()).toBe(false)
+    })
+
+    it('filtra apenas compromissos pelo select de tipo', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-type"]').setValue('event')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-301"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-101"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-201"]').exists()).toBe(
+            false,
+        )
+    })
+
+    it('aplica filtro de tipo tambem na visualizacao em lista', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-type"]').setValue('deadline')
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-list-item-deadline-201"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-list-item-task-101"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-list-item-event-301"]').exists()).toBe(false)
+    })
+
+    it('filtro de tipo nao realiza nova chamada a api', async () => {
+        const { wrapper, fetchAgendaSpy } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        fetchAgendaSpy.mockClear()
+
+        await wrapper.get('[data-testid="agenda-filter-type"]').setValue('task')
+
+        await flushPromises()
+
+        expect(fetchAgendaSpy).not.toHaveBeenCalled()
+    })
+
+    it('retorna para todos os tipos pelo select', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        const select = wrapper.get('[data-testid="agenda-filter-type"]')
+
+        await select.setValue('task')
+
+        await flushPromises()
+
+        await select.setValue('all')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-101"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-201"]').exists()).toBe(
+            true,
+        )
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-301"]').exists()).toBe(true)
+    })
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filtro por situação
+    |--------------------------------------------------------------------------
+    */
+
+    it('renderiza filtro de situacao como select e inicia em Todas', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        const label = wrapper.get('label[for="agenda-filter-status"]')
+
+        const select = wrapper.get('[data-testid="agenda-filter-status"]')
+
+        expect(label.text()).toContain('Situação')
+
+        expect(select.element.tagName).toBe('SELECT')
+
+        expect(select.element.value).toBe('all')
+    })
+
+    it('filtra itens pendentes e futuros pelo select de situacao', async () => {
+        const items = [
+            {
+                type: 'task',
+                id: 401,
+                title: 'Tarefa pendente futura',
+                starts_at: '2026-08-21T14:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 10,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'deadline',
+                id: 402,
+                title: 'Prazo vencido',
+                starts_at: '2026-08-19T14:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 11,
+                    name: 'Pasta B',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'event',
+                id: 403,
+                title: 'Compromisso futuro',
+                starts_at: '2026-08-22T14:00:00.000000Z',
+                status: 'scheduled',
+                completed_at: null,
+
+                folder: {
+                    id: 12,
+                    name: 'Pasta C',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'task',
+                id: 404,
+                title: 'Tarefa concluída',
+                starts_at: '2026-08-18T14:00:00.000000Z',
+                status: 'completed',
+                completed_at: '2026-08-18T15:00:00.000000Z',
+
+                folder: {
+                    id: 13,
+                    name: 'Pasta D',
+                    process_number: null,
+                },
+            },
+        ]
+
+        const { wrapper } = await mountPage({
+            items,
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-status"]').setValue('pending')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-401"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-403"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-402"]').exists()).toBe(
+            false,
+        )
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-404"]').exists()).toBe(false)
+    })
+
+    it('filtra itens concluidos pelo select de situacao', async () => {
+        const items = [
+            {
+                type: 'task',
+                id: 411,
+                title: 'Tarefa concluída',
+                starts_at: '2026-08-18T14:00:00.000000Z',
+                status: 'completed',
+                completed_at: '2026-08-18T15:00:00.000000Z',
+
+                folder: {
+                    id: 20,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'deadline',
+                id: 412,
+                title: 'Prazo concluído',
+                starts_at: '2026-08-19T14:00:00.000000Z',
+                status: 'completed',
+                completed_at: '2026-08-19T15:00:00.000000Z',
+
+                folder: {
+                    id: 21,
+                    name: 'Pasta B',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'event',
+                id: 413,
+                title: 'Compromisso pendente',
+                starts_at: '2026-08-22T14:00:00.000000Z',
+                status: 'scheduled',
+                completed_at: null,
+
+                folder: {
+                    id: 22,
+                    name: 'Pasta C',
+                    process_number: null,
+                },
+            },
+        ]
+
+        const { wrapper } = await mountPage({
+            items,
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-status"]').setValue('completed')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-411"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-412"]').exists()).toBe(
+            true,
+        )
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-413"]').exists()).toBe(false)
+    })
+
+    it('filtra tarefas e prazos vencidos pelo select de situacao', async () => {
+        const items = [
+            {
+                type: 'task',
+                id: 421,
+                title: 'Tarefa vencida',
+                starts_at: '2026-08-19T09:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 30,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'deadline',
+                id: 422,
+                title: 'Prazo vencido',
+                starts_at: '2026-08-19T10:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 31,
+                    name: 'Pasta B',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'task',
+                id: 423,
+                title: 'Tarefa futura',
+                starts_at: '2026-08-21T09:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 32,
+                    name: 'Pasta C',
+                    process_number: null,
+                },
+            },
+        ]
+
+        const { wrapper } = await mountPage({
+            items,
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-status"]').setValue('overdue')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-421"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-422"]').exists()).toBe(
+            true,
+        )
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-423"]').exists()).toBe(false)
+    })
+
+    it('considera compromisso agendado passado como vencido pelo select', async () => {
+        const items = [
+            {
+                type: 'event',
+                id: 431,
+                title: 'Compromisso passado',
+                starts_at: '2026-08-19T14:00:00.000000Z',
+                status: 'scheduled',
+                completed_at: null,
+
+                folder: {
+                    id: 40,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'event',
+                id: 432,
+                title: 'Compromisso futuro',
+                starts_at: '2026-08-21T14:00:00.000000Z',
+                status: 'scheduled',
+                completed_at: null,
+
+                folder: {
+                    id: 41,
+                    name: 'Pasta B',
+                    process_number: null,
+                },
+            },
+        ]
+
+        const { wrapper } = await mountPage({
+            items,
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-status"]').setValue('overdue')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-431"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-event-432"]').exists()).toBe(false)
+    })
+
+    it('combina selects de tipo e situacao', async () => {
+        const items = [
+            {
+                type: 'task',
+                id: 441,
+                title: 'Tarefa vencida',
+                starts_at: '2026-08-19T09:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 50,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'deadline',
+                id: 442,
+                title: 'Prazo vencido',
+                starts_at: '2026-08-19T10:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 51,
+                    name: 'Pasta B',
+                    process_number: null,
+                },
+            },
+        ]
+
+        const { wrapper } = await mountPage({
+            items,
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-filter-type"]').setValue('task')
+
+        await wrapper.get('[data-testid="agenda-filter-status"]').setValue('overdue')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-441"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-deadline-442"]').exists()).toBe(
+            false,
+        )
+    })
+
+    it('filtro de situacao nao realiza nova chamada a api', async () => {
+        const { wrapper, fetchAgendaSpy } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        fetchAgendaSpy.mockClear()
+
+        await wrapper.get('[data-testid="agenda-filter-status"]').setValue('pending')
+
+        await flushPromises()
+
+        expect(fetchAgendaSpy).not.toHaveBeenCalled()
+    })
+
+    it('retorna para todas as situacoes pelo select', async () => {
+        const items = [
+            {
+                type: 'task',
+                id: 451,
+                title: 'Tarefa vencida',
+                starts_at: '2026-08-19T09:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 60,
+                    name: 'Pasta A',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'task',
+                id: 452,
+                title: 'Tarefa concluída',
+                starts_at: '2026-08-18T09:00:00.000000Z',
+                status: 'completed',
+                completed_at: '2026-08-18T10:00:00.000000Z',
+
+                folder: {
+                    id: 61,
+                    name: 'Pasta B',
+                    process_number: null,
+                },
+            },
+
+            {
+                type: 'task',
+                id: 453,
+                title: 'Tarefa futura',
+                starts_at: '2026-08-21T09:00:00.000000Z',
+                status: 'pending',
+                completed_at: null,
+
+                folder: {
+                    id: 62,
+                    name: 'Pasta C',
+                    process_number: null,
+                },
+            },
+        ]
+
+        const { wrapper } = await mountPage({
+            items,
+        })
+
+        await flushPromises()
+
+        const select = wrapper.get('[data-testid="agenda-filter-status"]')
+
+        await select.setValue('overdue')
+
+        await flushPromises()
+
+        await select.setValue('all')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-451"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-452"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-calendar-item-task-453"]').exists()).toBe(true)
+    })
+
+    /*
+    |--------------------------------------------------------------------------
+    | Visualização semanal
+    |--------------------------------------------------------------------------
+    */
+
+    it('renderiza opcao de visualizacao semanal', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        const button = wrapper.get('[data-testid="agenda-view-week"]')
+
+        expect(button.text()).toContain('Semana')
+    })
+
+    it('alterna da visualizacao mensal para semanal', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-week"]').exists()).toBe(true)
+    })
+
+    it('renderiza sete dias na visualizacao semanal', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.findAll('[data-testid="agenda-week-day"]')).toHaveLength(7)
+    })
+
+    it('semana inicia na segunda-feira e termina no domingo', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        const days = wrapper.findAll('[data-testid="agenda-week-day"]')
+
+        expect(days).toHaveLength(7)
+
+        expect(days[0].attributes('data-date')).toBe('2026-08-17')
+
+        expect(days[6].attributes('data-date')).toBe('2026-08-23')
+    })
+
+    it('destaca hoje na visualizacao semanal', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        const today = wrapper.get('[data-testid="agenda-week-day"][data-date="2026-08-20"]')
+
+        expect(today.classes()).toContain('agenda-week__day--today')
+    })
+
+    it('renderiza itens no respectivo dia da semana', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        const august20 = wrapper.get('[data-testid="agenda-week-day"][data-date="2026-08-20"]')
+
+        const august21 = wrapper.get('[data-testid="agenda-week-day"][data-date="2026-08-21"]')
+
+        expect(august20.find('[data-testid="agenda-week-item-task-101"]').exists()).toBe(true)
+
+        expect(august20.find('[data-testid="agenda-week-item-deadline-201"]').exists()).toBe(true)
+
+        expect(august20.find('[data-testid="agenda-week-item-event-301"]').exists()).toBe(false)
+
+        expect(august21.find('[data-testid="agenda-week-item-event-301"]').exists()).toBe(true)
+    })
+
+    it('ordena itens cronologicamente dentro do dia da semana', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        const day = wrapper.get('[data-testid="agenda-week-day"][data-date="2026-08-20"]')
+
+        const items = day.findAll('[data-testid^="agenda-week-item-"]')
+
+        expect(items).toHaveLength(2)
+
+        expect(items[0].text()).toContain('Revisar documentos')
+
+        expect(items[1].text()).toContain('Protocolar manifestação')
+    })
+
+    it('navega para semana anterior e recarrega intervalo semanal', async () => {
+        const { wrapper, fetchAgendaSpy } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        fetchAgendaSpy.mockClear()
+
+        await wrapper.get('[data-testid="agenda-previous-month"]').trigger('click')
+
+        await flushPromises()
+
+        expect(fetchAgendaSpy).toHaveBeenCalledWith({
+            start: '2026-08-10',
+
+            end: '2026-08-16',
+        })
+    })
+
+    it('navega para proxima semana e recarrega intervalo semanal', async () => {
+        const { wrapper, fetchAgendaSpy } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        fetchAgendaSpy.mockClear()
+
+        await wrapper.get('[data-testid="agenda-next-month"]').trigger('click')
+
+        await flushPromises()
+
+        expect(fetchAgendaSpy).toHaveBeenCalledWith({
+            start: '2026-08-24',
+
+            end: '2026-08-30',
+        })
+    })
+
+    it('botao hoje retorna para semana atual', async () => {
+        const { wrapper, fetchAgendaSpy } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-previous-month"]').trigger('click')
+
+        await flushPromises()
+
+        fetchAgendaSpy.mockClear()
+
+        await wrapper.get('[data-testid="agenda-today"]').trigger('click')
+
+        await flushPromises()
+
+        expect(fetchAgendaSpy).toHaveBeenCalledWith({
+            start: '2026-08-17',
+
+            end: '2026-08-23',
+        })
+    })
+
+    it('aplica filtro de tipo na visualizacao semanal', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await wrapper.get('[data-testid="agenda-filter-type"]').setValue('deadline')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-week-item-deadline-201"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-week-item-task-101"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-week-item-event-301"]').exists()).toBe(false)
+    })
+
+    it('aplica filtro de situacao na visualizacao semanal', async () => {
+        const items = [
+            ...defaultItems(),
+
+            {
+                type: 'task',
+                id: 501,
+                title: 'Tarefa concluída',
+                starts_at: '2026-08-19T10:00:00.000000Z',
+                ends_at: null,
+                priority: null,
+                event_type: null,
+                location: null,
+                status: 'completed',
+                completed_at: '2026-08-19T11:00:00.000000Z',
+
+                folder: {
+                    id: 20,
+                    name: 'Pasta concluída',
+                    process_number: null,
+                },
+            },
+        ]
+
+        const { wrapper } = await mountPage({
+            items,
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await wrapper.get('[data-testid="agenda-filter-status"]').setValue('completed')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-week-item-task-501"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-week-item-task-101"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-week-item-deadline-201"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-week-item-event-301"]').exists()).toBe(false)
+    })
+
+    it('alternar para semana nao realiza nova chamada a api', async () => {
+        const { wrapper, fetchAgendaSpy } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        fetchAgendaSpy.mockClear()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        expect(fetchAgendaSpy).not.toHaveBeenCalled()
+    })
+
+    it('retorna da visualizacao semanal para mensal', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-week"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-week"]').exists()).toBe(true)
+
+        await wrapper.get('[data-testid="agenda-view-month"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-week"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-calendar"]').exists()).toBe(true)
+    })
 })

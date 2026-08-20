@@ -7,7 +7,7 @@
         -->
 
         <header class="agenda-page__header">
-            <div>
+            <div class="agenda-page__heading">
                 <h1 class="agenda-page__title">
                     Agenda
                 </h1>
@@ -15,22 +15,6 @@
                 <p class="agenda-page__description">
                     Acompanhe tarefas, prazos e compromissos em uma visão de calendário.
                 </p>
-            </div>
-
-            <div class="agenda-page__view-switcher" aria-label="Visualização da agenda">
-                <button type="button" class="agenda-page__view-button" :class="{
-                    'agenda-page__view-button--active':
-                        currentView === 'month',
-                }" data-testid="agenda-view-month" @click="setView('month')">
-                    Mês
-                </button>
-
-                <button type="button" class="agenda-page__view-button" :class="{
-                    'agenda-page__view-button--active':
-                        currentView === 'list',
-                }" data-testid="agenda-view-list" @click="setView('list')">
-                    Lista
-                </button>
             </div>
         </header>
 
@@ -46,38 +30,131 @@
 
         <!--
         |--------------------------------------------------------------------------
-        | Controles temporais
+        | Toolbar
         |--------------------------------------------------------------------------
         -->
 
-        <div class="agenda-period-toolbar">
-            <div class="agenda-calendar__navigation">
-                <button type="button" class="agenda-calendar__navigation-button" data-testid="agenda-previous-month"
-                    aria-label="Mês anterior" @click="goToPreviousMonth">
-                    ‹
-                </button>
+        <section class="agenda-toolbar" aria-label="Controles da agenda">
+            <!--
+            |--------------------------------------------------------------------------
+            | Navegação temporal
+            |--------------------------------------------------------------------------
+            -->
 
-                <button type="button" class="agenda-calendar__today-button" data-testid="agenda-today"
-                    @click="goToToday">
-                    Hoje
-                </button>
+            <div class="agenda-toolbar__period">
+                <div class="agenda-calendar__navigation">
+                    <button type="button" class="agenda-calendar__navigation-button" data-testid="agenda-previous-month"
+                        aria-label="Mês anterior" @click="goToPreviousMonth">
+                        ‹
+                    </button>
 
-                <button type="button" class="agenda-calendar__navigation-button" data-testid="agenda-next-month"
-                    aria-label="Próximo mês" @click="goToNextMonth">
-                    ›
-                </button>
-            </div>
+                    <button type="button" class="agenda-calendar__today-button" data-testid="agenda-today"
+                        @click="goToToday">
+                        Hoje
+                    </button>
 
-            <div class="agenda-calendar__period">
-                <span class="agenda-calendar__period-icon" aria-hidden="true">
-                    ◫
-                </span>
+                    <button type="button" class="agenda-calendar__navigation-button" data-testid="agenda-next-month"
+                        aria-label="Próximo mês" @click="goToNextMonth">
+                        ›
+                    </button>
+                </div>
 
                 <h2 id="agenda-calendar-title" class="agenda-calendar__title">
-                    {{ currentMonthLabel }}
+                    {{ currentPeriodLabel }}
                 </h2>
             </div>
-        </div>
+
+            <!--
+            |--------------------------------------------------------------------------
+            | Filtros
+            |--------------------------------------------------------------------------
+            -->
+
+            <div class="agenda-toolbar__filters">
+                <div class="agenda-select-field">
+                    <label for="agenda-filter-type" class="agenda-select-field__label">
+                        Tipo
+                    </label>
+
+                    <div class="agenda-select-field__control">
+                        <select id="agenda-filter-type" v-model="currentFilter" class="agenda-select-field__select"
+                            data-testid="agenda-filter-type">
+                            <option value="all">
+                                Todos os tipos
+                            </option>
+
+                            <option value="deadline">
+                                Prazos
+                            </option>
+
+                            <option value="task">
+                                Tarefas
+                            </option>
+
+                            <option value="event">
+                                Compromissos
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="agenda-select-field">
+                    <label for="agenda-filter-status" class="agenda-select-field__label">
+                        Situação
+                    </label>
+
+                    <div class="agenda-select-field__control">
+                        <select id="agenda-filter-status" v-model="currentStatusFilter"
+                            class="agenda-select-field__select" data-testid="agenda-filter-status">
+                            <option value="all">
+                                Todas as situações
+                            </option>
+
+                            <option value="pending">
+                                Pendentes
+                            </option>
+
+                            <option value="completed">
+                                Concluídos
+                            </option>
+
+                            <option value="overdue">
+                                Vencidos
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!--
+            |--------------------------------------------------------------------------
+            | Visualização
+            |--------------------------------------------------------------------------
+            -->
+
+            <div class="agenda-page__view-switcher" aria-label="Visualização da agenda">
+                <button type="button" class="agenda-page__view-button" :class="{
+                    'agenda-page__view-button--active':
+                        currentView === 'month',
+                }" data-testid="agenda-view-month" @click="setView('month')">
+                    Mês
+                </button>
+
+                <button type="button" class="agenda-page__view-button" :class="{
+                    'agenda-page__view-button--active':
+                        currentView === 'week',
+                }" data-testid="agenda-view-week" @click="setView('week')">
+                    Semana
+                </button>
+
+                <button type="button" class="agenda-page__view-button" :class="{
+                    'agenda-page__view-button--active':
+                        currentView === 'list',
+                }" data-testid="agenda-view-list" @click="setView('list')">
+                    Lista
+                </button>
+            </div>
+        </section>
 
         <!--
         |--------------------------------------------------------------------------
@@ -184,10 +261,6 @@
                     </h2>
 
                     <div class="agenda-selected-day__summary">
-                        <span class="agenda-selected-day__summary-icon" aria-hidden="true">
-                            ◫
-                        </span>
-
                         <span>
                             {{ selectedDayItems.length }}
                             {{ selectedDayItems.length === 1 ? 'item' : 'itens' }}
@@ -196,9 +269,7 @@
                 </header>
 
                 <div v-if="selectedDayItems.length === 0" class="agenda-selected-day__empty">
-                    <span class="agenda-selected-day__empty-icon" aria-hidden="true">
-                        ◫
-                    </span>
+                    <div class="agenda-selected-day__empty-mark" aria-hidden="true"></div>
 
                     <strong>
                         Nenhum compromisso neste dia
@@ -360,16 +431,80 @@
         </div>
 
         <!--
+|--------------------------------------------------------------------------
+| Visualização semanal
+|--------------------------------------------------------------------------
+-->
+
+        <section v-else-if="currentView === 'week'" class="agenda-week" data-testid="agenda-week"
+            aria-labelledby="agenda-calendar-title">
+            <div class="agenda-week__viewport">
+                <div class="agenda-week__grid">
+                    <article v-for="day in weekDays" :key="day.date" class="agenda-week__day" :class="{
+                        'agenda-week__day--today':
+                            day.isToday,
+                    }" data-testid="agenda-week-day" :data-date="day.date">
+                        <header class="agenda-week__day-header">
+                            <span class="agenda-week__weekday">
+                                {{ day.weekday }}
+                            </span>
+
+                            <span class="agenda-week__day-number">
+                                {{ day.day }}
+                            </span>
+
+                            <span v-if="itemsForDate(day.date).length > 0" class="agenda-week__count">
+                                {{ itemsForDate(day.date).length }}
+                            </span>
+                        </header>
+
+                        <div v-if="itemsForDate(day.date).length > 0" class="agenda-week__items">
+                            <article v-for="item in itemsForDate(day.date)" :key="`${item.type}-${item.id}`"
+                                class="agenda-week-item" :class="`agenda-week-item--${item.type}`"
+                                :data-testid="`agenda-week-item-${item.type}-${item.id}`">
+                                <div class="agenda-week-item__meta">
+                                    <span class="agenda-week-item__dot"></span>
+
+                                    <span class="agenda-week-item__type">
+                                        {{ itemTypeLabel(item.type) }}
+                                    </span>
+                                </div>
+
+                                <span v-if="formatItemTime(item)" class="agenda-week-item__time">
+                                    {{ formatItemTime(item) }}
+                                </span>
+
+                                <strong class="agenda-week-item__title">
+                                    {{ item.title }}
+                                </strong>
+
+                                <span v-if="item.folder" class="agenda-week-item__folder">
+                                    {{ item.folder.name }}
+                                </span>
+
+                                <span v-if="item.type === 'event' && item.location" class="agenda-week-item__location">
+                                    {{ item.location }}
+                                </span>
+                            </article>
+                        </div>
+
+                        <div v-else class="agenda-week__empty">
+                            Nenhum item
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!--
         |--------------------------------------------------------------------------
         | Visualização em lista
         |--------------------------------------------------------------------------
         -->
 
-        <section v-else class="agenda-list" data-testid="agenda-list" aria-label="Agenda em lista">
+        <section v-else-if="currentView === 'list'" data-testid="agenda-list" aria-label="Agenda em lista">
             <div v-if="agendaListGroups.length === 0" class="agenda-list__empty">
-                <span class="agenda-list__empty-icon" aria-hidden="true">
-                    ◫
-                </span>
+                <div class="agenda-list__empty-mark" aria-hidden="true"></div>
 
                 <strong>
                     Nenhum item encontrado
@@ -536,12 +671,29 @@ const todayReference = {
 const currentView =
     ref('month')
 
+const currentFilter =
+    ref('all')
+
+const currentStatusFilter =
+    ref('all')
+
 const currentMonth =
     ref(
         new Date(
             todayReference.year,
             todayReference.month,
             1,
+        ),
+    )
+
+const currentWeekStart =
+    ref(
+        startOfWeek(
+            new Date(
+                todayReference.year,
+                todayReference.month,
+                todayReference.day,
+            ),
         ),
     )
 
@@ -586,13 +738,128 @@ function setView(
 ) {
     if (
         view !== 'month'
+        && view !== 'week'
         && view !== 'list'
     ) {
         return
     }
 
+    if (
+        view === 'week'
+        && currentView.value !== 'week'
+    ) {
+        const referenceDate =
+            parseDateKey(
+                selectedDate.value,
+            )
+            ?? new Date(
+                todayReference.year,
+                todayReference.month,
+                todayReference.day,
+            )
+
+        currentWeekStart.value =
+            startOfWeek(
+                referenceDate,
+            )
+    }
+
     currentView.value =
         view
+}
+
+/*
+|--------------------------------------------------------------------------
+| Filtros
+|--------------------------------------------------------------------------
+*/
+
+const filteredItems =
+    computed(() =>
+        agendaStore.items.filter(
+            (item) => {
+                const matchesType =
+                    currentFilter.value === 'all'
+                    || item.type === currentFilter.value
+
+                const matchesStatus =
+                    matchesStatusFilter(
+                        item,
+                    )
+
+                return (
+                    matchesType
+                    && matchesStatus
+                )
+            },
+        ),
+    )
+
+function matchesStatusFilter(
+    item,
+) {
+    if (
+        currentStatusFilter.value === 'all'
+    ) {
+        return true
+    }
+
+    if (
+        currentStatusFilter.value === 'completed'
+    ) {
+        return item.status === 'completed'
+    }
+
+    return (
+        itemTemporalStatus(
+            item,
+        ) ===
+        currentStatusFilter.value
+    )
+}
+
+function itemTemporalStatus(
+    item,
+) {
+    if (
+        item.status === 'completed'
+    ) {
+        return 'completed'
+    }
+
+    const isPending =
+        (
+            item.type === 'event'
+            && item.status === 'scheduled'
+        )
+        || (
+            item.type !== 'event'
+            && item.status === 'pending'
+        )
+
+    if (!isPending) {
+        return null
+    }
+
+    const timestamp =
+        Date.parse(
+            item?.starts_at ?? '',
+        )
+
+    if (
+        Number.isNaN(
+            timestamp,
+        )
+    ) {
+        return null
+    }
+
+    return (
+        timestamp <
+        today.getTime()
+    )
+        ? 'overdue'
+        : 'pending'
 }
 
 /*
@@ -612,6 +879,45 @@ const currentMonthLabel =
             currentMonth.value.getFullYear()
 
         return `${month} de ${year}`
+    })
+
+/*
+|--------------------------------------------------------------------------
+| Semana
+|--------------------------------------------------------------------------
+*/
+
+const currentPeriodLabel =
+    computed(() => {
+        if (
+            currentView.value !== 'week'
+        ) {
+            return currentMonthLabel.value
+        }
+
+        const start =
+            currentWeekStart.value
+
+        const end =
+            addDays(
+                start,
+                6,
+            )
+
+        const startDay =
+            start.getDate()
+
+        const endDay =
+            end.getDate()
+
+        if (
+            start.getMonth() === end.getMonth()
+            && start.getFullYear() === end.getFullYear()
+        ) {
+            return `${startDay}–${endDay} de ${monthNames[end.getMonth()]} de ${end.getFullYear()}`
+        }
+
+        return `${startDay} de ${monthNames[start.getMonth()]} – ${endDay} de ${monthNames[end.getMonth()]} de ${end.getFullYear()}`
     })
 
 /*
@@ -692,9 +998,60 @@ const calendarDays =
         )
     })
 
+    /*
+|--------------------------------------------------------------------------
+| Grade semanal
+|--------------------------------------------------------------------------
+*/
+
+const weekDays =
+    computed(() => {
+        return Array.from(
+            {
+                length: 7,
+            },
+
+            (
+                _,
+                index,
+            ) => {
+                const date =
+                    addDays(
+                        currentWeekStart.value,
+                        index,
+                    )
+
+                return {
+                    date:
+                        formatDate(
+                            date,
+                        ),
+
+                    day:
+                        date.getDate(),
+
+                    weekday:
+                        weekdays[
+                            index
+                        ],
+
+                    isToday:
+                        isSameDate(
+                            date,
+
+                            new Date(
+                                todayReference.year,
+                                todayReference.month,
+                                todayReference.day,
+                            ),
+                        ),
+                }
+            },
+        )
+    })
 /*
 |--------------------------------------------------------------------------
-| Itens agrupados por data
+| Agrupamento
 |--------------------------------------------------------------------------
 */
 
@@ -704,7 +1061,7 @@ const itemsByDate =
 
         for (
             const item of
-            agendaStore.items
+            filteredItems.value
         ) {
             const date =
                 itemDate(
@@ -743,8 +1100,8 @@ const itemsByDate =
 */
 
 const agendaListGroups =
-    computed(() => {
-        return Object
+    computed(() =>
+        Object
             .keys(
                 itemsByDate.value,
             )
@@ -758,8 +1115,8 @@ const agendaListGroups =
                         date
                         ],
                 }),
-            )
-    })
+            ),
+    )
 
 /*
 |--------------------------------------------------------------------------
@@ -802,7 +1159,7 @@ onMounted(
 
 /*
 |--------------------------------------------------------------------------
-| Agenda
+| Carregamento
 |--------------------------------------------------------------------------
 */
 
@@ -846,11 +1203,52 @@ async function loadCurrentMonth() {
 
 /*
 |--------------------------------------------------------------------------
-| Navegação mensal
+| Navegação temporal
 |--------------------------------------------------------------------------
 */
 
+async function loadCurrentWeek() {
+    errorMessage.value = ''
+
+    const start =
+        formatDate(
+            currentWeekStart.value,
+        )
+
+    const end =
+        formatDate(
+            addDays(
+                currentWeekStart.value,
+                6,
+            ),
+        )
+
+    try {
+        await agendaStore.fetchAgenda({
+            start,
+            end,
+        })
+    } catch {
+        errorMessage.value =
+            'Não foi possível carregar a agenda. Tente novamente.'
+    }
+}
+
 async function goToPreviousMonth() {
+    if (
+        currentView.value === 'week'
+    ) {
+        currentWeekStart.value =
+            addDays(
+                currentWeekStart.value,
+                -7,
+            )
+
+        await loadCurrentWeek()
+
+        return
+    }
+
     currentMonth.value =
         new Date(
             currentMonth.value.getFullYear(),
@@ -864,6 +1262,20 @@ async function goToPreviousMonth() {
 }
 
 async function goToNextMonth() {
+    if (
+        currentView.value === 'week'
+    ) {
+        currentWeekStart.value =
+            addDays(
+                currentWeekStart.value,
+                7,
+            )
+
+        await loadCurrentWeek()
+
+        return
+    }
+
     currentMonth.value =
         new Date(
             currentMonth.value.getFullYear(),
@@ -877,13 +1289,6 @@ async function goToNextMonth() {
 }
 
 async function goToToday() {
-    currentMonth.value =
-        new Date(
-            todayReference.year,
-            todayReference.month,
-            1,
-        )
-
     selectedDate.value =
         formatDate(
             new Date(
@@ -891,6 +1296,30 @@ async function goToToday() {
                 todayReference.month,
                 todayReference.day,
             ),
+        )
+
+    if (
+        currentView.value === 'week'
+    ) {
+        currentWeekStart.value =
+            startOfWeek(
+                new Date(
+                    todayReference.year,
+                    todayReference.month,
+                    todayReference.day,
+                ),
+            )
+
+        await loadCurrentWeek()
+
+        return
+    }
+
+    currentMonth.value =
+        new Date(
+            todayReference.year,
+            todayReference.month,
+            1,
         )
 
     await loadCurrentMonth()
@@ -922,7 +1351,7 @@ function selectDay(
 
 /*
 |--------------------------------------------------------------------------
-| Itens visíveis no calendário
+| Itens do calendário
 |--------------------------------------------------------------------------
 */
 
@@ -987,16 +1416,10 @@ function canCompleteItem(
     if (
         item.type === 'event'
     ) {
-        return (
-            item.status ===
-            'scheduled'
-        )
+        return item.status === 'scheduled'
     }
 
-    return (
-        item.status ===
-        'pending'
-    )
+    return item.status === 'pending'
 }
 
 async function completeTask(
@@ -1173,10 +1596,7 @@ function compareAgendaItems(
         return -1
     }
 
-    return (
-        firstDate
-        - secondDate
-    )
+    return firstDate - secondDate
 }
 
 function itemTypeLabel(
@@ -1193,10 +1613,7 @@ function itemTypeLabel(
             'Compromisso',
     }
 
-    return (
-        labels[type]
-        ?? 'Item'
-    )
+    return labels[type] ?? 'Item'
 }
 
 function priorityLabel(
@@ -1213,10 +1630,7 @@ function priorityLabel(
             'Alta',
     }
 
-    return (
-        labels[priority]
-        ?? priority
-    )
+    return labels[priority] ?? priority
 }
 
 /*
@@ -1224,6 +1638,41 @@ function priorityLabel(
 | Datas
 |--------------------------------------------------------------------------
 */
+
+function startOfWeek(
+    date,
+) {
+    const result =
+        new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+        )
+
+    const offset =
+        (
+            result.getDay()
+            + 6
+        ) % 7
+
+    result.setDate(
+        result.getDate()
+        - offset,
+    )
+
+    return result
+}
+
+function addDays(
+    date,
+    days,
+) {
+    return new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate() + days,
+    )
+}
 
 function formatDate(
     date,
@@ -1375,12 +1824,9 @@ function isSameDate(
     second,
 ) {
     return (
-        first.getFullYear() ===
-        second.getFullYear()
-        && first.getMonth() ===
-        second.getMonth()
-        && first.getDate() ===
-        second.getDate()
+        first.getFullYear() === second.getFullYear()
+        && first.getMonth() === second.getMonth()
+        && first.getDate() === second.getDate()
     )
 }
 </script>
@@ -1408,9 +1854,6 @@ function isSameDate(
     --agenda-primary-soft:
         #edf2e4;
 
-    --agenda-primary-soft-strong:
-        #e4ecd8;
-
     --agenda-event:
         #e78529;
 
@@ -1431,7 +1874,9 @@ function isSameDate(
 
     display: flex;
     flex-direction: column;
-    gap: var(--space-5, 1.25rem);
+    gap: 1.15rem;
+
+    min-width: 0;
 
     color:
         var(--agenda-text);
@@ -1447,36 +1892,271 @@ function isSameDate(
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: var(--space-4, 1rem);
 }
 
 .agenda-page__title {
     margin: 0;
 
-    color:
-        var(--agenda-text);
-
     font-size:
-        clamp(1.55rem, 2.2vw, 2rem);
+        clamp(1.5rem, 2vw, 1.9rem);
 
     font-weight: 750;
     letter-spacing: -0.03em;
 }
 
 .agenda-page__description {
-    margin:
-        var(--space-1, 0.25rem) 0 0;
+    margin: 0.25rem 0 0;
 
     color:
         var(--agenda-muted);
 
     font-size:
-        0.92rem;
+        0.9rem;
 }
 
 /*
 |--------------------------------------------------------------------------
-| Seletor de visualização
+| Alerta
+|--------------------------------------------------------------------------
+*/
+
+.agenda-page__alert {
+    padding: 0.75rem 1rem;
+
+    border:
+        1px solid var(--danger, #c9544d);
+
+    border-radius:
+        0.65rem;
+
+    color:
+        var(--danger, #a9433d);
+
+    background:
+        #fff5f2;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Toolbar
+|--------------------------------------------------------------------------
+*/
+
+.agenda-toolbar {
+    display: grid;
+
+    grid-template-columns:
+        minmax(max-content, 1fr) auto auto;
+
+    align-items: end;
+
+    gap: 1rem;
+}
+
+.agenda-toolbar__period {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    min-width: 0;
+}
+
+.agenda-calendar__navigation {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    flex: 0 0 auto;
+}
+
+.agenda-calendar__navigation-button,
+.agenda-calendar__today-button {
+    height: 2.5rem;
+
+    border:
+        1px solid var(--agenda-border);
+
+    border-radius:
+        0.6rem;
+
+    color:
+        var(--agenda-text);
+
+    background:
+        var(--agenda-surface);
+
+    font: inherit;
+
+    cursor:
+        pointer;
+}
+
+.agenda-calendar__navigation-button {
+    width: 2.5rem;
+
+    padding: 0;
+
+    font-size:
+        1.15rem;
+}
+
+.agenda-calendar__today-button {
+    padding: 0 0.85rem;
+
+    font-size:
+        0.8rem;
+
+    font-weight:
+        680;
+}
+
+.agenda-calendar__navigation-button:hover,
+.agenda-calendar__today-button:hover {
+    background:
+        var(--agenda-primary-soft);
+}
+
+.agenda-calendar__title {
+    min-width: 0;
+
+    margin: 0;
+
+    font-size:
+        1.08rem;
+
+    font-weight:
+        730;
+
+    white-space:
+        nowrap;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Selects
+|--------------------------------------------------------------------------
+*/
+
+.agenda-toolbar__filters {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2,
+            minmax(10rem, 12.5rem));
+
+    gap: 0.65rem;
+}
+
+.agenda-select-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    min-width: 0;
+}
+
+.agenda-select-field__label {
+    color:
+        var(--agenda-muted);
+
+    font-size:
+        0.68rem;
+
+    font-weight:
+        700;
+}
+
+.agenda-select-field__control {
+    position: relative;
+
+    min-width: 0;
+}
+
+.agenda-select-field__control::after {
+    content: '';
+
+    position: absolute;
+
+    top: 50%;
+    right: 0.85rem;
+
+    width: 0.45rem;
+    height: 0.45rem;
+
+    border-right:
+        1.5px solid var(--agenda-muted);
+
+    border-bottom:
+        1.5px solid var(--agenda-muted);
+
+    transform:
+        translateY(-70%) rotate(45deg);
+
+    pointer-events:
+        none;
+}
+
+.agenda-select-field__select {
+    width: 100%;
+    height: 2.5rem;
+
+    padding:
+        0 2.2rem 0 0.8rem;
+
+    border:
+        1px solid var(--agenda-border);
+
+    border-radius:
+        0.6rem;
+
+    outline: none;
+
+    color:
+        var(--agenda-text);
+
+    background:
+        var(--agenda-surface);
+
+    font: inherit;
+
+    font-size:
+        0.78rem;
+
+    font-weight:
+        600;
+
+    appearance:
+        none;
+
+    cursor:
+        pointer;
+
+    transition:
+        border-color 140ms ease,
+        box-shadow 140ms ease,
+        background 140ms ease;
+}
+
+.agenda-select-field__select:hover {
+    border-color:
+        color-mix(in srgb,
+            var(--agenda-primary) 30%,
+            var(--agenda-border));
+}
+
+.agenda-select-field__select:focus {
+    border-color:
+        var(--agenda-primary);
+
+    box-shadow:
+        0 0 0 3px color-mix(in srgb,
+            var(--agenda-primary) 14%,
+            transparent);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mês / Semana Lista
 |--------------------------------------------------------------------------
 */
 
@@ -1484,13 +2164,15 @@ function isSameDate(
     display: inline-flex;
     align-items: center;
 
-    padding: 0.2rem;
+    height: 2.5rem;
+
+    padding: 0.18rem;
 
     border:
         1px solid var(--agenda-border);
 
     border-radius:
-        var(--radius-md, 0.65rem);
+        0.65rem;
 
     background:
         var(--agenda-surface-soft);
@@ -1498,15 +2180,14 @@ function isSameDate(
 
 .agenda-page__view-button {
     min-width: 4.4rem;
-    height: 2.2rem;
+    height: 2.05rem;
 
-    padding:
-        0 0.8rem;
+    padding: 0 0.75rem;
 
     border: 0;
 
     border-radius:
-        calc(var(--radius-md, 0.65rem) - 0.15rem);
+        0.48rem;
 
     color:
         var(--agenda-muted);
@@ -1515,10 +2196,15 @@ function isSameDate(
         transparent;
 
     font: inherit;
-    font-size: 0.78rem;
-    font-weight: 700;
 
-    cursor: pointer;
+    font-size:
+        0.76rem;
+
+    font-weight:
+        700;
+
+    cursor:
+        pointer;
 }
 
 .agenda-page__view-button--active {
@@ -1534,117 +2220,281 @@ function isSameDate(
 
 /*
 |--------------------------------------------------------------------------
-| Alerta
+| Semana
 |--------------------------------------------------------------------------
 */
 
-.agenda-page__alert {
-    padding:
-        var(--space-3, 0.75rem) var(--space-4, 1rem);
-
-    border:
-        1px solid var(--danger, #c9544d);
-
-    border-radius:
-        var(--radius-md, 0.625rem);
-
-    color:
-        var(--danger, #a9433d);
-
-    background:
-        #fff5f2;
+.agenda-week {
+    min-width: 0;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Navegação temporal
-|--------------------------------------------------------------------------
-*/
-
-.agenda-period-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-}
-
-.agenda-calendar__navigation {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.agenda-calendar__navigation-button,
-.agenda-calendar__today-button {
-    height: 2.55rem;
+.agenda-week__viewport {
+    overflow: hidden;
 
     border:
         1px solid var(--agenda-border);
 
+    border-radius:
+        0.85rem;
+
     background:
         var(--agenda-surface);
-
-    color:
-        var(--agenda-text);
-
-    font: inherit;
-    cursor: pointer;
 }
 
-.agenda-calendar__navigation-button {
-    width: 2.55rem;
-    padding: 0;
+.agenda-week__grid {
+    display: grid;
 
-    border-radius:
-        var(--radius-md, 0.625rem);
-
-    font-size:
-        1.2rem;
+    grid-template-columns:
+        repeat(7,
+            minmax(0, 1fr));
 }
 
-.agenda-calendar__today-button {
-    padding:
-        0 0.9rem;
+.agenda-week__day {
+    min-width: 0;
+    min-height: 26rem;
 
-    border-radius:
-        var(--radius-md, 0.625rem);
+    border-right:
+        1px solid var(--agenda-border);
 
-    font-size:
-        0.84rem;
-
-    font-weight:
-        650;
+    background:
+        var(--agenda-surface);
 }
 
-.agenda-calendar__navigation-button:hover,
-.agenda-calendar__today-button:hover {
+.agenda-week__day:last-child {
+    border-right: 0;
+}
+
+.agenda-week__day--today {
     background:
         var(--agenda-primary-soft);
 }
 
-.agenda-calendar__period {
+.agenda-week__day-header {
+    position: relative;
+
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.65rem;
+
+    gap: 0.2rem;
+
+    padding:
+        0.75rem 0.45rem;
+
+    border-bottom:
+        1px solid var(--agenda-border);
 }
 
-.agenda-calendar__period-icon {
+.agenda-week__weekday {
     color:
         var(--agenda-muted);
-}
-
-.agenda-calendar__title {
-    margin: 0;
 
     font-size:
-        1.15rem;
+        0.65rem;
 
     font-weight:
-        720;
+        750;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        0.05em;
+}
+
+.agenda-week__day-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 2rem;
+    height: 2rem;
+
+    border-radius:
+        999px;
+
+    font-size:
+        0.9rem;
+
+    font-weight:
+        750;
+}
+
+.agenda-week__day--today .agenda-week__day-number {
+    color:
+        #fff;
+
+    background:
+        var(--agenda-primary);
+}
+
+.agenda-week__count {
+    position: absolute;
+
+    top: 0.65rem;
+    right: 0.5rem;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 1.3rem;
+    height: 1.3rem;
+
+    padding:
+        0 0.25rem;
+
+    border-radius:
+        999px;
+
+    color:
+        var(--agenda-primary);
+
+    background:
+        var(--agenda-primary-soft);
+
+    font-size:
+        0.62rem;
+
+    font-weight:
+        750;
+}
+
+.agenda-week__items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+
+    padding:
+        0.65rem;
+}
+
+.agenda-week-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    min-width: 0;
+
+    padding:
+        0.65rem;
+
+    border:
+        1px solid var(--agenda-border);
+
+    border-left-width:
+        3px;
+
+    border-radius:
+        0.55rem;
+
+    background:
+        #fff;
+}
+
+.agenda-week-item--event {
+    border-left-color:
+        var(--agenda-event);
+}
+
+.agenda-week-item--task {
+    border-left-color:
+        var(--agenda-task);
+}
+
+.agenda-week-item--deadline {
+    border-left-color:
+        var(--agenda-deadline);
+}
+
+.agenda-week-item__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.agenda-week-item__dot {
+    width: 0.4rem;
+    height: 0.4rem;
+
+    border-radius:
+        999px;
+}
+
+.agenda-week-item--event .agenda-week-item__dot {
+    background:
+        var(--agenda-event);
+}
+
+.agenda-week-item--task .agenda-week-item__dot {
+    background:
+        var(--agenda-task);
+}
+
+.agenda-week-item--deadline .agenda-week-item__dot {
+    background:
+        var(--agenda-deadline);
+}
+
+.agenda-week-item__type {
+    color:
+        var(--agenda-muted);
+
+    font-size:
+        0.58rem;
+
+    font-weight:
+        800;
+
+    text-transform:
+        uppercase;
+}
+
+.agenda-week-item__time {
+    font-size:
+        0.68rem;
+
+    font-weight:
+        750;
+}
+
+.agenda-week-item__title {
+    font-size:
+        0.76rem;
+
+    line-height:
+        1.35;
+}
+
+.agenda-week-item__folder,
+.agenda-week-item__location {
+    color:
+        var(--agenda-muted);
+
+    font-size:
+        0.64rem;
+
+    line-height:
+        1.35;
+}
+
+.agenda-week__empty {
+    padding:
+        1.2rem 0.5rem;
+
+    color:
+        var(--agenda-muted);
+
+    font-size:
+        0.65rem;
+
+    text-align:
+        center;
 }
 
 /*
 |--------------------------------------------------------------------------
-| Workspace mensal
+| Workspace
 |--------------------------------------------------------------------------
 */
 
@@ -1652,14 +2502,20 @@ function isSameDate(
     display: grid;
 
     grid-template-columns:
-        minmax(0, 1fr) minmax(19rem, 23rem);
+        minmax(0, 1fr) minmax(18rem, 21rem);
 
-    align-items:
-        start;
+    align-items: start;
 
-    gap:
-        var(--space-5, 1.25rem);
+    gap: 1rem;
+
+    min-width: 0;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Calendário
+|--------------------------------------------------------------------------
+*/
 
 .agenda-calendar {
     min-width: 0;
@@ -1672,7 +2528,7 @@ function isSameDate(
         1px solid var(--agenda-border);
 
     border-radius:
-        var(--radius-lg, 0.9rem);
+        0.85rem;
 
     background:
         var(--agenda-surface);
@@ -1691,13 +2547,13 @@ function isSameDate(
 
 .agenda-calendar__weekday {
     padding:
-        0.85rem 0.5rem;
+        0.72rem 0.45rem;
 
     color:
         var(--agenda-muted);
 
     font-size:
-        0.72rem;
+        0.67rem;
 
     font-weight:
         750;
@@ -1727,9 +2583,9 @@ function isSameDate(
     flex-direction: column;
 
     min-width: 0;
-    min-height: 8.25rem;
+    min-height: 7.5rem;
 
-    padding: 0.65rem;
+    padding: 0.55rem;
 
     overflow: hidden;
 
@@ -1741,11 +2597,11 @@ function isSameDate(
     border-bottom:
         1px solid var(--agenda-border);
 
-    background:
-        var(--agenda-surface);
-
     color:
         var(--agenda-text);
+
+    background:
+        var(--agenda-surface);
 
     font: inherit;
 
@@ -1792,8 +2648,7 @@ function isSameDate(
     align-items: center;
     justify-content: space-between;
 
-    min-height:
-        1.9rem;
+    min-height: 1.8rem;
 }
 
 .agenda-calendar__day-number {
@@ -1801,24 +2656,22 @@ function isSameDate(
     align-items: center;
     justify-content: center;
 
-    min-width:
-        1.85rem;
-
-    height:
-        1.85rem;
+    min-width: 1.7rem;
+    height: 1.7rem;
 
     border-radius:
         999px;
 
     font-size:
-        0.84rem;
+        0.8rem;
 
     font-weight:
         650;
 }
 
 .agenda-calendar__day--today .agenda-calendar__day-number {
-    color: #fff;
+    color:
+        #fff;
 
     background:
         var(--agenda-primary);
@@ -1829,22 +2682,22 @@ function isSameDate(
     align-items: center;
     justify-content: center;
 
-    min-width: 1.35rem;
-    height: 1.35rem;
+    min-width: 1.25rem;
+    height: 1.25rem;
 
-    padding:
-        0 0.3rem;
+    padding: 0 0.28rem;
 
     border-radius:
         999px;
 
-    color: #fff;
+    color:
+        #fff;
 
     background:
         var(--agenda-primary);
 
     font-size:
-        0.65rem;
+        0.6rem;
 
     font-weight:
         750;
@@ -1852,34 +2705,34 @@ function isSameDate(
 
 /*
 |--------------------------------------------------------------------------
-| Itens do calendário
+| Itens no calendário
 |--------------------------------------------------------------------------
 */
 
 .agenda-calendar__items {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
 
     margin-top:
-        0.45rem;
+        0.38rem;
 }
 
 .agenda-calendar__item {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.27rem;
 
     min-width: 0;
 
     padding:
-        0.3rem 0.4rem;
+        0.28rem 0.36rem;
 
     border-radius:
-        0.38rem;
+        0.35rem;
 
     font-size:
-        0.67rem;
+        0.63rem;
 }
 
 .agenda-calendar__item--event {
@@ -1900,8 +2753,8 @@ function isSameDate(
 .agenda-calendar__item-dot {
     flex: 0 0 auto;
 
-    width: 0.38rem;
-    height: 0.38rem;
+    width: 0.36rem;
+    height: 0.36rem;
 
     border-radius:
         999px;
@@ -1943,7 +2796,9 @@ function isSameDate(
 
 .agenda-calendar__item-time {
     flex: 0 0 auto;
-    font-weight: 750;
+
+    font-weight:
+        750;
 }
 
 .agenda-calendar__item-title {
@@ -1960,42 +2815,49 @@ function isSameDate(
 
 .agenda-calendar__more {
     padding-left:
-        0.72rem;
+        0.6rem;
 
     color:
         var(--agenda-primary);
 
     font-size:
-        0.67rem;
+        0.62rem;
 
     font-weight:
         700;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Legenda
+|--------------------------------------------------------------------------
+*/
+
 .agenda-calendar__legend {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 1.2rem;
+    gap: 1rem;
 
     margin-top:
-        0.8rem;
+        0.7rem;
 
     color:
         var(--agenda-muted);
 
     font-size:
-        0.74rem;
+        0.7rem;
 }
 
 .agenda-calendar__legend-item {
     display: inline-flex;
     align-items: center;
-    gap: 0.38rem;
+    gap: 0.35rem;
 }
 
 .agenda-calendar__legend-dot {
-    width: 0.45rem;
-    height: 0.45rem;
+    width: 0.42rem;
+    height: 0.42rem;
 
     border-radius:
         999px;
@@ -2018,12 +2880,13 @@ function isSameDate(
 
 /*
 |--------------------------------------------------------------------------
-| Painel do dia
+| Painel lateral
 |--------------------------------------------------------------------------
 */
 
 .agenda-selected-day {
     position: sticky;
+
     top: 1rem;
 
     overflow: hidden;
@@ -2032,14 +2895,14 @@ function isSameDate(
         1px solid var(--agenda-border);
 
     border-radius:
-        var(--radius-lg, 0.9rem);
+        0.85rem;
 
     background:
         var(--agenda-surface);
 }
 
 .agenda-selected-day__header {
-    padding: 1.25rem;
+    padding: 1.1rem;
 
     border-bottom:
         1px solid var(--agenda-border);
@@ -2049,44 +2912,44 @@ function isSameDate(
     display: block;
 
     margin-bottom:
-        0.45rem;
+        0.35rem;
 
     color:
         var(--agenda-primary);
 
     font-size:
-        0.7rem;
+        0.66rem;
 
     font-weight:
         800;
+
+    letter-spacing:
+        0.05em;
 }
 
 .agenda-selected-day__title {
     margin: 0;
 
     font-size:
-        1.25rem;
+        1.12rem;
 
     font-weight:
         740;
 }
 
 .agenda-selected-day__summary {
-    display: flex;
-    gap: 0.45rem;
-
     margin-top:
-        0.85rem;
+        0.65rem;
 
     color:
         var(--agenda-muted);
 
     font-size:
-        0.8rem;
+        0.75rem;
 }
 
 .agenda-selected-day__items {
-    padding: 1.1rem;
+    padding: 1rem;
 }
 
 .agenda-selected-day__empty {
@@ -2097,9 +2960,10 @@ function isSameDate(
     gap: 0.5rem;
 
     min-height:
-        18rem;
+        15rem;
 
-    padding: 2rem;
+    padding:
+        2rem 1.4rem;
 
     color:
         var(--agenda-muted);
@@ -2108,25 +2972,38 @@ function isSameDate(
         center;
 }
 
-.agenda-selected-day__empty-icon {
-    font-size:
-        1.3rem;
+.agenda-selected-day__empty-mark,
+.agenda-list__empty-mark {
+    width: 2.5rem;
+    height: 2.5rem;
 
-    color:
-        var(--agenda-primary);
+    border:
+        2px solid var(--agenda-primary);
+
+    border-radius:
+        50%;
+
+    opacity:
+        0.3;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Item selecionado
+|--------------------------------------------------------------------------
+*/
 
 .agenda-selected-item {
     padding-bottom:
-        1rem;
+        0.9rem;
 }
 
 .agenda-selected-item+.agenda-selected-item {
     margin-top:
-        1rem;
+        0.9rem;
 
     padding-top:
-        1rem;
+        0.9rem;
 
     border-top:
         1px solid var(--agenda-border);
@@ -2135,13 +3012,13 @@ function isSameDate(
 .agenda-selected-item__type {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.38rem;
 
     margin-bottom:
-        0.55rem;
+        0.5rem;
 
     font-size:
-        0.69rem;
+        0.65rem;
 
     font-weight:
         800;
@@ -2166,8 +3043,8 @@ function isSameDate(
 }
 
 .agenda-selected-item__type-dot {
-    width: 0.45rem;
-    height: 0.45rem;
+    width: 0.42rem;
+    height: 0.42rem;
 
     border-radius:
         999px;
@@ -2177,7 +3054,8 @@ function isSameDate(
 }
 
 .agenda-selected-item__card {
-    padding: 1rem;
+    padding:
+        0.9rem;
 
     border:
         1px solid var(--agenda-border);
@@ -2186,7 +3064,7 @@ function isSameDate(
         3px;
 
     border-radius:
-        var(--radius-md, 0.65rem);
+        0.6rem;
 
     background:
         #fff;
@@ -2210,36 +3088,43 @@ function isSameDate(
 .agenda-selected-item__header {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.55rem;
 }
 
 .agenda-selected-item__time {
     font-size:
-        0.72rem;
+        0.7rem;
 
     font-weight:
         750;
 }
 
+.agenda-selected-item__title {
+    font-size:
+        0.86rem;
+}
+
 .agenda-selected-item__details {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.55rem;
 
-    margin-top:
-        0.9rem;
+    margin:
+        0.75rem 0 0;
+
+    padding: 0;
 }
 
 .agenda-selected-item__detail {
     display: grid;
 
     grid-template-columns:
-        5.2rem minmax(0, 1fr);
+        4.5rem minmax(0, 1fr);
 
-    gap: 0.65rem;
+    gap: 0.55rem;
 
     font-size:
-        0.76rem;
+        0.72rem;
 }
 
 .agenda-selected-item__detail dt {
@@ -2251,6 +3136,8 @@ function isSameDate(
     display: flex;
     flex-direction: column;
 
+    min-width: 0;
+
     margin: 0;
 }
 
@@ -2259,14 +3146,18 @@ function isSameDate(
         var(--agenda-muted);
 
     font-size:
-        0.71rem;
+        0.68rem;
+
+    overflow-wrap:
+        anywhere;
 }
 
 .agenda-selected-item__priority {
-    width: fit-content;
+    width:
+        fit-content;
 
     padding:
-        0.16rem 0.4rem;
+        0.14rem 0.36rem;
 
     border-radius:
         999px;
@@ -2290,28 +3181,30 @@ function isSameDate(
 .agenda-selected-item__actions-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.55rem;
+    gap: 0.45rem;
 
     margin-top:
-        1rem;
+        0.85rem;
 }
 
 .agenda-selected-item__folder-button,
 .agenda-selected-item__complete-button {
-    min-height:
-        2.15rem;
+    min-height: 2rem;
 
     padding:
-        0.34rem 0.65rem;
+        0.3rem 0.58rem;
 
     border-radius:
-        var(--radius-md, 0.6rem);
+        0.55rem;
 
     font:
         inherit;
 
     font-size:
-        0.73rem;
+        0.69rem;
+
+    font-weight:
+        650;
 
     cursor:
         pointer;
@@ -2336,8 +3229,14 @@ function isSameDate(
         var(--agenda-primary-soft);
 }
 
+/*
+|--------------------------------------------------------------------------
+| Totais
+|--------------------------------------------------------------------------
+*/
+
 .agenda-selected-day__totals {
-    padding: 1rem;
+    padding: 0.9rem;
 
     border-top:
         1px solid var(--agenda-border);
@@ -2345,10 +3244,10 @@ function isSameDate(
 
 .agenda-selected-day__totals-title {
     margin:
-        0 0 0.7rem;
+        0 0 0.6rem;
 
     font-size:
-        0.75rem;
+        0.72rem;
 }
 
 .agenda-selected-day__totals-grid {
@@ -2356,9 +3255,9 @@ function isSameDate(
 
     grid-template-columns:
         repeat(3,
-            1fr);
+            minmax(0, 1fr));
 
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .agenda-selected-day__total {
@@ -2366,13 +3265,14 @@ function isSameDate(
     flex-direction: column;
     align-items: center;
 
-    padding: 0.65rem;
+    padding:
+        0.55rem 0.25rem;
 
     border:
         1px solid var(--agenda-border);
 
     border-radius:
-        var(--radius-md, 0.6rem);
+        0.55rem;
 }
 
 .agenda-selected-day__total-value {
@@ -2385,7 +3285,7 @@ function isSameDate(
         var(--agenda-muted);
 
     font-size:
-        0.6rem;
+        0.56rem;
 }
 
 /*
@@ -2395,25 +3295,18 @@ function isSameDate(
 */
 
 .agenda-list {
-    max-width:
-        70rem;
+    width: 100%;
+
+    overflow: hidden;
 
     border:
         1px solid var(--agenda-border);
 
     border-radius:
-        var(--radius-lg, 0.9rem);
+        0.85rem;
 
     background:
         var(--agenda-surface);
-
-    overflow:
-        hidden;
-}
-
-.agenda-list__groups {
-    display: flex;
-    flex-direction: column;
 }
 
 .agenda-list__group+.agenda-list__group {
@@ -2426,11 +3319,10 @@ function isSameDate(
     align-items: center;
     justify-content: space-between;
 
-    gap:
-        1rem;
+    gap: 1rem;
 
     padding:
-        1rem 1.25rem;
+        0.9rem 1.1rem;
 
     background:
         var(--agenda-surface-soft);
@@ -2440,26 +3332,26 @@ function isSameDate(
     display: block;
 
     margin-bottom:
-        0.2rem;
+        0.15rem;
 
     color:
         var(--agenda-primary);
 
     font-size:
-        0.66rem;
+        0.62rem;
 
     font-weight:
         800;
 
     letter-spacing:
-        0.055em;
+        0.05em;
 }
 
 .agenda-list__date {
     margin: 0;
 
     font-size:
-        1rem;
+        0.94rem;
 
     font-weight:
         720;
@@ -2467,7 +3359,7 @@ function isSameDate(
 
 .agenda-list__count {
     padding:
-        0.25rem 0.55rem;
+        0.22rem 0.5rem;
 
     border-radius:
         999px;
@@ -2479,31 +3371,25 @@ function isSameDate(
         var(--agenda-surface);
 
     font-size:
-        0.7rem;
+        0.66rem;
 
     font-weight:
         700;
-}
-
-.agenda-list__items {
-    display: flex;
-    flex-direction: column;
 }
 
 .agenda-list-item {
     display: grid;
 
     grid-template-columns:
-        4.5rem 0.8rem minmax(0, 1fr);
+        4rem 0.7rem minmax(0, 1fr);
 
-    gap:
-        0.8rem;
+    gap: 0.7rem;
 
     align-items:
         start;
 
     padding:
-        1rem 1.25rem;
+        0.9rem 1.1rem;
 }
 
 .agenda-list-item+.agenda-list-item {
@@ -2512,14 +3398,11 @@ function isSameDate(
 }
 
 .agenda-list-item__time {
-    padding-top:
-        0.1rem;
-
     color:
         var(--agenda-muted);
 
     font-size:
-        0.78rem;
+        0.74rem;
 
     font-weight:
         700;
@@ -2530,15 +3413,12 @@ function isSameDate(
     justify-content: center;
 
     padding-top:
-        0.35rem;
+        0.3rem;
 }
 
 .agenda-list-item__dot {
-    width:
-        0.5rem;
-
-    height:
-        0.5rem;
+    width: 0.48rem;
+    height: 0.48rem;
 
     border-radius:
         999px;
@@ -2559,30 +3439,21 @@ function isSameDate(
         var(--agenda-deadline);
 }
 
-.agenda-list-item__content {
-    min-width: 0;
-}
-
 .agenda-list-item__heading {
     display: flex;
     align-items: baseline;
-    gap: 0.7rem;
+    gap: 0.6rem;
 }
 
 .agenda-list-item__type {
-    flex: 0 0 auto;
-
     font-size:
-        0.68rem;
+        0.64rem;
 
     font-weight:
         800;
 
     text-transform:
         uppercase;
-
-    letter-spacing:
-        0.045em;
 }
 
 .agenda-list-item--event .agenda-list-item__type {
@@ -2602,40 +3473,41 @@ function isSameDate(
 
 .agenda-list-item__title {
     font-size:
-        0.9rem;
+        0.85rem;
 }
 
 .agenda-list-item__folder {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
 
     margin-top:
-        0.4rem;
+        0.3rem;
 
     color:
         var(--agenda-muted);
 
     font-size:
-        0.76rem;
+        0.72rem;
 }
 
 .agenda-list-item__process::before {
-    content: '•';
+    content:
+        '•';
 
     margin-right:
-        0.5rem;
+        0.4rem;
 }
 
 .agenda-list-item__meta {
     margin-top:
-        0.25rem;
+        0.2rem;
 
     color:
         var(--agenda-muted);
 
     font-size:
-        0.74rem;
+        0.7rem;
 }
 
 .agenda-list__empty {
@@ -2643,11 +3515,10 @@ function isSameDate(
     flex-direction: column;
     align-items: center;
 
-    gap:
-        0.5rem;
+    gap: 0.5rem;
 
     padding:
-        4rem 2rem;
+        3.5rem 1.5rem;
 
     color:
         var(--agenda-muted);
@@ -2656,26 +3527,40 @@ function isSameDate(
         center;
 }
 
-.agenda-list__empty-icon {
-    color:
-        var(--agenda-primary);
-
-    font-size:
-        1.5rem;
-}
-
-.agenda-list__empty strong {
-    color:
-        var(--agenda-text);
-}
-
 /*
 |--------------------------------------------------------------------------
-| Responsividade
+| Tablet
 |--------------------------------------------------------------------------
 */
 
-@media (max-width: 960px) {
+@media (max-width: 1180px) {
+    .agenda-toolbar {
+        grid-template-columns:
+            1fr auto;
+    }
+
+    .agenda-toolbar__filters {
+        grid-column:
+            1;
+
+        grid-row:
+            2;
+
+        justify-self:
+            start;
+    }
+
+    .agenda-page__view-switcher {
+        grid-column:
+            2;
+
+        grid-row:
+            1 / span 2;
+
+        align-self:
+            end;
+    }
+
     .agenda-workspace {
         grid-template-columns:
             1fr;
@@ -2684,36 +3569,48 @@ function isSameDate(
     .agenda-selected-day {
         position:
             static;
+
+        width:
+            100%;
     }
 }
 
-@media (max-width: 760px) {
-    .agenda-page__header {
-        flex-direction:
-            column;
+/*
+|--------------------------------------------------------------------------
+| Tablet estreito
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 820px) {
+    .agenda-toolbar {
+        grid-template-columns:
+            1fr;
     }
 
-    .agenda-period-toolbar {
-        align-items:
-            flex-start;
+    .agenda-toolbar__period,
+    .agenda-toolbar__filters,
+    .agenda-page__view-switcher {
+        grid-column:
+            1;
 
-        flex-direction:
-            column-reverse;
-    }
-
-    .agenda-calendar__container {
-        overflow-x:
+        grid-row:
             auto;
     }
 
-    .agenda-calendar__weekdays,
-    .agenda-calendar__grid {
-        min-width:
-            49rem;
+    .agenda-toolbar__period {
+        justify-content:
+            space-between;
     }
-}
 
-@media (max-width: 560px) {
+    .agenda-toolbar__filters {
+        width:
+            100%;
+
+        grid-template-columns:
+            repeat(2,
+                minmax(0, 1fr));
+    }
+
     .agenda-page__view-switcher {
         width:
             100%;
@@ -2724,17 +3621,257 @@ function isSameDate(
             1 1 0;
     }
 
-    .agenda-list-item {
+    .agenda-calendar__container {
+        overflow-x:
+            auto;
+    }
+
+    .agenda-calendar__weekdays,
+    .agenda-calendar__grid {
+        min-width:
+            45rem;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mobile
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 560px) {
+    .agenda-page {
+        gap:
+            1rem;
+    }
+
+    .agenda-page__title {
+        font-size:
+            1.4rem;
+    }
+
+    .agenda-page__description {
+        font-size:
+            0.82rem;
+
+        line-height:
+            1.45;
+    }
+
+    .agenda-toolbar {
+        gap:
+            0.8rem;
+    }
+
+    .agenda-toolbar__period {
+        display: grid;
+
         grid-template-columns:
-            auto minmax(0, 1fr);
+            1fr;
 
         gap:
             0.65rem;
     }
 
+    .agenda-calendar__title {
+        grid-row:
+            1;
+
+        text-align:
+            center;
+
+        font-size:
+            1rem;
+    }
+
+    .agenda-calendar__navigation {
+        grid-row:
+            2;
+
+        display: grid;
+
+        grid-template-columns:
+            2.6rem 1fr 2.6rem;
+
+        width:
+            100%;
+    }
+
+    .agenda-calendar__navigation-button,
+    .agenda-calendar__today-button {
+        width:
+            100%;
+    }
+
+    .agenda-toolbar__filters {
+        grid-template-columns:
+            1fr;
+
+        gap:
+            0.55rem;
+    }
+
+    .agenda-select-field__label {
+        font-size:
+            0.66rem;
+    }
+
+    .agenda-select-field__select {
+        height:
+            2.7rem;
+
+        font-size:
+            0.8rem;
+    }
+
+    .agenda-page__view-switcher {
+        height:
+            2.7rem;
+    }
+
+    .agenda-page__view-button {
+        height:
+            2.25rem;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Calendário mobile
+    |--------------------------------------------------------------------------
+    |
+    | Não comprimimos as sete colunas.
+    | Mantemos largura mínima e permitimos scroll horizontal.
+    |
+    */
+
+    .agenda-calendar__weekdays,
+    .agenda-calendar__grid {
+        min-width:
+            42rem;
+    }
+
+    .agenda-calendar__day {
+        min-height:
+            6.6rem;
+
+        padding:
+            0.45rem;
+    }
+
+    .agenda-calendar__legend {
+        justify-content:
+            flex-start;
+
+        overflow-x:
+            auto;
+
+        padding-bottom:
+            0.2rem;
+    }
+
+    .agenda-week__grid {
+        display: grid;
+
+        grid-template-columns:
+            repeat(7,
+                minmax(10rem, 1fr));
+
+        min-width:
+            max-content;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Semana mobile
+    |--------------------------------------------------------------------------
+    */
+
+    .agenda-week__day {
+        min-height:
+            20rem;
+    }
+
+    .agenda-week__viewport {
+        overflow-x:
+            auto;
+
+        overscroll-behavior-inline:
+            contain;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Painel do dia
+    |--------------------------------------------------------------------------
+    */
+
+    .agenda-selected-day__header,
+    .agenda-selected-day__items,
+    .agenda-selected-day__totals {
+        padding:
+            0.85rem;
+    }
+
+    .agenda-selected-item__detail {
+        grid-template-columns:
+            1fr;
+
+        gap:
+            0.15rem;
+    }
+
+    .agenda-selected-item__actions-row {
+        flex-direction:
+            column;
+    }
+
+    .agenda-selected-item__folder-button,
+    .agenda-selected-item__complete-button {
+        width:
+            100%;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Semana mobile
+    |--------------------------------------------------------------------------
+    */
+
+    @media (max-width: 1180px) {
+        .agenda-week__viewport {
+            overflow-x:
+                auto;
+        }
+
+        .agenda-week__grid {
+            min-width:
+                58rem;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lista mobile
+    |--------------------------------------------------------------------------
+    */
+
+    .agenda-list-item {
+        grid-template-columns:
+            0.7rem minmax(0, 1fr);
+
+        gap:
+            0.55rem;
+
+        padding:
+            0.85rem;
+    }
+
     .agenda-list-item__time {
         grid-column:
             1 / -1;
+
+        font-size:
+            0.7rem;
     }
 
     .agenda-list-item__marker {
@@ -2748,14 +3885,19 @@ function isSameDate(
     }
 
     .agenda-list-item__heading {
-        align-items:
-            flex-start;
-
         flex-direction:
             column;
 
+        align-items:
+            flex-start;
+
         gap:
-            0.25rem;
+            0.2rem;
+    }
+
+    .agenda-list__group-header {
+        padding:
+            0.8rem;
     }
 }
 </style>
