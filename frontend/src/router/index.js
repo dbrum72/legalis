@@ -66,6 +66,18 @@ const router = createRouter({
                 },
 
                 {
+                    path: 'agenda',
+
+                    name: 'agenda',
+
+                    component: () => import('@/views/agenda/AgendaPage.vue'),
+
+                    meta: {
+                        breadcrumb: 'Agenda',
+                    },
+                },
+
+                {
                     path: 'playground',
 
                     name: 'playground',

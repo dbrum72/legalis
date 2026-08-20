@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
@@ -121,6 +122,20 @@ Route::middleware([
             '/dashboard',
             [
                 DashboardController::class,
+                'index',
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Agenda
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/agenda',
+            [
+                AgendaController::class,
                 'index',
             ]
         );

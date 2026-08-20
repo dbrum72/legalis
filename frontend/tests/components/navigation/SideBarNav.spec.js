@@ -24,6 +24,14 @@ function createTestRouter() {
             },
 
             {
+                path: '/agenda',
+                name: 'agenda',
+                component: {
+                    template: '<div>Agenda</div>',
+                },
+            },
+
+            {
                 path: '/clients',
                 name: 'clients',
                 component: {
@@ -111,6 +119,12 @@ describe('SideBarNav', () => {
         expect(wrapper.text()).toContain('Dashboard')
     })
 
+    it('sempre mostra Agenda', async () => {
+        const { wrapper } = await mountNav()
+
+        expect(wrapper.text()).toContain('Agenda')
+    })
+
     it('nao mostra Clientes sem clients.view', async () => {
         const { wrapper } = await mountNav()
 
@@ -160,6 +174,8 @@ describe('SideBarNav', () => {
 
         expect(wrapper.text()).toContain('Dashboard')
 
+        expect(wrapper.text()).toContain('Agenda')
+
         expect(wrapper.text()).toContain('Clientes')
 
         expect(wrapper.text()).not.toContain('Pastas')
@@ -183,6 +199,16 @@ describe('SideBarNav', () => {
         expect(link).toBeTruthy()
 
         expect(link.attributes('href')).toBe('/')
+    })
+
+    it('Agenda aponta para a rota agenda', async () => {
+        const { wrapper } = await mountNav()
+
+        const link = linkByLabel(wrapper, 'Agenda')
+
+        expect(link).toBeTruthy()
+
+        expect(link.attributes('href')).toBe('/agenda')
     })
 
     it('Clientes aponta para a rota clients', async () => {
@@ -227,6 +253,18 @@ describe('SideBarNav', () => {
         })
 
         const link = linkByLabel(wrapper, 'Dashboard')
+
+        expect(link.classes()).toContain('router-link-exact-active')
+    })
+
+    it('marca Agenda como ativa em sua rota', async () => {
+        const { wrapper } = await mountNav({
+            route: '/agenda',
+        })
+
+        const link = linkByLabel(wrapper, 'Agenda')
+
+        expect(link).toBeTruthy()
 
         expect(link.classes()).toContain('router-link-exact-active')
     })

@@ -7,6 +7,13 @@ export default [
     },
 
     {
+        id: 'agenda',
+        label: 'Agenda',
+        name: 'agenda',
+        icon: 'calendar',
+    },
+
+    {
         id: 'clients',
         label: 'Clientes',
         name: 'clients',
