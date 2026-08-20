@@ -255,7 +255,7 @@ describe('AgendaPage', () => {
 
         await flushPromises()
 
-        expect(wrapper.text()).toContain('Agosto 2026')
+        expect(wrapper.text()).toContain('Agosto de 2026')
     })
 
     it('renderiza os dias da semana', async () => {
@@ -289,7 +289,7 @@ describe('AgendaPage', () => {
 
         await flushPromises()
 
-        expect(wrapper.text()).toContain('Julho 2026')
+        expect(wrapper.text()).toContain('Julho de 2026')
 
         expect(fetchAgendaSpy).toHaveBeenLastCalledWith({
             start: '2026-07-01',
@@ -307,7 +307,7 @@ describe('AgendaPage', () => {
 
         await flushPromises()
 
-        expect(wrapper.text()).toContain('Setembro 2026')
+        expect(wrapper.text()).toContain('Setembro de 2026')
 
         expect(fetchAgendaSpy).toHaveBeenLastCalledWith({
             start: '2026-09-01',
@@ -325,13 +325,13 @@ describe('AgendaPage', () => {
 
         await flushPromises()
 
-        expect(wrapper.text()).toContain('Julho 2026')
+        expect(wrapper.text()).toContain('Julho de 2026')
 
         await wrapper.get('[data-testid="agenda-today"]').trigger('click')
 
         await flushPromises()
 
-        expect(wrapper.text()).toContain('Agosto 2026')
+        expect(wrapper.text()).toContain('Agosto de 2026')
 
         expect(fetchAgendaSpy).toHaveBeenLastCalledWith({
             start: '2026-08-01',
@@ -828,5 +828,145 @@ describe('AgendaPage', () => {
         await flushPromises()
 
         expect(wrapper.text()).toContain('Não foi possível carregar a agenda. Tente novamente.')
+    })
+
+    it('inicia na visualizacao mensal', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-list"]').exists()).toBe(false)
+    })
+
+    it('alterna da visualizacao mensal para lista', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar"]').exists()).toBe(false)
+
+        expect(wrapper.find('[data-testid="agenda-list"]').exists()).toBe(true)
+    })
+
+    it('retorna da visualizacao em lista para o calendario', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-month"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="agenda-calendar"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="agenda-list"]').exists()).toBe(false)
+    })
+
+    it('renderiza itens cronologicamente na visualizacao em lista', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        const items = wrapper.findAll('[data-testid^="agenda-list-item-"]')
+
+        expect(items).toHaveLength(3)
+
+        expect(items[0].text()).toContain('Revisar documentos')
+
+        expect(items[1].text()).toContain('Protocolar manifestação')
+
+        expect(items[2].text()).toContain('Audiência de instrução')
+    })
+
+    it('agrupa itens da lista pela data', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('20 de agosto de 2026')
+
+        expect(wrapper.text()).toContain('21 de agosto de 2026')
+    })
+
+    it('renderiza tipo dos itens na visualizacao em lista', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.get('[data-testid="agenda-list-item-task-101"]').text()).toContain('Tarefa')
+
+        expect(wrapper.get('[data-testid="agenda-list-item-deadline-201"]').text()).toContain(
+            'Prazo',
+        )
+
+        expect(wrapper.get('[data-testid="agenda-list-item-event-301"]').text()).toContain(
+            'Compromisso',
+        )
+    })
+
+    it('renderiza pasta relacionada na visualizacao em lista', async () => {
+        const { wrapper } = await mountPage({
+            items: defaultItems(),
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        const item = wrapper.get('[data-testid="agenda-list-item-task-101"]')
+
+        expect(item.text()).toContain('Ação indenizatória')
+
+        expect(item.text()).toContain('5000000-00.2026.8.21.0001')
+    })
+
+    it('exibe estado vazio na visualizacao em lista', async () => {
+        const { wrapper } = await mountPage({
+            items: [],
+        })
+
+        await flushPromises()
+
+        await wrapper.get('[data-testid="agenda-view-list"]').trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('Nenhum item encontrado neste período.')
     })
 })
