@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Services\Registration\RegisterOrganization;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use App\Support\Tenancy\CurrentOrganization;
@@ -19,9 +21,75 @@ class AuthController extends Controller implements HasMiddleware
                 'auth:api',
                 except: [
                     'login',
+                    'register'
                 ],
             ),
         ];
+    }
+
+    public function register(
+        RegisterRequest $request,
+        RegisterOrganization $registrar,
+    ): JsonResponse {
+        $result =
+            $registrar->execute(
+                $request->validated()
+            );
+
+        $user =
+            $result['user'];
+
+        $organization =
+            $result['organization'];
+
+        $token =
+            $this
+            ->guard()
+            ->login(
+                $user
+            );
+
+        return response()->json([
+            'token' =>
+            $token,
+
+            'access_token' =>
+            $token,
+
+            'token_type' =>
+            'bearer',
+
+            'expires_in' =>
+            $this
+                ->guard()
+                ->factory()
+                ->getTTL()
+                * 60,
+
+            'user' => [
+                'id' =>
+                $user->id,
+
+                'name' =>
+                $user->name,
+
+                'email' =>
+                $user->email,
+            ],
+
+            'organizations' => [
+                [
+                    'id' =>
+                    $organization->id,
+
+                    'name' =>
+                    $organization->name,
+
+                    'slug' =>
+                    $organization->slug,
+                ],
+            ],
+        ], 201);
     }
 
     public function login(

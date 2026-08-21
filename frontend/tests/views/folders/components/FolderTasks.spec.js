@@ -293,7 +293,7 @@ describe('FolderTasks', () => {
 
             priority: 'high',
 
-            due_at: '2026-08-30T18:00',
+            due_at: new Date('2026-08-30T18:00').toISOString(),
         })
     })
 

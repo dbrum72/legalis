@@ -4,6 +4,7 @@ import { authGuard } from './guards/auth.js'
 
 import { permissionGuard } from '@/router/guards/permission.js'
 
+import PublicLayout from '@/layouts/PublicLayout.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const router = createRouter({
@@ -11,11 +12,39 @@ const router = createRouter({
 
     routes: [
         {
+            path: '/',
+
+            component: PublicLayout,
+
+            children: [
+                {
+                    path: '',
+
+                    name: 'home',
+
+                    component: () => import('@/views/public/LandingPage.vue'),
+                },
+            ],
+        },
+
+        {
             path: '/login',
 
             name: 'login',
 
             component: () => import('@/views/auth/LoginPage.vue'),
+
+            meta: {
+                guestOnly: true,
+            },
+        },
+
+        {
+            path: '/register',
+
+            name: 'register',
+
+            component: () => import('@/views/auth/RegisterPage.vue'),
 
             meta: {
                 guestOnly: true,
@@ -54,7 +83,7 @@ const router = createRouter({
 
             children: [
                 {
-                    path: '',
+                    path: 'dashboard',
 
                     name: 'dashboard',
 

@@ -12,6 +12,7 @@ import { useFolderTasksStore } from '@/stores/folder-tasks.js'
 vi.mock('@/api/auth.js', () => ({
     context: vi.fn(),
     login: vi.fn(),
+    register: vi.fn(),
     logout: vi.fn(),
     me: vi.fn(),
     refresh: vi.fn(),
@@ -29,7 +30,7 @@ vi.mock('@/api/tenant.js', () => ({
     removeCurrentTenant: vi.fn(),
 }))
 
-import { context, login, logout, me, refresh } from '@/api/auth.js'
+import { context, login, logout, me, refresh, register } from '@/api/auth.js'
 
 import { getAccessToken, removeAccessToken, setAccessToken } from '@/api/auth-token.js'
 
@@ -355,6 +356,148 @@ describe('auth store', () => {
         expect(store.organization).toBeNull()
 
         expect(store.contextLoaded).toBe(false)
+
+        expect(setCurrentTenant).not.toHaveBeenCalled()
+
+        expect(context).not.toHaveBeenCalled()
+    })
+
+    it('executa cadastro e seleciona automaticamente a organizacao criada', async () => {
+        register.mockResolvedValue({
+            data: {
+                access_token: 'register-token',
+
+                token_type: 'bearer',
+
+                user: {
+                    id: 15,
+                    name: 'João Silva',
+                    email: 'joao@silva.test',
+                },
+
+                organizations: [
+                    {
+                        id: 30,
+                        name: 'Silva Advocacia',
+                        slug: 'silva-advocacia',
+                    },
+                ],
+            },
+        })
+
+        context.mockResolvedValue({
+            data: {
+                organization: {
+                    id: 30,
+                    name: 'Silva Advocacia',
+                    slug: 'silva-advocacia',
+                },
+
+                roles: ['socio-administrador'],
+
+                permissions: ['clients.view', 'folders.view', 'organization-members.view'],
+            },
+        })
+
+        getCurrentTenant.mockReturnValueOnce(null).mockReturnValue('silva-advocacia')
+
+        const store = useAuthStore()
+
+        const payload = {
+            name: 'João Silva',
+
+            email: 'joao@silva.test',
+
+            organization_name: 'Silva Advocacia',
+
+            password: 'Password123!',
+
+            password_confirmation: 'Password123!',
+        }
+
+        const result = await store.register(payload)
+
+        expect(register).toHaveBeenCalledWith(payload)
+
+        expect(store.token).toBe('register-token')
+
+        expect(store.user).toEqual({
+            id: 15,
+            name: 'João Silva',
+            email: 'joao@silva.test',
+        })
+
+        expect(store.organizations).toEqual([
+            {
+                id: 30,
+                name: 'Silva Advocacia',
+                slug: 'silva-advocacia',
+            },
+        ])
+
+        expect(setAccessToken).toHaveBeenCalledWith('register-token')
+
+        expect(setCurrentTenant).toHaveBeenCalledWith('silva-advocacia')
+
+        expect(context).toHaveBeenCalledTimes(1)
+
+        expect(store.organization).toEqual({
+            id: 30,
+            name: 'Silva Advocacia',
+            slug: 'silva-advocacia',
+        })
+
+        expect(store.roles).toEqual(['socio-administrador'])
+
+        expect(store.permissions).toEqual([
+            'clients.view',
+            'folders.view',
+            'organization-members.view',
+        ])
+
+        expect(store.contextLoaded).toBe(true)
+
+        expect(store.isAuthenticated).toBe(true)
+
+        expect(result.access_token).toBe('register-token')
+    })
+
+    it('cadastro nao altera estado quando requisicao falha', async () => {
+        register.mockRejectedValue(new Error('Validation failed'))
+
+        const store = useAuthStore()
+
+        const payload = {
+            name: 'João Silva',
+
+            email: 'joao@silva.test',
+
+            organization_name: 'Silva Advocacia',
+
+            password: 'Password123!',
+
+            password_confirmation: 'Password123!',
+        }
+
+        await expect(store.register(payload)).rejects.toThrow('Validation failed')
+
+        expect(register).toHaveBeenCalledWith(payload)
+
+        expect(store.token).toBeNull()
+
+        expect(store.user).toBeNull()
+
+        expect(store.organizations).toEqual([])
+
+        expect(store.organization).toBeNull()
+
+        expect(store.roles).toEqual([])
+
+        expect(store.permissions).toEqual([])
+
+        expect(store.contextLoaded).toBe(false)
+
+        expect(setAccessToken).not.toHaveBeenCalled()
 
         expect(setCurrentTenant).not.toHaveBeenCalled()
 

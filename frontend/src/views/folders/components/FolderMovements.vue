@@ -273,7 +273,9 @@ async function submitMovement() {
 
     const payload = {
         occurred_at:
-            form.occurred_at,
+            new Date(
+                form.occurred_at,
+            ).toISOString(),
 
         title:
             form.title.trim(),

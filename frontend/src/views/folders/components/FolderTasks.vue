@@ -402,8 +402,11 @@ async function submitCreate() {
             form.priority,
 
         due_at:
-            dueAt ||
-            null,
+            dueAt
+                ? new Date(
+                    dueAt,
+                ).toISOString()
+                : null,
     }
 
     isSubmitting.value =

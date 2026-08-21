@@ -5,8 +5,13 @@
      quando existir um token semântico equivalente.
   ========================================================= */
 
-  /* Paleta-base fornecida */
+  /* Paleta-base */
   --palette-earth-700: #5e412f;
+
+  --palette-moss-200: #dfe7d7;
+  --palette-moss-700: #526548;
+  --palette-moss-800: #394a38;
+
   --palette-cream-200: #fcebb6;
   --palette-mint-500: #78c0a8;
   --palette-orange-500: #f07818;

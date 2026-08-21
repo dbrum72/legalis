@@ -103,6 +103,212 @@ class FolderController extends Controller
                 'description',
             ]);
 
+        $attentionDeadlines =
+            $folder
+            ->deadlines()
+            ->where(
+                'status',
+                'pending',
+            )
+            ->orderBy(
+                'due_at'
+            )
+            ->orderBy(
+                'id'
+            )
+            ->limit(3)
+            ->get([
+                'id',
+                'folder_id',
+                'title',
+                'description',
+                'due_at',
+                'status',
+            ])
+            ->map(function ($deadline) {
+                $dueAt =
+                    $deadline->due_at;
+
+                $urgency =
+                    match (true) {
+                        $dueAt->lt(
+                            now()->startOfDay()
+                        ) =>
+                        'overdue',
+
+                        $dueAt->between(
+                            now()->startOfDay(),
+                            now()->endOfDay(),
+                        ) =>
+                        'today',
+
+                        default =>
+                        'upcoming',
+                    };
+
+                return [
+                    'id' =>
+                    $deadline->id,
+
+                    'title' =>
+                    $deadline->title,
+
+                    'description' =>
+                    $deadline->description,
+
+                    'due_at' =>
+                    $dueAt,
+
+                    'status' =>
+                    $deadline->status,
+
+                    'urgency' =>
+                    $urgency,
+                ];
+            })
+            ->values();
+
+        $attentionTasks =
+            $folder
+            ->tasks()
+            ->where(
+                'status',
+                'pending',
+            )
+            ->get([
+                'id',
+                'folder_id',
+                'title',
+                'description',
+                'priority',
+                'due_at',
+                'status',
+            ])
+            ->map(function ($task) {
+                $dueAt =
+                    $task->due_at;
+
+                $urgency =
+                    match (true) {
+                        $dueAt === null =>
+                        'unscheduled',
+
+                        $dueAt->lt(
+                            now()->startOfDay()
+                        ) =>
+                        'overdue',
+
+                        $dueAt->between(
+                            now()->startOfDay(),
+                            now()->endOfDay(),
+                        ) =>
+                        'today',
+
+                        default =>
+                        'upcoming',
+                    };
+
+                return [
+                    'id' =>
+                    $task->id,
+
+                    'title' =>
+                    $task->title,
+
+                    'description' =>
+                    $task->description,
+
+                    'priority' =>
+                    $task->priority,
+
+                    'due_at' =>
+                    $dueAt,
+
+                    'status' =>
+                    $task->status,
+
+                    'urgency' =>
+                    $urgency,
+                ];
+            })
+            ->sort(function (array $left, array $right) {
+                $urgencyOrder = [
+                    'overdue' =>
+                    0,
+
+                    'today' =>
+                    1,
+
+                    'unscheduled' =>
+                    2,
+
+                    'upcoming' =>
+                    3,
+                ];
+
+                $priorityOrder = [
+                    'high' =>
+                    0,
+
+                    'medium' =>
+                    1,
+
+                    'low' =>
+                    2,
+                ];
+
+                $leftUrgency =
+                    $urgencyOrder[$left['urgency']] ?? 4;
+
+                $rightUrgency =
+                    $urgencyOrder[$right['urgency']] ?? 4;
+
+                if (
+                    $leftUrgency !==
+                    $rightUrgency
+                ) {
+                    return $leftUrgency <=>
+                        $rightUrgency;
+                }
+
+                $leftPriority =
+                    $priorityOrder[$left['priority']] ?? 3;
+
+                $rightPriority =
+                    $priorityOrder[$right['priority']] ?? 3;
+
+                if (
+                    $leftPriority !==
+                    $rightPriority
+                ) {
+                    return $leftPriority <=>
+                        $rightPriority;
+                }
+
+                $leftTimestamp =
+                    $left['due_at']
+                    ? $left['due_at']->timestamp
+                    : PHP_INT_MAX;
+
+                $rightTimestamp =
+                    $right['due_at']
+                    ? $right['due_at']->timestamp
+                    : PHP_INT_MAX;
+
+                if (
+                    $leftTimestamp !==
+                    $rightTimestamp
+                ) {
+                    return $leftTimestamp <=>
+                        $rightTimestamp;
+                }
+
+                return $left['id'] <=>
+                    $right['id'];
+            })
+            ->take(3)
+            ->values();
+
         $folder->setAttribute(
             'summary',
             [
@@ -128,6 +334,14 @@ class FolderController extends Controller
                         'pending',
                     )
                     ->count(),
+
+                'attention' => [
+                    'deadlines' =>
+                    $attentionDeadlines,
+
+                    'tasks' =>
+                    $attentionTasks,
+                ],
 
                 'next_event' =>
                 $nextEvent,

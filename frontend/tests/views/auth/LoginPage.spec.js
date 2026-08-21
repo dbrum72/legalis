@@ -36,11 +36,49 @@ function createTestRouter(initialRoute = '/login') {
 
         routes: [
             {
+                path: '/',
+
+                name: 'home',
+
+                component: {
+                    template: '<div>Home</div>',
+                },
+            },
+
+            {
                 path: '/login',
 
                 name: 'login',
 
                 component: LoginPage,
+            },
+
+            {
+                path: '/register',
+
+                name: 'register',
+
+                component: {
+                    template: '<div>Cadastro</div>',
+                },
+            },
+
+            {
+                path: '/login',
+
+                name: 'login',
+
+                component: LoginPage,
+            },
+
+            {
+                path: '/register',
+
+                name: 'register',
+
+                component: {
+                    template: '<div>Cadastro</div>',
+                },
             },
 
             {

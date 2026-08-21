@@ -1,30 +1,26 @@
 <template>
-    <main class="login-page">
-        <section class="login-page__container" aria-labelledby="login-title">
-            <header class="login-page__brand">
-                <AppLogo :to="{ name: 'login' }" aria-label="Legalis" />
+    <AuthShell>
+        <section class="login-page" aria-labelledby="login-title">
+            <header class="login-page__header">
+                <span class="login-page__eyebrow">
+                    Bem-vindo de volta
+                </span>
 
-                <p class="login-page__brand-description">
-                    Gestão jurídica simples, organizada e segura.
+                <h1 id="login-title" class="login-page__title">
+                    Acesse sua conta
+                </h1>
+
+                <p class="login-page__description">
+                    Informe suas credenciais para continuar.
                 </p>
             </header>
 
             <AppCard class="login-page__card" as="section">
-                <header class="login-page__header">
-                    <h1 id="login-title" class="login-page__title">
-                        Acesse sua conta
-                    </h1>
-
-                    <p class="login-page__description">
-                        Informe suas credenciais para continuar.
-                    </p>
-                </header>
-
                 <form class="login-page__form" novalidate @submit.prevent="handleSubmit">
-                    <AppEmail v-model="form.email" id="login-email" name="email" label="E-mail"
+                    <AppEmail id="login-email" v-model="form.email" name="email" label="E-mail"
                         placeholder="seu@email.com" :disabled="loading" :error="errors.email" required autofocus />
 
-                    <AppPassword v-model="form.password" id="login-password" name="password" label="Senha"
+                    <AppPassword id="login-password" v-model="form.password" name="password" label="Senha"
                         autocomplete="current-password" :disabled="loading" :error="errors.password" required />
 
                     <div v-if="authError" class="login-page__error" role="alert">
@@ -38,12 +34,16 @@
             </AppCard>
 
             <footer class="login-page__footer">
-                <span>Legalis</span>
-                <span aria-hidden="true">·</span>
-                <span>Gestão jurídica</span>
+                <span>
+                    Ainda não possui uma conta?
+                </span>
+
+                <RouterLink :to="{ name: 'register' }">
+                    Criar conta
+                </RouterLink>
             </footer>
         </section>
-    </main>
+    </AuthShell>
 </template>
 
 <script setup>
@@ -62,10 +62,12 @@ import {
     AppPassword,
 } from '@/components/forms'
 
+import AuthShell
+    from '@/components/public/AuthShell.vue'
+
 import {
     AppButton,
-    AppCard,
-    AppLogo,
+    AppCard
 } from '@/components/ui'
 
 import {
@@ -236,4 +238,93 @@ async function handleSubmit() {
 }
 </script>
 
-<style src="./style.css"></style>
+<style>
+.login-page {
+    width: 100%;
+}
+
+.login-page__header {
+    margin-bottom: var(--space-6);
+}
+
+.login-page__eyebrow {
+    display: inline-block;
+    margin-bottom: var(--space-3);
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.login-page__title {
+    margin: 0;
+    color: var(--color-text);
+    font-size: clamp(
+        var(--font-size-2xl),
+        5vw,
+        var(--font-size-3xl)
+    );
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.15;
+}
+
+.login-page__description {
+    margin:
+        var(--space-2) 0 0;
+    color: var(--color-text-soft);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+.login-page__card {
+    width: 100%;
+    box-shadow: var(--shadow-md);
+}
+
+.login-page__form {
+    display: grid;
+    gap: var(--space-5);
+}
+
+.login-page__error {
+    padding:
+        var(--space-3)
+        var(--space-4);
+    border: 1px solid var(--color-danger);
+    border-radius: var(--radius-md);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+}
+
+.login-page__footer {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.login-page__footer a {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+}
+
+.login-page__footer a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 30rem) {
+    .login-page__header {
+        margin-bottom: var(--space-5);
+    }
+
+    .login-page__footer {
+        flex-wrap: wrap;
+        text-align: center;
+    }
+}
+</style>

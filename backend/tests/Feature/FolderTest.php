@@ -765,6 +765,345 @@ class FolderTest extends TestCase
         );
     }
 
+    public function test_exibe_prazos_prioritarios_no_resumo_da_pasta(): void
+    {
+        $this->travelTo(
+            \Illuminate\Support\Carbon::parse(
+                '2026-08-21 09:00:00'
+            )
+        );
+
+        $folder =
+            Folder::factory()
+            ->for(
+                $this->organization
+            )
+            ->create();
+
+        $overdue =
+            $folder
+            ->deadlines()
+            ->create([
+                'title' =>
+                'Apresentar réplica',
+
+                'description' =>
+                null,
+
+                'due_at' =>
+                now()->subDay(),
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $today =
+            $folder
+            ->deadlines()
+            ->create([
+                'title' =>
+                'Protocolar manifestação',
+
+                'description' =>
+                null,
+
+                'due_at' =>
+                now()->endOfDay(),
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $upcoming =
+            $folder
+            ->deadlines()
+            ->create([
+                'title' =>
+                'Juntar documentos',
+
+                'description' =>
+                null,
+
+                'due_at' =>
+                now()->addDays(2),
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $folder
+            ->deadlines()
+            ->create([
+                'title' =>
+                'Prazo posterior',
+
+                'description' =>
+                null,
+
+                'due_at' =>
+                now()->addDays(5),
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $folder
+            ->deadlines()
+            ->create([
+                'title' =>
+                'Prazo concluído',
+
+                'description' =>
+                null,
+
+                'due_at' =>
+                now()->subDays(3),
+
+                'status' =>
+                'completed',
+
+                'completed_at' =>
+                now(),
+            ]);
+
+        $token =
+            $this->loginAsSuperAdmin();
+
+        $response =
+            $this
+            ->asTenant(
+                $token,
+                $this->organization,
+            )
+            ->getJson(
+                "/api/folders/{$folder->id}"
+            );
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(
+                3,
+                'summary.attention.deadlines',
+            )
+            ->assertJsonPath(
+                'summary.attention.deadlines.0.id',
+                $overdue->id,
+            )
+            ->assertJsonPath(
+                'summary.attention.deadlines.0.urgency',
+                'overdue',
+            )
+            ->assertJsonPath(
+                'summary.attention.deadlines.1.id',
+                $today->id,
+            )
+            ->assertJsonPath(
+                'summary.attention.deadlines.1.urgency',
+                'today',
+            )
+            ->assertJsonPath(
+                'summary.attention.deadlines.2.id',
+                $upcoming->id,
+            )
+            ->assertJsonPath(
+                'summary.attention.deadlines.2.urgency',
+                'upcoming',
+            );
+    }
+
+    public function test_exibe_tarefas_prioritarias_no_resumo_da_pasta(): void
+    {
+        $this->travelTo(
+            \Illuminate\Support\Carbon::parse(
+                '2026-08-21 09:00:00'
+            )
+        );
+
+        $folder =
+            Folder::factory()
+            ->for(
+                $this->organization
+            )
+            ->create();
+
+        $overdue =
+            $folder
+            ->tasks()
+            ->create([
+                'title' =>
+                'Revisar contestação',
+
+                'description' =>
+                null,
+
+                'priority' =>
+                'high',
+
+                'due_at' =>
+                now()->subDay(),
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $today =
+            $folder
+            ->tasks()
+            ->create([
+                'title' =>
+                'Conferir documentos',
+
+                'description' =>
+                null,
+
+                'priority' =>
+                'medium',
+
+                'due_at' =>
+                now()->endOfDay(),
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $withoutDueDate =
+            $folder
+            ->tasks()
+            ->create([
+                'title' =>
+                'Contatar cliente',
+
+                'description' =>
+                null,
+
+                'priority' =>
+                'high',
+
+                'due_at' =>
+                null,
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $folder
+            ->tasks()
+            ->create([
+                'title' =>
+                'Tarefa futura de baixa prioridade',
+
+                'description' =>
+                null,
+
+                'priority' =>
+                'low',
+
+                'due_at' =>
+                now()->addDays(5),
+
+                'status' =>
+                'pending',
+
+                'completed_at' =>
+                null,
+            ]);
+
+        $folder
+            ->tasks()
+            ->create([
+                'title' =>
+                'Tarefa concluída',
+
+                'description' =>
+                null,
+
+                'priority' =>
+                'high',
+
+                'due_at' =>
+                now()->subDays(2),
+
+                'status' =>
+                'completed',
+
+                'completed_at' =>
+                now(),
+            ]);
+
+        $token =
+            $this->loginAsSuperAdmin();
+
+        $response =
+            $this
+            ->asTenant(
+                $token,
+                $this->organization,
+            )
+            ->getJson(
+                "/api/folders/{$folder->id}"
+            );
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(
+                3,
+                'summary.attention.tasks',
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.0.id',
+                $overdue->id,
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.0.urgency',
+                'overdue',
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.0.priority',
+                'high',
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.1.id',
+                $today->id,
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.1.urgency',
+                'today',
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.2.id',
+                $withoutDueDate->id,
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.2.urgency',
+                'unscheduled',
+            )
+            ->assertJsonPath(
+                'summary.attention.tasks.2.priority',
+                'high',
+            );
+    }
+
     public function test_nao_exibe_pasta_de_outra_organizacao(): void
     {
         $otherOrganization =

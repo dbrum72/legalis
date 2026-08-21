@@ -28,6 +28,14 @@ Route::prefix('auth')
             ]
         );
 
+        Route::post(
+            '/register',
+            [
+                AuthController::class,
+                'register',
+            ],
+        );
+
         Route::middleware(
             'auth:api'
         )

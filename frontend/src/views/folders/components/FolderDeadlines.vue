@@ -127,8 +127,8 @@
                         " :disabled="completingId !== null ||
                             deleting
                             " @click="
-                            completeDeadline(deadline)
-                            ">
+                                completeDeadline(deadline)
+                                ">
                         Concluir
                     </AppButton>
 
@@ -348,7 +348,9 @@ async function submitDeadline() {
             form.description.trim(),
 
         due_at:
-            form.due_at,
+            new Date(
+                form.due_at,
+            ).toISOString(),
     }
 
     try {

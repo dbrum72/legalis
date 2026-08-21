@@ -7,6 +7,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 
 import FolderShowPage from '@/views/folders/FolderShowPage.vue'
+import AppTabs from '@/components/ui/AppTabs/index.vue'
 
 import { useAuthStore } from '@/stores/auth.js'
 import { useFoldersStore } from '@/stores/folders.js'
@@ -39,6 +40,102 @@ function defaultFolder() {
             pending_tasks_count: 2,
 
             pending_deadlines_count: 3,
+
+            attention: {
+                deadlines: [
+                    {
+                        id: 201,
+
+                        title: 'Apresentar réplica',
+
+                        description: null,
+
+                        due_at: '2026-08-20T18:00:00.000000Z',
+
+                        status: 'pending',
+
+                        urgency: 'overdue',
+                    },
+
+                    {
+                        id: 202,
+
+                        title: 'Protocolar manifestação',
+
+                        description: null,
+
+                        due_at: '2026-08-21T20:00:00.000000Z',
+
+                        status: 'pending',
+
+                        urgency: 'today',
+                    },
+
+                    {
+                        id: 203,
+
+                        title: 'Juntar documentos',
+
+                        description: null,
+
+                        due_at: '2026-08-23T18:00:00.000000Z',
+
+                        status: 'pending',
+
+                        urgency: 'upcoming',
+                    },
+                ],
+
+                tasks: [
+                    {
+                        id: 301,
+
+                        title: 'Revisar contestação',
+
+                        description: null,
+
+                        priority: 'high',
+
+                        due_at: '2026-08-20T18:00:00.000000Z',
+
+                        status: 'pending',
+
+                        urgency: 'overdue',
+                    },
+
+                    {
+                        id: 302,
+
+                        title: 'Conferir documentos',
+
+                        description: null,
+
+                        priority: 'medium',
+
+                        due_at: '2026-08-21T20:00:00.000000Z',
+
+                        status: 'pending',
+
+                        urgency: 'today',
+                    },
+
+                    {
+                        id: 303,
+
+                        title: 'Contatar cliente',
+
+                        description: null,
+
+                        priority: 'high',
+
+                        due_at: null,
+
+                        status: 'pending',
+
+                        urgency: 'unscheduled',
+                    },
+                ],
+            },
 
             next_event: {
                 id: 51,
@@ -214,6 +311,32 @@ async function mountPage({
 
                     template: '<div data-test="folder-movements" />',
                 },
+
+                FolderDeadlines: {
+                    name: 'FolderDeadlines',
+
+                    props: ['folderId'],
+
+                    template: '<div data-test="folder-deadlines" />',
+                },
+
+                FolderEvents: {
+                    name: 'FolderEvents',
+
+                    props: ['folderId'],
+
+                    emits: ['changed'],
+
+                    template: '<div data-test="folder-events" />',
+                },
+
+                FolderTasks: {
+                    name: 'FolderTasks',
+
+                    props: ['folderId'],
+
+                    template: '<div data-test="folder-tasks" />',
+                },
             },
         },
     })
@@ -281,6 +404,12 @@ describe('FolderShowPage', () => {
     it('renderiza partes vinculadas', async () => {
         const { wrapper } = await mountPage()
 
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'clients')
+
+        await wrapper.vm.$nextTick()
+
         expect(wrapper.text()).toContain('Partes')
 
         expect(wrapper.text()).toContain('Maria da Silva')
@@ -304,6 +433,12 @@ describe('FolderShowPage', () => {
         const { wrapper } = await mountPage({
             folder,
         })
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'clients')
+
+        await wrapper.vm.$nextTick()
 
         expect(wrapper.text()).toContain('Nenhuma parte vinculada.')
     })
@@ -337,13 +472,142 @@ describe('FolderShowPage', () => {
             folder,
         })
 
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'clients')
+
+        await wrapper.vm.$nextTick()
+
         expect(wrapper.text()).toContain('Maria da Silva')
 
         expect(wrapper.text()).toContain('—')
     })
 
-    it('renderiza documentos da pasta com o id atual', async () => {
+    it('renderiza navegação das seções da pasta', async () => {
         const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.exists()).toBe(true)
+
+        expect(tabs.props('items')).toEqual([
+            {
+                value: 'overview',
+                label: 'Visão geral',
+            },
+
+            {
+                value: 'clients',
+                label: 'Partes',
+            },
+
+            {
+                value: 'documents',
+                label: 'Documentos',
+            },
+
+            {
+                value: 'movements',
+                label: 'Movimentações',
+            },
+
+            {
+                value: 'deadlines',
+                label: 'Prazos',
+            },
+
+            {
+                value: 'events',
+                label: 'Agenda',
+            },
+
+            {
+                value: 'tasks',
+                label: 'Tarefas',
+            },
+        ])
+    })
+
+    it('inicia pela seção Visão geral', async () => {
+        const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('overview')
+
+        expect(wrapper.text()).toContain('Visão operacional')
+
+        expect(wrapper.text()).toContain('Dados gerais')
+    })
+
+    it('não monta módulos operacionais enquanto Visão geral está ativa', async () => {
+        const { wrapper } = await mountPage()
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderDocuments',
+                })
+                .exists(),
+        ).toBe(false)
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderMovements',
+                })
+                .exists(),
+        ).toBe(false)
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderDeadlines',
+                })
+                .exists(),
+        ).toBe(false)
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderEvents',
+                })
+                .exists(),
+        ).toBe(false)
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderTasks',
+                })
+                .exists(),
+        ).toBe(false)
+    })
+
+    it('exibe Partes ao selecionar a respectiva seção', async () => {
+        const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'clients')
+
+        await wrapper.vm.$nextTick()
+
+        expect(wrapper.text()).toContain('Partes')
+
+        expect(wrapper.text()).toContain('Maria da Silva')
+
+        expect(wrapper.text()).not.toContain('Visão operacional')
+    })
+
+    it('monta Documentos somente quando sua seção é selecionada', async () => {
+        const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'documents')
+
+        await wrapper.vm.$nextTick()
 
         const component = wrapper.findComponent({
             name: 'FolderDocuments',
@@ -352,10 +616,24 @@ describe('FolderShowPage', () => {
         expect(component.exists()).toBe(true)
 
         expect(component.props('folderId')).toBe(10)
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderMovements',
+                })
+                .exists(),
+        ).toBe(false)
     })
 
-    it('renderiza movimentações da pasta com o id atual', async () => {
+    it('monta Movimentações somente quando sua seção é selecionada', async () => {
         const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'movements')
+
+        await wrapper.vm.$nextTick()
 
         const component = wrapper.findComponent({
             name: 'FolderMovements',
@@ -364,13 +642,63 @@ describe('FolderShowPage', () => {
         expect(component.exists()).toBe(true)
 
         expect(component.props('folderId')).toBe(10)
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderDocuments',
+                })
+                .exists(),
+        ).toBe(false)
     })
 
-    it('renderiza prazos da pasta com o id atual', async () => {
+    it('monta Prazos somente quando sua seção é selecionada', async () => {
         const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'deadlines')
+
+        await wrapper.vm.$nextTick()
 
         const component = wrapper.findComponent({
             name: 'FolderDeadlines',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        expect(component.props('folderId')).toBe(10)
+    })
+
+    it('monta Agenda somente quando sua seção é selecionada', async () => {
+        const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'events')
+
+        await wrapper.vm.$nextTick()
+
+        const component = wrapper.findComponent({
+            name: 'FolderEvents',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        expect(component.props('folderId')).toBe(10)
+    })
+
+    it('monta Tarefas somente quando sua seção é selecionada', async () => {
+        const { wrapper } = await mountPage()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'tasks')
+
+        await wrapper.vm.$nextTick()
+
+        const component = wrapper.findComponent({
+            name: 'FolderTasks',
         })
 
         expect(component.exists()).toBe(true)
@@ -438,30 +766,6 @@ describe('FolderShowPage', () => {
         await flushPromises()
 
         expect(router.currentRoute.value.name).toBe('folders')
-    })
-
-    it('renderiza agenda da pasta com o id atual', async () => {
-        const { wrapper } = await mountPage()
-
-        const component = wrapper.findComponent({
-            name: 'FolderEvents',
-        })
-
-        expect(component.exists()).toBe(true)
-
-        expect(component.props('folderId')).toBe(10)
-    })
-
-    it('renderiza tarefas da pasta com o id atual', async () => {
-        const { wrapper } = await mountPage()
-
-        const component = wrapper.findComponent({
-            name: 'FolderTasks',
-        })
-
-        expect(component.exists()).toBe(true)
-
-        expect(component.props('folderId')).toBe(10)
     })
 
     it('renderiza resumo operacional da pasta', async () => {
@@ -548,12 +852,128 @@ describe('FolderShowPage', () => {
         expect(text).toContain('Nenhuma movimentação registrada.')
     })
 
+    it('abre Documentos ao acionar o indicador de documentos', async () => {
+        const { wrapper } = await mountPage()
+
+        const shortcut = wrapper.get('[data-testid="folder-summary-documents"]')
+
+        await shortcut.trigger('click')
+
+        await wrapper.vm.$nextTick()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('documents')
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderDocuments',
+                })
+                .exists(),
+        ).toBe(true)
+    })
+
+    it('abre Tarefas ao acionar o indicador de tarefas pendentes', async () => {
+        const { wrapper } = await mountPage()
+
+        const shortcut = wrapper.get('[data-testid="folder-summary-tasks"]')
+
+        await shortcut.trigger('click')
+
+        await wrapper.vm.$nextTick()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('tasks')
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderTasks',
+                })
+                .exists(),
+        ).toBe(true)
+    })
+
+    it('abre Prazos ao acionar o indicador de prazos pendentes', async () => {
+        const { wrapper } = await mountPage()
+
+        const shortcut = wrapper.get('[data-testid="folder-summary-deadlines"]')
+
+        await shortcut.trigger('click')
+
+        await wrapper.vm.$nextTick()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('deadlines')
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderDeadlines',
+                })
+                .exists(),
+        ).toBe(true)
+    })
+
+    it('abre Agenda ao acionar próximo compromisso', async () => {
+        const { wrapper } = await mountPage()
+
+        const shortcut = wrapper.get('[data-testid="folder-summary-next-event"]')
+
+        await shortcut.trigger('click')
+
+        await wrapper.vm.$nextTick()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('events')
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderEvents',
+                })
+                .exists(),
+        ).toBe(true)
+    })
+
+    it('abre Movimentações ao acionar última movimentação', async () => {
+        const { wrapper } = await mountPage()
+
+        const shortcut = wrapper.get('[data-testid="folder-summary-latest-movement"]')
+
+        await shortcut.trigger('click')
+
+        await wrapper.vm.$nextTick()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('movements')
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderMovements',
+                })
+                .exists(),
+        ).toBe(true)
+    })
+
     it('recarrega a pasta quando a agenda é alterada', async () => {
         const { wrapper, fetchFolderSpy } = await mountPage()
 
         expect(fetchFolderSpy).toHaveBeenCalledTimes(1)
 
         expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'events')
+
+        await wrapper.vm.$nextTick()
 
         const component = wrapper.findComponent({
             name: 'FolderEvents',
@@ -568,5 +988,116 @@ describe('FolderShowPage', () => {
         expect(fetchFolderSpy).toHaveBeenCalledTimes(2)
 
         expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+    })
+
+    it('renderiza painel de atenção jurídica da pasta', async () => {
+        const { wrapper } = await mountPage()
+
+        const attention = wrapper.get('[data-testid="folder-attention"]')
+
+        expect(attention.text()).toContain('Atenção jurídica')
+
+        expect(attention.text()).toContain('Itens que exigem acompanhamento prioritário.')
+
+        expect(attention.text()).toContain('Prazos prioritários')
+
+        expect(attention.text()).toContain('Tarefas prioritárias')
+    })
+
+    it('renderiza prazos prioritários na visão geral', async () => {
+        const { wrapper } = await mountPage()
+
+        const attention = wrapper.get('[data-testid="folder-attention-deadlines"]')
+
+        const text = attention.text()
+
+        expect(text).toContain('Apresentar réplica')
+
+        expect(text).toContain('Protocolar manifestação')
+
+        expect(text).toContain('Juntar documentos')
+
+        expect(text).toContain('Vencido')
+
+        expect(text).toContain('Hoje')
+
+        expect(text).toContain('Próximo')
+    })
+
+    it('renderiza tarefas prioritárias na visão geral', async () => {
+        const { wrapper } = await mountPage()
+
+        const attention = wrapper.get('[data-testid="folder-attention-tasks"]')
+
+        const text = attention.text()
+
+        expect(text).toContain('Revisar contestação')
+
+        expect(text).toContain('Conferir documentos')
+
+        expect(text).toContain('Contatar cliente')
+
+        expect(text).toContain('Alta')
+
+        expect(text).toContain('Média')
+
+        expect(text).toContain('Sem vencimento')
+    })
+
+    it('renderiza estado vazio quando não existem itens de atenção', async () => {
+        const folder = defaultFolder()
+
+        folder.summary.attention = {
+            deadlines: [],
+            tasks: [],
+        }
+
+        const { wrapper } = await mountPage({
+            folder,
+        })
+
+        expect(wrapper.text()).toContain('Nenhum prazo pendente exige atenção.')
+
+        expect(wrapper.text()).toContain('Nenhuma tarefa pendente exige atenção.')
+    })
+
+    it('abre Prazos a partir do painel de atenção', async () => {
+        const { wrapper } = await mountPage()
+
+        await wrapper.get('[data-testid="folder-attention-deadlines-all"]').trigger('click')
+
+        await wrapper.vm.$nextTick()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('deadlines')
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderDeadlines',
+                })
+                .exists(),
+        ).toBe(true)
+    })
+
+    it('abre Tarefas a partir do painel de atenção', async () => {
+        const { wrapper } = await mountPage()
+
+        await wrapper.get('[data-testid="folder-attention-tasks-all"]').trigger('click')
+
+        await wrapper.vm.$nextTick()
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        expect(tabs.props('modelValue')).toBe('tasks')
+
+        expect(
+            wrapper
+                .findComponent({
+                    name: 'FolderTasks',
+                })
+                .exists(),
+        ).toBe(true)
     })
 })

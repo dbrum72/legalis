@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { flushPromises, mount } from '@vue/test-utils'
 
@@ -195,9 +195,17 @@ async function mountPage({
 
 describe('AgendaPage', () => {
     beforeEach(() => {
+        vi.useFakeTimers()
+
+        vi.setSystemTime(new Date(2026, 7, 20, 12, 0, 0))
+
         setActivePinia(createPinia())
 
         vi.clearAllMocks()
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
     })
 
     /*

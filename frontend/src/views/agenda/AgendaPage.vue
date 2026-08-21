@@ -1,587 +1,593 @@
 <template>
-    <section class="agenda-page">
-        <!--
+    <PageContainer>
+        <section class="agenda-page">
+            <!--
         |--------------------------------------------------------------------------
         | Cabeçalho
         |--------------------------------------------------------------------------
         -->
 
-        <header class="agenda-page__header">
-            <div class="agenda-page__heading">
-                <h1 class="agenda-page__title">
-                    Agenda
-                </h1>
+            <header class="agenda-page__header">
+                <div class="agenda-page__heading">
+                    <h1 class="agenda-page__title">
+                        Agenda
+                    </h1>
 
-                <p class="agenda-page__description">
-                    Acompanhe tarefas, prazos e compromissos em uma visão de calendário.
-                </p>
-            </div>
-        </header>
+                    <p class="agenda-page__description">
+                        Acompanhe tarefas, prazos e compromissos em uma visão de calendário.
+                    </p>
+                </div>
+            </header>
 
-        <!--
+            <!--
         |--------------------------------------------------------------------------
         | Mensagens
         |--------------------------------------------------------------------------
         -->
 
-        <div v-if="errorMessage" class="agenda-page__alert" role="alert">
-            {{ errorMessage }}
-        </div>
+            <div v-if="errorMessage" class="agenda-page__alert" role="alert">
+                {{ errorMessage }}
+            </div>
 
-        <!--
+            <!--
         |--------------------------------------------------------------------------
         | Toolbar
         |--------------------------------------------------------------------------
         -->
 
-        <section class="agenda-toolbar" aria-label="Controles da agenda">
-            <!--
+            <section class="agenda-toolbar" aria-label="Controles da agenda">
+                <!--
             |--------------------------------------------------------------------------
             | Navegação temporal
             |--------------------------------------------------------------------------
             -->
 
-            <div class="agenda-toolbar__period">
-                <div class="agenda-calendar__navigation">
-                    <button type="button" class="agenda-calendar__navigation-button" data-testid="agenda-previous-month"
-                        aria-label="Mês anterior" @click="goToPreviousMonth">
-                        ‹
-                    </button>
+                <div class="agenda-toolbar__period">
+                    <div class="agenda-calendar__navigation">
+                        <button type="button" class="agenda-calendar__navigation-button"
+                            data-testid="agenda-previous-month" aria-label="Mês anterior" @click="goToPreviousMonth">
+                            ‹
+                        </button>
 
-                    <button type="button" class="agenda-calendar__today-button" data-testid="agenda-today"
-                        @click="goToToday">
-                        Hoje
-                    </button>
+                        <button type="button" class="agenda-calendar__today-button" data-testid="agenda-today"
+                            @click="goToToday">
+                            Hoje
+                        </button>
 
-                    <button type="button" class="agenda-calendar__navigation-button" data-testid="agenda-next-month"
-                        aria-label="Próximo mês" @click="goToNextMonth">
-                        ›
-                    </button>
+                        <button type="button" class="agenda-calendar__navigation-button" data-testid="agenda-next-month"
+                            aria-label="Próximo mês" @click="goToNextMonth">
+                            ›
+                        </button>
+                    </div>
+
+                    <h2 id="agenda-calendar-title" class="agenda-calendar__title">
+                        {{ currentPeriodLabel }}
+                    </h2>
                 </div>
 
-                <h2 id="agenda-calendar-title" class="agenda-calendar__title">
-                    {{ currentPeriodLabel }}
-                </h2>
-            </div>
-
-            <!--
+                <!--
             |--------------------------------------------------------------------------
             | Filtros
             |--------------------------------------------------------------------------
             -->
 
-            <div class="agenda-toolbar__filters">
-                <div class="agenda-select-field">
-                    <label for="agenda-filter-type" class="agenda-select-field__label">
-                        Tipo
-                    </label>
+                <div class="agenda-toolbar__filters">
+                    <div class="agenda-select-field">
+                        <label for="agenda-filter-type" class="agenda-select-field__label">
+                            Tipo
+                        </label>
 
-                    <div class="agenda-select-field__control">
-                        <select id="agenda-filter-type" v-model="currentFilter" class="agenda-select-field__select"
-                            data-testid="agenda-filter-type">
-                            <option value="all">
-                                Todos os tipos
-                            </option>
+                        <div class="agenda-select-field__control">
+                            <select id="agenda-filter-type" v-model="currentFilter" class="agenda-select-field__select"
+                                data-testid="agenda-filter-type">
+                                <option value="all">
+                                    Todos os tipos
+                                </option>
 
-                            <option value="deadline">
-                                Prazos
-                            </option>
+                                <option value="deadline">
+                                    Prazos
+                                </option>
 
-                            <option value="task">
-                                Tarefas
-                            </option>
+                                <option value="task">
+                                    Tarefas
+                                </option>
 
-                            <option value="event">
-                                Compromissos
-                            </option>
-                        </select>
+                                <option value="event">
+                                    Compromissos
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="agenda-select-field">
+                        <label for="agenda-filter-status" class="agenda-select-field__label">
+                            Situação
+                        </label>
+
+                        <div class="agenda-select-field__control">
+                            <select id="agenda-filter-status" v-model="currentStatusFilter"
+                                class="agenda-select-field__select" data-testid="agenda-filter-status">
+                                <option value="all">
+                                    Todas as situações
+                                </option>
+
+                                <option value="pending">
+                                    Pendentes
+                                </option>
+
+                                <option value="completed">
+                                    Concluídos
+                                </option>
+
+                                <option value="overdue">
+                                    Vencidos
+                                </option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="agenda-select-field">
-                    <label for="agenda-filter-status" class="agenda-select-field__label">
-                        Situação
-                    </label>
-
-                    <div class="agenda-select-field__control">
-                        <select id="agenda-filter-status" v-model="currentStatusFilter"
-                            class="agenda-select-field__select" data-testid="agenda-filter-status">
-                            <option value="all">
-                                Todas as situações
-                            </option>
-
-                            <option value="pending">
-                                Pendentes
-                            </option>
-
-                            <option value="completed">
-                                Concluídos
-                            </option>
-
-                            <option value="overdue">
-                                Vencidos
-                            </option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!--
+                <!--
             |--------------------------------------------------------------------------
             | Visualização
             |--------------------------------------------------------------------------
             -->
 
-            <div class="agenda-page__view-switcher" aria-label="Visualização da agenda">
-                <button type="button" class="agenda-page__view-button" :class="{
-                    'agenda-page__view-button--active':
-                        currentView === 'month',
-                }" data-testid="agenda-view-month" @click="setView('month')">
-                    Mês
-                </button>
+                <div class="agenda-page__view-switcher" aria-label="Visualização da agenda">
+                    <button type="button" class="agenda-page__view-button" :class="{
+                        'agenda-page__view-button--active':
+                            currentView === 'month',
+                    }" data-testid="agenda-view-month" @click="setView('month')">
+                        Mês
+                    </button>
 
-                <button type="button" class="agenda-page__view-button" :class="{
-                    'agenda-page__view-button--active':
-                        currentView === 'week',
-                }" data-testid="agenda-view-week" @click="setView('week')">
-                    Semana
-                </button>
+                    <button type="button" class="agenda-page__view-button" :class="{
+                        'agenda-page__view-button--active':
+                            currentView === 'week',
+                    }" data-testid="agenda-view-week" @click="setView('week')">
+                        Semana
+                    </button>
 
-                <button type="button" class="agenda-page__view-button" :class="{
-                    'agenda-page__view-button--active':
-                        currentView === 'list',
-                }" data-testid="agenda-view-list" @click="setView('list')">
-                    Lista
-                </button>
-            </div>
-        </section>
+                    <button type="button" class="agenda-page__view-button" :class="{
+                        'agenda-page__view-button--active':
+                            currentView === 'list',
+                    }" data-testid="agenda-view-list" @click="setView('list')">
+                        Lista
+                    </button>
+                </div>
+            </section>
 
-        <!--
+            <!--
         |--------------------------------------------------------------------------
         | Visualização mensal
         |--------------------------------------------------------------------------
         -->
 
-        <div v-if="currentView === 'month'" class="agenda-workspace" data-testid="agenda-calendar">
-            <section class="agenda-calendar" aria-labelledby="agenda-calendar-title">
-                <div class="agenda-calendar__container">
-                    <div class="agenda-calendar__weekdays" aria-hidden="true">
-                        <div v-for="weekday in weekdays" :key="weekday" class="agenda-calendar__weekday">
-                            {{ weekday }}
+            <div v-if="currentView === 'month'" class="agenda-workspace" data-testid="agenda-calendar">
+                <section class="agenda-calendar" aria-labelledby="agenda-calendar-title">
+                    <div class="agenda-calendar__container">
+                        <div class="agenda-calendar__weekdays" aria-hidden="true">
+                            <div v-for="weekday in weekdays" :key="weekday" class="agenda-calendar__weekday">
+                                {{ weekday }}
+                            </div>
+                        </div>
+
+                        <div class="agenda-calendar__grid">
+                            <button v-for="day in calendarDays" :key="day.date" type="button"
+                                class="agenda-calendar__day" :class="{
+                                    'agenda-calendar__day--outside':
+                                        !day.isCurrentMonth,
+
+                                    'agenda-calendar__day--today':
+                                        day.isToday,
+
+                                    'agenda-calendar__day--selected':
+                                        day.date === selectedDate,
+                                }" data-testid="agenda-day" :data-date="day.date" :aria-label="day.date"
+                                @click="selectDay(day)">
+                                <span class="agenda-calendar__day-header">
+                                    <span class="agenda-calendar__day-number">
+                                        {{ day.day }}
+                                    </span>
+
+                                    <span v-if="itemsForDate(day.date).length > 0" class="agenda-calendar__day-count">
+                                        {{ itemsForDate(day.date).length }}
+                                    </span>
+                                </span>
+
+                                <span v-if="itemsForDate(day.date).length > 0" class="agenda-calendar__items">
+                                    <span v-for="item in visibleItemsForDate(day.date)" :key="`${item.type}-${item.id}`"
+                                        class="agenda-calendar__item" :class="`agenda-calendar__item--${item.type}`"
+                                        :data-testid="`agenda-calendar-item-${item.type}-${item.id}`">
+                                        <span class="agenda-calendar__item-dot" aria-hidden="true"></span>
+
+                                        <span class="agenda-calendar__item-type">
+                                            {{ itemTypeLabel(item.type) }}
+                                        </span>
+
+                                        <span v-if="item.type === 'event'" class="agenda-calendar__item-time">
+                                            {{ formatItemTime(item) }}
+                                        </span>
+
+                                        <span class="agenda-calendar__item-title">
+                                            {{ item.title }}
+                                        </span>
+                                    </span>
+
+                                    <span v-if="remainingItemsForDate(day.date) > 0" class="agenda-calendar__more">
+                                        +{{ remainingItemsForDate(day.date) }}
+                                        {{ remainingItemsForDate(day.date) === 1 ? 'item' : 'itens' }}
+                                    </span>
+                                </span>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="agenda-calendar__grid">
-                        <button v-for="day in calendarDays" :key="day.date" type="button" class="agenda-calendar__day"
-                            :class="{
-                                'agenda-calendar__day--outside':
-                                    !day.isCurrentMonth,
+                    <footer class="agenda-calendar__legend">
+                        <span class="agenda-calendar__legend-item">
+                            <span class="agenda-calendar__legend-dot agenda-calendar__legend-dot--event"></span>
 
-                                'agenda-calendar__day--today':
-                                    day.isToday,
+                            Compromissos
+                        </span>
 
-                                'agenda-calendar__day--selected':
-                                    day.date === selectedDate,
-                            }" data-testid="agenda-day" :data-date="day.date" :aria-label="day.date"
-                            @click="selectDay(day)">
-                            <span class="agenda-calendar__day-header">
-                                <span class="agenda-calendar__day-number">
-                                    {{ day.day }}
-                                </span>
+                        <span class="agenda-calendar__legend-item">
+                            <span class="agenda-calendar__legend-dot agenda-calendar__legend-dot--task"></span>
 
-                                <span v-if="itemsForDate(day.date).length > 0" class="agenda-calendar__day-count">
-                                    {{ itemsForDate(day.date).length }}
-                                </span>
-                            </span>
+                            Tarefas
+                        </span>
 
-                            <span v-if="itemsForDate(day.date).length > 0" class="agenda-calendar__items">
-                                <span v-for="item in visibleItemsForDate(day.date)" :key="`${item.type}-${item.id}`"
-                                    class="agenda-calendar__item" :class="`agenda-calendar__item--${item.type}`"
-                                    :data-testid="`agenda-calendar-item-${item.type}-${item.id}`">
-                                    <span class="agenda-calendar__item-dot" aria-hidden="true"></span>
+                        <span class="agenda-calendar__legend-item">
+                            <span class="agenda-calendar__legend-dot agenda-calendar__legend-dot--deadline"></span>
 
-                                    <span class="agenda-calendar__item-type">
-                                        {{ itemTypeLabel(item.type) }}
-                                    </span>
+                            Prazos
+                        </span>
+                    </footer>
+                </section>
 
-                                    <span v-if="item.type === 'event'" class="agenda-calendar__item-time">
-                                        {{ formatItemTime(item) }}
-                                    </span>
-
-                                    <span class="agenda-calendar__item-title">
-                                        {{ item.title }}
-                                    </span>
-                                </span>
-
-                                <span v-if="remainingItemsForDate(day.date) > 0" class="agenda-calendar__more">
-                                    +{{ remainingItemsForDate(day.date) }}
-                                    {{ remainingItemsForDate(day.date) === 1 ? 'item' : 'itens' }}
-                                </span>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
-                <footer class="agenda-calendar__legend">
-                    <span class="agenda-calendar__legend-item">
-                        <span class="agenda-calendar__legend-dot agenda-calendar__legend-dot--event"></span>
-
-                        Compromissos
-                    </span>
-
-                    <span class="agenda-calendar__legend-item">
-                        <span class="agenda-calendar__legend-dot agenda-calendar__legend-dot--task"></span>
-
-                        Tarefas
-                    </span>
-
-                    <span class="agenda-calendar__legend-item">
-                        <span class="agenda-calendar__legend-dot agenda-calendar__legend-dot--deadline"></span>
-
-                        Prazos
-                    </span>
-                </footer>
-            </section>
-
-            <!--
+                <!--
             |--------------------------------------------------------------------------
             | Dia selecionado
             |--------------------------------------------------------------------------
             -->
 
-            <aside class="agenda-selected-day" data-testid="agenda-selected-day"
-                aria-labelledby="agenda-selected-day-title">
-                <header class="agenda-selected-day__header">
-                    <span class="agenda-selected-day__weekday">
-                        {{ selectedWeekdayLabel }}
-                    </span>
+                <aside class="agenda-selected-day" data-testid="agenda-selected-day"
+                    aria-labelledby="agenda-selected-day-title">
+                    <header class="agenda-selected-day__header">
+                        <span class="agenda-selected-day__weekday">
+                            {{ selectedWeekdayLabel }}
+                        </span>
 
-                    <h2 id="agenda-selected-day-title" class="agenda-selected-day__title">
-                        {{ selectedDateLabel }}
-                    </h2>
+                        <h2 id="agenda-selected-day-title" class="agenda-selected-day__title">
+                            {{ selectedDateLabel }}
+                        </h2>
 
-                    <div class="agenda-selected-day__summary">
+                        <div class="agenda-selected-day__summary">
+                            <span>
+                                {{ selectedDayItems.length }}
+                                {{ selectedDayItems.length === 1 ? 'item' : 'itens' }}
+                            </span>
+                        </div>
+                    </header>
+
+                    <div v-if="selectedDayItems.length === 0" class="agenda-selected-day__empty">
+                        <div class="agenda-selected-day__empty-mark" aria-hidden="true"></div>
+
+                        <strong>
+                            Nenhum compromisso neste dia
+                        </strong>
+
                         <span>
-                            {{ selectedDayItems.length }}
-                            {{ selectedDayItems.length === 1 ? 'item' : 'itens' }}
+                            Nenhum item agendado para este dia.
                         </span>
                     </div>
-                </header>
 
-                <div v-if="selectedDayItems.length === 0" class="agenda-selected-day__empty">
-                    <div class="agenda-selected-day__empty-mark" aria-hidden="true"></div>
+                    <div v-else class="agenda-selected-day__items">
+                        <article v-for="item in selectedDayItems" :key="`${item.type}-${item.id}`"
+                            class="agenda-selected-item" :class="`agenda-selected-item--${item.type}`"
+                            :data-testid="`agenda-selected-item-${item.type}-${item.id}`">
+                            <div class="agenda-selected-item__type">
+                                <span class="agenda-selected-item__type-dot"></span>
 
-                    <strong>
-                        Nenhum compromisso neste dia
-                    </strong>
+                                {{ itemTypeLabel(item.type) }}
+                            </div>
 
-                    <span>
-                        Nenhum item agendado para este dia.
-                    </span>
-                </div>
+                            <div class="agenda-selected-item__card">
+                                <header class="agenda-selected-item__header">
+                                    <span v-if="formatItemTime(item)" class="agenda-selected-item__time">
+                                        {{ formatItemTime(item) }}
+                                    </span>
 
-                <div v-else class="agenda-selected-day__items">
-                    <article v-for="item in selectedDayItems" :key="`${item.type}-${item.id}`"
-                        class="agenda-selected-item" :class="`agenda-selected-item--${item.type}`"
-                        :data-testid="`agenda-selected-item-${item.type}-${item.id}`">
-                        <div class="agenda-selected-item__type">
-                            <span class="agenda-selected-item__type-dot"></span>
+                                    <strong class="agenda-selected-item__title">
+                                        {{ item.title }}
+                                    </strong>
+                                </header>
 
-                            {{ itemTypeLabel(item.type) }}
-                        </div>
+                                <dl class="agenda-selected-item__details">
+                                    <div v-if="item.type === 'task' && item.priority"
+                                        class="agenda-selected-item__detail">
+                                        <dt>
+                                            Prioridade
+                                        </dt>
 
-                        <div class="agenda-selected-item__card">
-                            <header class="agenda-selected-item__header">
-                                <span v-if="formatItemTime(item)" class="agenda-selected-item__time">
-                                    {{ formatItemTime(item) }}
+                                        <dd>
+                                            <span class="agenda-selected-item__priority"
+                                                :class="`agenda-selected-item__priority--${item.priority}`">
+                                                {{ priorityLabel(item.priority) }}
+                                            </span>
+                                        </dd>
+                                    </div>
+
+                                    <div v-if="item.type === 'event' && item.location"
+                                        class="agenda-selected-item__detail">
+                                        <dt>
+                                            Local
+                                        </dt>
+
+                                        <dd>
+                                            {{ item.location }}
+                                        </dd>
+                                    </div>
+
+                                    <div v-if="item.folder" class="agenda-selected-item__detail">
+                                        <dt>
+                                            Pasta
+                                        </dt>
+
+                                        <dd>
+                                            <strong>
+                                                {{ item.folder.name }}
+                                            </strong>
+
+                                            <span v-if="item.folder.process_number"
+                                                class="agenda-selected-item__process">
+                                                {{ item.folder.process_number }}
+                                            </span>
+                                        </dd>
+                                    </div>
+                                </dl>
+
+                                <footer class="agenda-selected-item__actions-row">
+                                    <button v-if="item.folder" type="button" class="agenda-selected-item__folder-button"
+                                        :data-testid="`agenda-selected-folder-${item.type}-${item.id}`"
+                                        @click="openFolder(item)">
+                                        Ver pasta
+
+                                        <span aria-hidden="true">
+                                            →
+                                        </span>
+                                    </button>
+
+                                    <button v-if="
+                                        canUpdateFolders
+                                        && canCompleteItem(item)
+                                        && item.type === 'task'
+                                    " type="button" class="agenda-selected-item__complete-button"
+                                        :data-testid="`agenda-complete-task-${item.id}`"
+                                        :disabled="completingItemKey === itemKey(item)" @click="completeTask(item)">
+                                        ✓
+                                        Concluir tarefa
+                                    </button>
+
+                                    <button v-else-if="
+                                        canUpdateFolders
+                                        && canCompleteItem(item)
+                                        && item.type === 'deadline'
+                                    " type="button" class="agenda-selected-item__complete-button"
+                                        :data-testid="`agenda-complete-deadline-${item.id}`"
+                                        :disabled="completingItemKey === itemKey(item)" @click="completeDeadline(item)">
+                                        ✓
+                                        Concluir prazo
+                                    </button>
+
+                                    <button v-else-if="
+                                        canUpdateFolders
+                                        && canCompleteItem(item)
+                                        && item.type === 'event'
+                                    " type="button" class="agenda-selected-item__complete-button"
+                                        :data-testid="`agenda-complete-event-${item.id}`"
+                                        :disabled="completingItemKey === itemKey(item)" @click="completeEvent(item)">
+                                        ✓
+                                        Concluir compromisso
+                                    </button>
+                                </footer>
+                            </div>
+                        </article>
+                    </div>
+
+                    <footer v-if="selectedDayItems.length > 0" class="agenda-selected-day__totals">
+                        <h3 class="agenda-selected-day__totals-title">
+                            Resumo do dia
+                        </h3>
+
+                        <div class="agenda-selected-day__totals-grid">
+                            <div class="agenda-selected-day__total">
+                                <span class="agenda-selected-day__total-value">
+                                    {{ selectedDayTypeCount('event') }}
                                 </span>
 
-                                <strong class="agenda-selected-item__title">
-                                    {{ item.title }}
-                                </strong>
-                            </header>
+                                <span class="agenda-selected-day__total-label">
+                                    Compromissos
+                                </span>
+                            </div>
 
-                            <dl class="agenda-selected-item__details">
-                                <div v-if="item.type === 'task' && item.priority" class="agenda-selected-item__detail">
-                                    <dt>
-                                        Prioridade
-                                    </dt>
+                            <div class="agenda-selected-day__total">
+                                <span class="agenda-selected-day__total-value">
+                                    {{ selectedDayTypeCount('task') }}
+                                </span>
 
-                                    <dd>
-                                        <span class="agenda-selected-item__priority"
-                                            :class="`agenda-selected-item__priority--${item.priority}`">
-                                            {{ priorityLabel(item.priority) }}
-                                        </span>
-                                    </dd>
-                                </div>
+                                <span class="agenda-selected-day__total-label">
+                                    Tarefas
+                                </span>
+                            </div>
 
-                                <div v-if="item.type === 'event' && item.location" class="agenda-selected-item__detail">
-                                    <dt>
-                                        Local
-                                    </dt>
+                            <div class="agenda-selected-day__total">
+                                <span class="agenda-selected-day__total-value">
+                                    {{ selectedDayTypeCount('deadline') }}
+                                </span>
 
-                                    <dd>
-                                        {{ item.location }}
-                                    </dd>
-                                </div>
-
-                                <div v-if="item.folder" class="agenda-selected-item__detail">
-                                    <dt>
-                                        Pasta
-                                    </dt>
-
-                                    <dd>
-                                        <strong>
-                                            {{ item.folder.name }}
-                                        </strong>
-
-                                        <span v-if="item.folder.process_number" class="agenda-selected-item__process">
-                                            {{ item.folder.process_number }}
-                                        </span>
-                                    </dd>
-                                </div>
-                            </dl>
-
-                            <footer class="agenda-selected-item__actions-row">
-                                <button v-if="item.folder" type="button" class="agenda-selected-item__folder-button"
-                                    :data-testid="`agenda-selected-folder-${item.type}-${item.id}`"
-                                    @click="openFolder(item)">
-                                    Ver pasta
-
-                                    <span aria-hidden="true">
-                                        →
-                                    </span>
-                                </button>
-
-                                <button v-if="
-                                    canUpdateFolders
-                                    && canCompleteItem(item)
-                                    && item.type === 'task'
-                                " type="button" class="agenda-selected-item__complete-button"
-                                    :data-testid="`agenda-complete-task-${item.id}`"
-                                    :disabled="completingItemKey === itemKey(item)" @click="completeTask(item)">
-                                    ✓
-                                    Concluir tarefa
-                                </button>
-
-                                <button v-else-if="
-                                    canUpdateFolders
-                                    && canCompleteItem(item)
-                                    && item.type === 'deadline'
-                                " type="button" class="agenda-selected-item__complete-button"
-                                    :data-testid="`agenda-complete-deadline-${item.id}`"
-                                    :disabled="completingItemKey === itemKey(item)" @click="completeDeadline(item)">
-                                    ✓
-                                    Concluir prazo
-                                </button>
-
-                                <button v-else-if="
-                                    canUpdateFolders
-                                    && canCompleteItem(item)
-                                    && item.type === 'event'
-                                " type="button" class="agenda-selected-item__complete-button"
-                                    :data-testid="`agenda-complete-event-${item.id}`"
-                                    :disabled="completingItemKey === itemKey(item)" @click="completeEvent(item)">
-                                    ✓
-                                    Concluir compromisso
-                                </button>
-                            </footer>
+                                <span class="agenda-selected-day__total-label">
+                                    Prazos
+                                </span>
+                            </div>
                         </div>
-                    </article>
-                </div>
+                    </footer>
+                </aside>
+            </div>
 
-                <footer v-if="selectedDayItems.length > 0" class="agenda-selected-day__totals">
-                    <h3 class="agenda-selected-day__totals-title">
-                        Resumo do dia
-                    </h3>
-
-                    <div class="agenda-selected-day__totals-grid">
-                        <div class="agenda-selected-day__total">
-                            <span class="agenda-selected-day__total-value">
-                                {{ selectedDayTypeCount('event') }}
-                            </span>
-
-                            <span class="agenda-selected-day__total-label">
-                                Compromissos
-                            </span>
-                        </div>
-
-                        <div class="agenda-selected-day__total">
-                            <span class="agenda-selected-day__total-value">
-                                {{ selectedDayTypeCount('task') }}
-                            </span>
-
-                            <span class="agenda-selected-day__total-label">
-                                Tarefas
-                            </span>
-                        </div>
-
-                        <div class="agenda-selected-day__total">
-                            <span class="agenda-selected-day__total-value">
-                                {{ selectedDayTypeCount('deadline') }}
-                            </span>
-
-                            <span class="agenda-selected-day__total-label">
-                                Prazos
-                            </span>
-                        </div>
-                    </div>
-                </footer>
-            </aside>
-        </div>
-
-        <!--
+            <!--
 |--------------------------------------------------------------------------
 | Visualização semanal
 |--------------------------------------------------------------------------
 -->
 
-        <section v-else-if="currentView === 'week'" class="agenda-week" data-testid="agenda-week"
-            aria-labelledby="agenda-calendar-title">
-            <div class="agenda-week__viewport">
-                <div class="agenda-week__grid">
-                    <article v-for="day in weekDays" :key="day.date" class="agenda-week__day" :class="{
-                        'agenda-week__day--today':
-                            day.isToday,
-                    }" data-testid="agenda-week-day" :data-date="day.date">
-                        <header class="agenda-week__day-header">
-                            <span class="agenda-week__weekday">
-                                {{ day.weekday }}
-                            </span>
+            <section v-else-if="currentView === 'week'" class="agenda-week" data-testid="agenda-week"
+                aria-labelledby="agenda-calendar-title">
+                <div class="agenda-week__viewport">
+                    <div class="agenda-week__grid">
+                        <article v-for="day in weekDays" :key="day.date" class="agenda-week__day" :class="{
+                            'agenda-week__day--today':
+                                day.isToday,
+                        }" data-testid="agenda-week-day" :data-date="day.date">
+                            <header class="agenda-week__day-header">
+                                <span class="agenda-week__weekday">
+                                    {{ day.weekday }}
+                                </span>
 
-                            <span class="agenda-week__day-number">
-                                {{ day.day }}
-                            </span>
+                                <span class="agenda-week__day-number">
+                                    {{ day.day }}
+                                </span>
 
-                            <span v-if="itemsForDate(day.date).length > 0" class="agenda-week__count">
-                                {{ itemsForDate(day.date).length }}
-                            </span>
-                        </header>
+                                <span v-if="itemsForDate(day.date).length > 0" class="agenda-week__count">
+                                    {{ itemsForDate(day.date).length }}
+                                </span>
+                            </header>
 
-                        <div v-if="itemsForDate(day.date).length > 0" class="agenda-week__items">
-                            <article v-for="item in itemsForDate(day.date)" :key="`${item.type}-${item.id}`"
-                                class="agenda-week-item" :class="`agenda-week-item--${item.type}`"
-                                :data-testid="`agenda-week-item-${item.type}-${item.id}`">
-                                <div class="agenda-week-item__meta">
-                                    <span class="agenda-week-item__dot"></span>
+                            <div v-if="itemsForDate(day.date).length > 0" class="agenda-week__items">
+                                <article v-for="item in itemsForDate(day.date)" :key="`${item.type}-${item.id}`"
+                                    class="agenda-week-item" :class="`agenda-week-item--${item.type}`"
+                                    :data-testid="`agenda-week-item-${item.type}-${item.id}`">
+                                    <div class="agenda-week-item__meta">
+                                        <span class="agenda-week-item__dot"></span>
 
-                                    <span class="agenda-week-item__type">
-                                        {{ itemTypeLabel(item.type) }}
+                                        <span class="agenda-week-item__type">
+                                            {{ itemTypeLabel(item.type) }}
+                                        </span>
+                                    </div>
+
+                                    <span v-if="formatItemTime(item)" class="agenda-week-item__time">
+                                        {{ formatItemTime(item) }}
                                     </span>
-                                </div>
 
-                                <span v-if="formatItemTime(item)" class="agenda-week-item__time">
-                                    {{ formatItemTime(item) }}
-                                </span>
+                                    <strong class="agenda-week-item__title">
+                                        {{ item.title }}
+                                    </strong>
 
-                                <strong class="agenda-week-item__title">
-                                    {{ item.title }}
-                                </strong>
+                                    <span v-if="item.folder" class="agenda-week-item__folder">
+                                        {{ item.folder.name }}
+                                    </span>
 
-                                <span v-if="item.folder" class="agenda-week-item__folder">
-                                    {{ item.folder.name }}
-                                </span>
+                                    <span v-if="item.type === 'event' && item.location"
+                                        class="agenda-week-item__location">
+                                        {{ item.location }}
+                                    </span>
+                                </article>
+                            </div>
 
-                                <span v-if="item.type === 'event' && item.location" class="agenda-week-item__location">
-                                    {{ item.location }}
-                                </span>
-                            </article>
-                        </div>
-
-                        <div v-else class="agenda-week__empty">
-                            Nenhum item
-                        </div>
-                    </article>
+                            <div v-else class="agenda-week__empty">
+                                Nenhum item
+                            </div>
+                        </article>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!--
+            <!--
         |--------------------------------------------------------------------------
         | Visualização em lista
         |--------------------------------------------------------------------------
         -->
 
-        <section v-else-if="currentView === 'list'" data-testid="agenda-list" aria-label="Agenda em lista">
-            <div v-if="agendaListGroups.length === 0" class="agenda-list__empty">
-                <div class="agenda-list__empty-mark" aria-hidden="true"></div>
+            <section v-else-if="currentView === 'list'" data-testid="agenda-list" aria-label="Agenda em lista">
+                <div v-if="agendaListGroups.length === 0" class="agenda-list__empty">
+                    <div class="agenda-list__empty-mark" aria-hidden="true"></div>
 
-                <strong>
-                    Nenhum item encontrado
-                </strong>
+                    <strong>
+                        Nenhum item encontrado
+                    </strong>
 
-                <span>
-                    Nenhum item encontrado neste período.
-                </span>
-            </div>
+                    <span>
+                        Nenhum item encontrado neste período.
+                    </span>
+                </div>
 
-            <div v-else class="agenda-list__groups">
-                <section v-for="group in agendaListGroups" :key="group.date" class="agenda-list__group">
-                    <header class="agenda-list__group-header">
-                        <div>
-                            <span class="agenda-list__weekday">
-                                {{ formatWeekday(group.date) }}
+                <div v-else class="agenda-list__groups">
+                    <section v-for="group in agendaListGroups" :key="group.date" class="agenda-list__group">
+                        <header class="agenda-list__group-header">
+                            <div>
+                                <span class="agenda-list__weekday">
+                                    {{ formatWeekday(group.date) }}
+                                </span>
+
+                                <h3 class="agenda-list__date">
+                                    {{ formatDateLabel(group.date) }}
+                                </h3>
+                            </div>
+
+                            <span class="agenda-list__count">
+                                {{ group.items.length }}
+                                {{ group.items.length === 1 ? 'item' : 'itens' }}
                             </span>
+                        </header>
 
-                            <h3 class="agenda-list__date">
-                                {{ formatDateLabel(group.date) }}
-                            </h3>
+                        <div class="agenda-list__items">
+                            <article v-for="item in group.items" :key="`${item.type}-${item.id}`"
+                                class="agenda-list-item" :class="`agenda-list-item--${item.type}`"
+                                :data-testid="`agenda-list-item-${item.type}-${item.id}`">
+                                <div class="agenda-list-item__time">
+                                    {{ formatItemTime(item) }}
+                                </div>
+
+                                <div class="agenda-list-item__marker">
+                                    <span class="agenda-list-item__dot"></span>
+                                </div>
+
+                                <div class="agenda-list-item__content">
+                                    <div class="agenda-list-item__heading">
+                                        <span class="agenda-list-item__type">
+                                            {{ itemTypeLabel(item.type) }}
+                                        </span>
+
+                                        <strong class="agenda-list-item__title">
+                                            {{ item.title }}
+                                        </strong>
+                                    </div>
+
+                                    <div v-if="item.folder" class="agenda-list-item__folder">
+                                        <span>
+                                            {{ item.folder.name }}
+                                        </span>
+
+                                        <span v-if="item.folder.process_number" class="agenda-list-item__process">
+                                            {{ item.folder.process_number }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="item.type === 'event' && item.location" class="agenda-list-item__meta">
+                                        {{ item.location }}
+                                    </div>
+
+                                    <div v-if="item.type === 'task' && item.priority" class="agenda-list-item__meta">
+                                        Prioridade:
+                                        {{ priorityLabel(item.priority) }}
+                                    </div>
+                                </div>
+                            </article>
                         </div>
-
-                        <span class="agenda-list__count">
-                            {{ group.items.length }}
-                            {{ group.items.length === 1 ? 'item' : 'itens' }}
-                        </span>
-                    </header>
-
-                    <div class="agenda-list__items">
-                        <article v-for="item in group.items" :key="`${item.type}-${item.id}`" class="agenda-list-item"
-                            :class="`agenda-list-item--${item.type}`"
-                            :data-testid="`agenda-list-item-${item.type}-${item.id}`">
-                            <div class="agenda-list-item__time">
-                                {{ formatItemTime(item) }}
-                            </div>
-
-                            <div class="agenda-list-item__marker">
-                                <span class="agenda-list-item__dot"></span>
-                            </div>
-
-                            <div class="agenda-list-item__content">
-                                <div class="agenda-list-item__heading">
-                                    <span class="agenda-list-item__type">
-                                        {{ itemTypeLabel(item.type) }}
-                                    </span>
-
-                                    <strong class="agenda-list-item__title">
-                                        {{ item.title }}
-                                    </strong>
-                                </div>
-
-                                <div v-if="item.folder" class="agenda-list-item__folder">
-                                    <span>
-                                        {{ item.folder.name }}
-                                    </span>
-
-                                    <span v-if="item.folder.process_number" class="agenda-list-item__process">
-                                        {{ item.folder.process_number }}
-                                    </span>
-                                </div>
-
-                                <div v-if="item.type === 'event' && item.location" class="agenda-list-item__meta">
-                                    {{ item.location }}
-                                </div>
-
-                                <div v-if="item.type === 'task' && item.priority" class="agenda-list-item__meta">
-                                    Prioridade:
-                                    {{ priorityLabel(item.priority) }}
-                                </div>
-                            </div>
-                        </article>
-                    </div>
-                </section>
-            </div>
+                    </section>
+                </div>
+            </section>
         </section>
-    </section>
+    </PageContainer>
 </template>
 
 <script setup>
@@ -592,6 +598,8 @@ import {
 } from 'vue'
 
 import { useRouter } from 'vue-router'
+
+import PageContainer from '@/components/layout/PageContainer/index.vue'
 
 import { useAgendaStore } from '@/stores/agenda.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -998,7 +1006,7 @@ const calendarDays =
         )
     })
 
-    /*
+/*
 |--------------------------------------------------------------------------
 | Grade semanal
 |--------------------------------------------------------------------------
@@ -1032,7 +1040,7 @@ const weekDays =
 
                     weekday:
                         weekdays[
-                            index
+                        index
                         ],
 
                     isToday:
@@ -1834,43 +1842,37 @@ function isSameDate(
 <style scoped>
 .agenda-page {
     --agenda-surface:
-        var(--surface, #fffdf8);
+        var(--color-surface);
 
     --agenda-surface-soft:
-        var(--surface-muted, #f7f3e9);
+        var(--color-surface-muted);
 
     --agenda-border:
-        var(--border-color, #e8e0d2);
+        var(--color-border);
 
     --agenda-text:
-        var(--text-primary, #3f352a);
+        var(--color-text);
 
     --agenda-muted:
-        var(--text-muted, #817566);
-
-    --agenda-primary:
-        var(--primary, #557c32);
-
-    --agenda-primary-soft:
-        #edf2e4;
+        var(--color-text-muted);
 
     --agenda-event:
-        #e78529;
+        var(--color-highlight);
 
     --agenda-event-soft:
-        #fff0df;
+        var(--color-surface-highlight-soft);
 
     --agenda-task:
-        #4f7e3a;
+        var(--color-brand-secondary);
 
     --agenda-task-soft:
-        #edf4e7;
+        var(--color-surface-secondary-soft);
 
     --agenda-deadline:
-        #c9544d;
+        var(--color-danger);
 
     --agenda-deadline-soft:
-        #fbe9e5;
+        var(--color-danger-soft);
 
     display: flex;
     flex-direction: column;
@@ -1924,16 +1926,16 @@ function isSameDate(
     padding: 0.75rem 1rem;
 
     border:
-        1px solid var(--danger, #c9544d);
+        1px solid var(--color-danger);
 
     border-radius:
         0.65rem;
 
     color:
-        var(--danger, #a9433d);
+        var(--color-danger);
 
     background:
-        #fff5f2;
+        var(--color-danger-soft);
 }
 
 /*
@@ -2013,7 +2015,7 @@ function isSameDate(
 .agenda-calendar__navigation-button:hover,
 .agenda-calendar__today-button:hover {
     background:
-        var(--agenda-primary-soft);
+        var(--color-surface-secondary-soft);
 }
 
 .agenda-calendar__title {
@@ -2140,17 +2142,17 @@ function isSameDate(
 .agenda-select-field__select:hover {
     border-color:
         color-mix(in srgb,
-            var(--agenda-primary) 30%,
+            var(--color-brand-secondary) 30%,
             var(--agenda-border));
 }
 
 .agenda-select-field__select:focus {
     border-color:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     box-shadow:
         0 0 0 3px color-mix(in srgb,
-            var(--agenda-primary) 14%,
+            var(--color-brand-secondary) 14%,
             transparent);
 }
 
@@ -2209,7 +2211,7 @@ function isSameDate(
 
 .agenda-page__view-button--active {
     color:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     background:
         var(--agenda-surface);
@@ -2266,7 +2268,7 @@ function isSameDate(
 
 .agenda-week__day--today {
     background:
-        var(--agenda-primary-soft);
+        var(--color-surface-secondary-soft);
 }
 
 .agenda-week__day-header {
@@ -2322,10 +2324,10 @@ function isSameDate(
 
 .agenda-week__day--today .agenda-week__day-number {
     color:
-        #fff;
+        var(--color-on-brand-secondary);
 
     background:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 }
 
 .agenda-week__count {
@@ -2348,10 +2350,10 @@ function isSameDate(
         999px;
 
     color:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     background:
-        var(--agenda-primary-soft);
+        var(--color-surface-secondary-soft);
 
     font-size:
         0.62rem;
@@ -2389,7 +2391,7 @@ function isSameDate(
         0.55rem;
 
     background:
-        #fff;
+        var(--color-surface);
 }
 
 .agenda-week-item--event {
@@ -2622,7 +2624,7 @@ function isSameDate(
 
 .agenda-calendar__day:hover {
     background:
-        var(--agenda-primary-soft);
+        var(--color-surface-secondary-soft);
 }
 
 .agenda-calendar__day--outside {
@@ -2635,12 +2637,12 @@ function isSameDate(
 
 .agenda-calendar__day--selected {
     background:
-        var(--agenda-primary-soft);
+        var(--color-surface-secondary-soft);
 }
 
 .agenda-calendar__day--today {
     box-shadow:
-        inset 0 0 0 2px var(--agenda-primary);
+        inset 0 0 0 2px var(--color-brand-secondary);
 }
 
 .agenda-calendar__day-header {
@@ -2671,10 +2673,10 @@ function isSameDate(
 
 .agenda-calendar__day--today .agenda-calendar__day-number {
     color:
-        #fff;
+        var(--color-on-brand-secondary);
 
     background:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 }
 
 .agenda-calendar__day-count {
@@ -2691,10 +2693,10 @@ function isSameDate(
         999px;
 
     color:
-        #fff;
+        var(--color-on-brand-secondary);
 
     background:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     font-size:
         0.6rem;
@@ -2818,7 +2820,7 @@ function isSameDate(
         0.6rem;
 
     color:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     font-size:
         0.62rem;
@@ -2915,7 +2917,7 @@ function isSameDate(
         0.35rem;
 
     color:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     font-size:
         0.66rem;
@@ -2978,7 +2980,7 @@ function isSameDate(
     height: 2.5rem;
 
     border:
-        2px solid var(--agenda-primary);
+        2px solid var(--color-brand-secondary);
 
     border-radius:
         50%;
@@ -3067,7 +3069,7 @@ function isSameDate(
         0.6rem;
 
     background:
-        #fff;
+        var(--color-surface);
 }
 
 .agenda-selected-item--event .agenda-selected-item__card {
@@ -3170,7 +3172,7 @@ function isSameDate(
 
 .agenda-selected-item__priority--medium {
     background:
-        #fff3dc;
+        var(--color-surface-warning-soft);
 }
 
 .agenda-selected-item__priority--low {
@@ -3220,13 +3222,13 @@ function isSameDate(
 
 .agenda-selected-item__complete-button {
     border:
-        1px solid var(--agenda-primary);
+        1px solid var(--color-brand-secondary);
 
     color:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     background:
-        var(--agenda-primary-soft);
+        var(--color-surface-secondary-soft);
 }
 
 /*
@@ -3335,7 +3337,7 @@ function isSameDate(
         0.15rem;
 
     color:
-        var(--agenda-primary);
+        var(--color-brand-secondary);
 
     font-size:
         0.62rem;

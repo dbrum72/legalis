@@ -1,58 +1,79 @@
 :root,
-[data-theme="terra-solar"] {
-  /* =========================================================
+[data-theme='terra-solar'] {
+    /* =========================================================
      TEMA: TERRA SOLAR
      Identidade: institucional, acolhedora, moderna e orgânica.
+
+     Cores institucionais:
+     - Marrom: marca primária
+     - Verde musgo: marca secundária
+     - Laranja: destaque
   ========================================================= */
 
-  /* Marca */
-  --color-brand: var(--palette-earth-700);
-  --color-brand-hover: #4f3627;
-  --color-brand-active: #432e22;
-  --color-on-brand: var(--neutral-0);
+    /* Marca primária — marrom */
+    --color-brand: var(--palette-earth-700);
+    --color-brand-hover: #4f3627;
+    --color-brand-active: #432e22;
+    --color-on-brand: var(--neutral-0);
 
-  --color-accent: var(--palette-mint-500);
-  --color-accent-hover: #65ad95;
-  --color-on-accent: #173c31;
+    /* Marca secundária — verde musgo */
+    --color-brand-secondary: var(--palette-moss-700);
+    --color-brand-secondary-hover: #46583f;
+    --color-brand-secondary-active: var(--palette-moss-800);
+    --color-on-brand-secondary: var(--neutral-0);
 
-  --color-highlight: var(--palette-orange-500);
-  --color-highlight-hover: #d96810;
-  --color-on-highlight: var(--neutral-0);
+    /* Accent de apoio — mint */
+    --color-accent: var(--palette-mint-500);
+    --color-accent-hover: #65ad95;
+    --color-on-accent: #173c31;
 
-  --color-warning: var(--palette-amber-400);
-  --color-warning-hover: #d99520;
-  --color-on-warning: #422a00;
+    /* Destaque — laranja */
+    --color-highlight: var(--palette-orange-500);
+    --color-highlight-hover: #d96810;
+    --color-on-highlight: var(--neutral-0);
 
-  /* Superfícies */
-  --color-page: #fffdf7;
-  --color-surface: var(--neutral-0);
-  --color-surface-soft: #fff8df;
-  --color-surface-muted: var(--neutral-100);
-  --color-surface-accent: #e4f4ef;
+    /* Apoio quente — âmbar */
+    --color-warning: var(--palette-amber-400);
+    --color-warning-hover: #d99520;
+    --color-on-warning: #422a00;
 
-  /* Texto */
-  --color-text: #2f2924;
-  --color-text-soft: #655b51;
-  --color-text-muted: #867b70;
-  --color-text-inverse: var(--neutral-0);
+    /* Superfícies */
+    --color-page: #fffdf7;
+    --color-surface: var(--neutral-0);
+    --color-surface-soft: #fff8df;
+    --color-surface-muted: var(--neutral-100);
+    --color-surface-accent: #e4f4ef;
 
-  /* Bordas */
-  --color-border: #e5ddcf;
-  --color-border-strong: #cdbfab;
-  --color-divider: #eee7dc;
+    /* Superfícies cromáticas */
+    --color-surface-secondary-soft: var(--palette-moss-200);
+    --color-surface-highlight-soft: #fff0e4;
+    --color-surface-warning-soft: #fff5d6;
 
-  /* Estados */
-  --color-success: #3f8f73;
-  --color-success-soft: #e2f2ec;
-  --color-danger: #c54b3c;
-  --color-danger-soft: #fde9e6;
-  --color-info: #4d86a8;
-  --color-info-soft: #e8f2f8;
+    /* Texto */
+    --color-text: #2f2924;
+    --color-text-soft: #655b51;
+    --color-text-muted: #867b70;
+    --color-text-inverse: var(--neutral-0);
 
-  /* Foco */
-  --focus-ring: 0 0 0 3px rgb(120 192 168 / 0.35);
+    /* Bordas */
+    --color-border: #e5ddcf;
+    --color-border-strong: #cdbfab;
+    --color-divider: #eee7dc;
 
-  /* Elevação contextual */
-  --surface-shadow: var(--shadow-sm);
-  --overlay-shadow: var(--shadow-lg);
+    /* Estados */
+    --color-success: #3f8f73;
+    --color-success-soft: #e2f2ec;
+
+    --color-danger: #c54b3c;
+    --color-danger-soft: #fde9e6;
+
+    --color-info: #4d86a8;
+    --color-info-soft: #e8f2f8;
+
+    /* Foco */
+    --focus-ring: 0 0 0 3px rgb(120 192 168 / 0.35);
+
+    /* Elevação contextual */
+    --surface-shadow: var(--shadow-sm);
+    --overlay-shadow: var(--shadow-lg);
 }

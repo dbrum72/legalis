@@ -8,6 +8,7 @@ import {
     logout as logoutRequest,
     me as meRequest,
     refresh as refreshRequest,
+    register as registerRequest,
 } from '@/api/auth.js'
 
 import { getAccessToken, removeAccessToken, setAccessToken } from '@/api/auth-token.js'
@@ -106,7 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
         useFolderDeadlinesStore().clear()
 
         useFolderDocumentsStore().clear()
-        
+
         useFolderEventsStore().clear()
 
         useFolderMovementsStore().clear()
@@ -258,6 +259,16 @@ export const useAuthStore = defineStore('auth', () => {
         return response.data
     }
 
+    async function register(payload) {
+        const response = await registerRequest(payload)
+
+        applyAuthPayload(response.data)
+
+        await initializeContext()
+
+        return response.data
+    }
+
     async function fetchMe() {
         const response = await meRequest()
 
@@ -349,6 +360,7 @@ export const useAuthStore = defineStore('auth', () => {
         initializeContext,
 
         login,
+        register,
         fetchMe,
         refresh,
         logout,

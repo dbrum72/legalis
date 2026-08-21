@@ -245,7 +245,7 @@ describe('FolderMovements', () => {
         })
 
         expect(createSpy).toHaveBeenCalledWith(10, {
-            occurred_at: '2026-08-18T14:30',
+            occurred_at: new Date('2026-08-18T14:30').toISOString(),
 
             title: 'Audiência designada',
 
