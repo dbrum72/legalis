@@ -181,6 +181,10 @@ const props = defineProps({
     },
 })
 
+const emit = defineEmits([
+    'changed',
+])
+
 const authStore =
     useAuthStore()
 
@@ -359,6 +363,10 @@ async function submitDeadline() {
             payload,
         )
 
+        emit(
+            'changed',
+        )
+
         resetForm()
 
         showCreateForm.value =
@@ -392,6 +400,9 @@ async function completeDeadline(
         await folderDeadlinesStore.completeDeadline(
             props.folderId,
             deadline.id,
+        )
+        emit(
+            'changed',
         )
     } catch {
         completeError.value =
@@ -442,6 +453,9 @@ async function confirmDelete() {
         await folderDeadlinesStore.removeDeadline(
             props.folderId,
             deadlineToDelete.value.id,
+        )
+        emit(
+            'changed',
         )
 
         deadlineToDelete.value =

@@ -372,15 +372,15 @@
                 -->
 
                 <AppCard v-if="activeSection === 'documents'">
-                    <FolderDocuments :folder-id="folder.id" />
+                    <FolderDocuments :folder-id="folder.id" @changed="refreshFolderSummary" />
                 </AppCard>
 
                 <AppCard v-if="activeSection === 'movements'">
-                    <FolderMovements :folder-id="folder.id" />
+                    <FolderMovements :folder-id="folder.id" @changed="refreshFolderSummary" />
                 </AppCard>
 
                 <AppCard v-if="activeSection === 'deadlines'">
-                    <FolderDeadlines :folder-id="folder.id" />
+                    <FolderDeadlines :folder-id="folder.id" @changed="refreshFolderSummary" />
                 </AppCard>
 
                 <AppCard v-if="activeSection === 'events'">
@@ -388,7 +388,7 @@
                 </AppCard>
 
                 <AppCard v-if="activeSection === 'tasks'">
-                    <FolderTasks :folder-id="folder.id" />
+                    <FolderTasks :folder-id="folder.id" @changed="refreshFolderSummary" />
                 </AppCard>
             </template>
         </div>

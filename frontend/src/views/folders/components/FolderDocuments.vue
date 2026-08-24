@@ -150,6 +150,10 @@ const props = defineProps({
     },
 })
 
+const emit = defineEmits([
+    'changed',
+])
+
 const authStore =
     useAuthStore()
 
@@ -312,6 +316,9 @@ async function submitUpload() {
             props.folderId,
             payload,
         )
+        emit(
+            'changed',
+        )
 
         resetUploadForm()
 
@@ -423,6 +430,10 @@ async function confirmDelete() {
         await folderDocumentsStore.removeDocument(
             props.folderId,
             documentToDelete.value.id,
+        )
+
+        emit(
+            'changed',
         )
 
         documentToDelete.value =

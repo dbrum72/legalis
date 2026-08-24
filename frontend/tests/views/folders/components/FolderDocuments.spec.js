@@ -645,4 +645,59 @@ describe('FolderDocuments', () => {
 
         expect(document.querySelector('.app-confirm-dialog')).not.toBeNull()
     })
+
+    it('emite changed após anexar documento com sucesso', async () => {
+        const { wrapper, folderDocumentsStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderDocumentsStore, 'uploadDocument').mockResolvedValue({
+            id: 20,
+            folder_id: 10,
+            name: 'Petição inicial',
+            original_name: 'peticao.pdf',
+        })
+
+        await openUploadForm(wrapper)
+
+        const file = new File(['conteúdo do documento'], 'peticao.pdf', {
+            type: 'application/pdf',
+        })
+
+        await selectFile(wrapper, file)
+
+        await wrapper.get('input[name="name"]').setValue('Petição inicial')
+
+        await wrapper.get('textarea[name="description"]').setValue('Petição inicial protocolada.')
+
+        await wrapper.get('form').trigger('submit')
+
+        await flushPromises()
+
+        expect(wrapper.emitted('changed')).toHaveLength(1)
+    })
+
+    it('emite changed após excluir documento com sucesso', async () => {
+        const { wrapper, folderDocumentsStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderDocumentsStore, 'removeDocument').mockResolvedValue()
+
+        const button = findButtons(wrapper, 'Excluir')[0]
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        const confirmButton = findTeleportedButton('Excluir')
+
+        expect(confirmButton).toBeTruthy()
+
+        confirmButton.click()
+
+        await vi.waitFor(() => {
+            expect(wrapper.emitted('changed')).toHaveLength(1)
+        })
+    })
 })

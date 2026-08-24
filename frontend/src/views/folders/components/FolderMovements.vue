@@ -149,6 +149,10 @@ const props = defineProps({
     },
 })
 
+const emit = defineEmits([
+    'changed',
+])
+
 const authStore =
     useAuthStore()
 
@@ -289,6 +293,9 @@ async function submitMovement() {
             props.folderId,
             payload,
         )
+        emit(
+            'changed',
+        )
 
         resetForm()
 
@@ -341,6 +348,9 @@ async function confirmDelete() {
         await folderMovementsStore.removeMovement(
             props.folderId,
             movementToDelete.value.id,
+        )
+        emit(
+            'changed',
         )
 
         movementToDelete.value =

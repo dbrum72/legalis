@@ -450,4 +450,52 @@ describe('FolderMovements', () => {
 
         expect(document.querySelector('.app-confirm-dialog')).not.toBeNull()
     })
+
+    it('emite changed após registrar movimentação com sucesso', async () => {
+        const { wrapper, folderMovementsStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderMovementsStore, 'createMovement').mockResolvedValue({
+            id: 3,
+            folder_id: 10,
+            title: 'Audiência designada',
+        })
+
+        await openCreateForm(wrapper)
+
+        await wrapper.get('input[name="occurred_at"]').setValue('2026-08-18T14:30')
+
+        await wrapper.get('input[name="title"]').setValue('Audiência designada')
+
+        await wrapper.get('form').trigger('submit')
+
+        await flushPromises()
+
+        expect(wrapper.emitted('changed')).toHaveLength(1)
+    })
+
+    it('emite changed após excluir movimentação com sucesso', async () => {
+        const { wrapper, folderMovementsStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderMovementsStore, 'removeMovement').mockResolvedValue()
+
+        const button = findButtons(wrapper, 'Excluir')[0]
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        const confirmButton = findTeleportedButton('Excluir')
+
+        expect(confirmButton).toBeTruthy()
+
+        confirmButton.click()
+
+        await vi.waitFor(() => {
+            expect(wrapper.emitted('changed')).toHaveLength(1)
+        })
+    })
 })

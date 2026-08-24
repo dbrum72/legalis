@@ -1100,4 +1100,109 @@ describe('FolderShowPage', () => {
                 .exists(),
         ).toBe(true)
     })
+
+    it('recarrega a pasta quando os prazos são alterados', async () => {
+        const { wrapper, fetchFolderSpy } = await mountPage()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(1)
+
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'deadlines')
+
+        await wrapper.vm.$nextTick()
+
+        const component = wrapper.findComponent({
+            name: 'FolderDeadlines',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        await component.vm.$emit('changed')
+
+        await flushPromises()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(2)
+
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+    })
+
+    it('recarrega a pasta quando as tarefas são alteradas', async () => {
+        const { wrapper, fetchFolderSpy } = await mountPage()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(1)
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'tasks')
+
+        await wrapper.vm.$nextTick()
+
+        const component = wrapper.findComponent({
+            name: 'FolderTasks',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        await component.vm.$emit('changed')
+
+        await flushPromises()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(2)
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+    })
+
+    it('recarrega a pasta quando as movimentações são alteradas', async () => {
+        const { wrapper, fetchFolderSpy } = await mountPage()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(1)
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'movements')
+
+        await wrapper.vm.$nextTick()
+
+        const component = wrapper.findComponent({
+            name: 'FolderMovements',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        await component.vm.$emit('changed')
+
+        await flushPromises()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(2)
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+    })
+
+    it('recarrega a pasta quando os documentos são alterados', async () => {
+        const { wrapper, fetchFolderSpy } = await mountPage()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(1)
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+
+        const tabs = wrapper.findComponent(AppTabs)
+
+        await tabs.vm.$emit('update:modelValue', 'documents')
+
+        await wrapper.vm.$nextTick()
+
+        const component = wrapper.findComponent({
+            name: 'FolderDocuments',
+        })
+
+        expect(component.exists()).toBe(true)
+
+        await component.vm.$emit('changed')
+
+        await flushPromises()
+
+        expect(fetchFolderSpy).toHaveBeenCalledTimes(2)
+        expect(fetchFolderSpy).toHaveBeenLastCalledWith(10)
+    })
 })

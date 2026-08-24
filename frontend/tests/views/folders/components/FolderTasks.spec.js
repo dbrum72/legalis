@@ -577,4 +577,84 @@ describe('FolderTasks', () => {
 
         expect(document.querySelector('.app-confirm-dialog')).not.toBeNull()
     })
+
+    it('emite changed após criar tarefa com sucesso', async () => {
+        const { wrapper, folderTasksStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderTasksStore, 'createTask').mockResolvedValue({
+            id: 3,
+            folder_id: 10,
+            title: 'Preparar recurso',
+            priority: 'high',
+            due_at: '2026-08-30T21:00:00.000Z',
+            status: 'pending',
+        })
+
+        const button = findButton(wrapper, 'Nova tarefa')
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        await wrapper.get('input[name="title"]').setValue('Preparar recurso')
+
+        await wrapper.get('select[name="priority"]').setValue('high')
+
+        await wrapper.get('input[name="due_at"]').setValue('2026-08-30T18:00')
+
+        await wrapper.get('form').trigger('submit')
+
+        await flushPromises()
+
+        expect(wrapper.emitted('changed')).toHaveLength(1)
+    })
+
+    it('emite changed após concluir tarefa com sucesso', async () => {
+        const { wrapper, folderTasksStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderTasksStore, 'completeTask').mockResolvedValue({
+            id: 1,
+            folder_id: 10,
+            status: 'completed',
+            completed_at: '2026-08-22T16:00:00.000Z',
+        })
+
+        const button = findButton(wrapper, 'Concluir')
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.emitted('changed')).toHaveLength(1)
+    })
+
+    it('emite changed após excluir tarefa com sucesso', async () => {
+        const { wrapper, folderTasksStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderTasksStore, 'removeTask').mockResolvedValue()
+
+        const button = findButtons(wrapper, 'Excluir')[0]
+
+        expect(button).toBeTruthy()
+
+        await button.trigger('click')
+
+        const confirmButton = findTeleportedButton('Excluir')
+
+        expect(confirmButton).toBeTruthy()
+
+        confirmButton.click()
+
+        await vi.waitFor(() => {
+            expect(wrapper.emitted('changed')).toHaveLength(1)
+        })
+    })
 })

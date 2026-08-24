@@ -209,6 +209,10 @@ const props = defineProps({
     },
 })
 
+const emit = defineEmits([
+    'changed',
+])
+
 const authStore =
     useAuthStore()
 
@@ -418,6 +422,10 @@ async function submitCreate() {
             payload,
         )
 
+        emit(
+            'changed',
+        )
+
         resetForm()
 
         isCreating.value =
@@ -451,6 +459,9 @@ async function completeTask(
         await folderTasksStore.completeTask(
             props.folderId,
             task.id,
+        )
+        emit(
+            'changed',
         )
     } catch {
         completeError.value =
@@ -502,7 +513,10 @@ async function confirmDelete() {
             props.folderId,
             taskToDelete.value.id,
         )
-
+        emit(
+            'changed',
+        )
+        
         taskToDelete.value =
             null
     } catch {

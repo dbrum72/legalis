@@ -260,7 +260,7 @@ describe('FolderDeadlines', () => {
 
             description: 'Prazo para interposição do recurso.',
 
-            due_at: new Date('2026-08-30T18:00').toISOString()
+            due_at: new Date('2026-08-30T18:00').toISOString(),
         })
     })
 
@@ -516,5 +516,78 @@ describe('FolderDeadlines', () => {
         })
 
         expect(document.querySelector('.app-confirm-dialog')).not.toBeNull()
+    })
+
+    it('emite changed após criar prazo com sucesso', async () => {
+        const { wrapper, folderDeadlinesStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderDeadlinesStore, 'createDeadline').mockResolvedValue({
+            id: 3,
+            folder_id: 10,
+            title: 'Apresentar recurso',
+            due_at: '2026-08-30T21:00:00.000Z',
+            status: 'pending',
+        })
+
+        await openCreateForm(wrapper)
+
+        await wrapper.get('input[name="title"]').setValue('Apresentar recurso')
+
+        await wrapper.get('input[name="due_at"]').setValue('2026-08-30T18:00')
+
+        await wrapper.get('form').trigger('submit')
+
+        await flushPromises()
+
+        expect(wrapper.emitted('changed')).toHaveLength(1)
+    })
+
+    it('emite changed após concluir prazo com sucesso', async () => {
+        const { wrapper, folderDeadlinesStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderDeadlinesStore, 'completeDeadline').mockResolvedValue({
+            id: 1,
+            folder_id: 10,
+            status: 'completed',
+            completed_at: '2026-08-22T15:00:00.000Z',
+        })
+
+        const completeButton = findButton(wrapper, 'Concluir')
+
+        expect(completeButton).toBeTruthy()
+
+        await completeButton.trigger('click')
+
+        await flushPromises()
+
+        expect(wrapper.emitted('changed')).toHaveLength(1)
+    })
+
+    it('emite changed após excluir prazo com sucesso', async () => {
+        const { wrapper, folderDeadlinesStore } = await mountComponent({
+            permissions: ['folders.update'],
+        })
+
+        vi.spyOn(folderDeadlinesStore, 'removeDeadline').mockResolvedValue()
+
+        const deleteButton = findButtons(wrapper, 'Excluir')[0]
+
+        expect(deleteButton).toBeTruthy()
+
+        await deleteButton.trigger('click')
+
+        const confirmButton = findTeleportedButton('Excluir')
+
+        expect(confirmButton).toBeTruthy()
+
+        confirmButton.click()
+
+        await vi.waitFor(() => {
+            expect(wrapper.emitted('changed')).toHaveLength(1)
+        })
     })
 })
