@@ -72,7 +72,6 @@ function emptyAttention() {
     return {
         overdue_tasks: [],
         overdue_deadlines: [],
-        events_today: [],
     }
 }
 
@@ -105,230 +104,6 @@ function defaultAttention() {
                     id: 12,
                     name: 'Ação revisional',
                     process_number: '5002222-33.2026.8.21.0022',
-                },
-            },
-        ],
-
-        events_today: [
-            {
-                id: 601,
-                type: 'hearing',
-                title: 'Audiência de conciliação hoje',
-                starts_at: '2026-08-19T19:00:00.000000Z',
-                ends_at: '2026-08-19T20:00:00.000000Z',
-                location: 'Fórum de Pelotas',
-                status: 'scheduled',
-
-                folder: {
-                    id: 13,
-                    name: 'Ação de alimentos',
-                    process_number: '5003333-44.2026.8.21.0022',
-                },
-            },
-        ],
-    }
-}
-
-function emptyOperational() {
-    return {
-        upcoming_events: [],
-        pending_deadlines: [],
-        pending_tasks: [],
-    }
-}
-
-function defaultOperational() {
-    function emptyMyWork() {
-        return {
-            pending_tasks: [],
-            pending_deadlines: [],
-            upcoming_events: [],
-        }
-    }
-
-    function defaultMyWork() {
-        return {
-            pending_tasks: [
-                {
-                    id: 801,
-                    title: 'Minha tarefa prioritária',
-                    priority: 'high',
-                    due_at: '2026-08-20T18:00:00.000000Z',
-                    status: 'pending',
-
-                    folder: {
-                        id: 10,
-                        name: 'Ação indenizatória',
-                        process_number: '5000000-00.2026.8.21.0001',
-                    },
-                },
-
-                {
-                    id: 802,
-                    title: 'Minha tarefa de acompanhamento',
-                    priority: 'medium',
-                    due_at: null,
-                    status: 'pending',
-
-                    folder: {
-                        id: 11,
-                        name: 'Ação de cobrança',
-                        process_number: null,
-                    },
-                },
-            ],
-
-            pending_deadlines: [
-                {
-                    id: 803,
-                    title: 'Meu prazo processual',
-                    due_at: '2026-08-21T23:59:59.000000Z',
-                    status: 'pending',
-
-                    folder: {
-                        id: 12,
-                        name: 'Ação revisional',
-                        process_number: '5002222-33.2026.8.21.0022',
-                    },
-                },
-
-                {
-                    id: 804,
-                    title: 'Meu segundo prazo',
-                    due_at: '2026-08-25T23:59:59.000000Z',
-                    status: 'pending',
-
-                    folder: {
-                        id: 13,
-                        name: 'Ação de alimentos',
-                        process_number: '5003333-44.2026.8.21.0022',
-                    },
-                },
-            ],
-
-            upcoming_events: [
-                {
-                    id: 805,
-                    type: 'hearing',
-                    title: 'Minha audiência',
-                    starts_at: '2026-08-22T19:00:00.000000Z',
-                    ends_at: '2026-08-22T20:00:00.000000Z',
-                    location: 'Fórum de Pelotas',
-                    status: 'scheduled',
-
-                    folder: {
-                        id: 14,
-                        name: 'Ação possessória',
-                        process_number: '5004444-55.2026.8.21.0022',
-                    },
-                },
-
-                {
-                    id: 806,
-                    type: 'meeting',
-                    title: 'Minha reunião',
-                    starts_at: '2026-08-24T14:00:00.000000Z',
-                    ends_at: null,
-                    location: 'Escritório',
-                    status: 'scheduled',
-
-                    folder: {
-                        id: 15,
-                        name: 'Consultoria empresarial',
-                        process_number: null,
-                    },
-                },
-            ],
-        }
-    }
-
-    return {
-        upcoming_events: [
-            {
-                id: 101,
-                type: 'hearing',
-                title: 'Audiência de instrução',
-                starts_at: '2026-08-20T17:00:00.000000Z',
-                ends_at: '2026-08-20T18:00:00.000000Z',
-                location: '3ª Vara Cível de Pelotas',
-
-                folder: {
-                    id: 10,
-                    name: 'Ação indenizatória',
-                    process_number: '5000000-00.2026.8.21.0001',
-                },
-            },
-
-            {
-                id: 102,
-                type: 'meeting',
-                title: 'Reunião com cliente',
-                starts_at: '2026-08-22T14:00:00.000000Z',
-                ends_at: null,
-                location: 'Escritório',
-
-                folder: {
-                    id: 11,
-                    name: 'Ação de cobrança',
-                    process_number: null,
-                },
-            },
-        ],
-
-        pending_deadlines: [
-            {
-                id: 201,
-                title: 'Apresentar manifestação',
-                due_at: '2026-08-21T23:59:59.000000Z',
-                status: 'pending',
-
-                folder: {
-                    id: 10,
-                    name: 'Ação indenizatória',
-                    process_number: '5000000-00.2026.8.21.0001',
-                },
-            },
-
-            {
-                id: 202,
-                title: 'Interpor recurso',
-                due_at: '2026-08-25T23:59:59.000000Z',
-                status: 'pending',
-
-                folder: {
-                    id: 12,
-                    name: 'Ação revisional',
-                    process_number: '5002222-33.2026.8.21.0022',
-                },
-            },
-        ],
-
-        pending_tasks: [
-            {
-                id: 301,
-                title: 'Revisar documentos',
-                priority: 'high',
-                due_at: '2026-08-20T20:00:00.000000Z',
-                status: 'pending',
-
-                folder: {
-                    id: 11,
-                    name: 'Ação de cobrança',
-                    process_number: null,
-                },
-            },
-
-            {
-                id: 302,
-                title: 'Telefonar para cliente',
-                priority: 'medium',
-                due_at: null,
-                status: 'pending',
-
-                folder: {
-                    id: 10,
-                    name: 'Ação indenizatória',
-                    process_number: '5000000-00.2026.8.21.0001',
                 },
             },
         ],
@@ -459,16 +234,15 @@ async function mountPage({
         upcoming_events: 0,
         overdue_tasks: 0,
         overdue_deadlines: 0,
-        events_today: 0,
     },
 
     attention = emptyAttention(),
 
+    todayAgenda = [],
+
     recentActivity = [],
 
     recentFolders = [],
-
-    operational = emptyOperational(),
 
     myWork = emptyMyWork(),
 
@@ -494,11 +268,11 @@ async function mountPage({
 
     dashboardStore.attention = attention
 
+    dashboardStore.todayAgenda = todayAgenda
+
     dashboardStore.recentActivity = recentActivity
 
     dashboardStore.recentFolders = recentFolders
-
-    dashboardStore.operational = operational
 
     dashboardStore.myWork = myWork
 
@@ -518,11 +292,11 @@ async function mountPage({
 
             attention: dashboardStore.attention,
 
+            today_agenda: dashboardStore.todayAgenda,
+
             recent_activity: dashboardStore.recentActivity,
 
             recent_folders: dashboardStore.recentFolders,
-
-            operational: dashboardStore.operational,
 
             my_work: dashboardStore.myWork,
         })
@@ -578,7 +352,6 @@ describe('DashboardPage', () => {
                 upcoming_events: 5,
                 overdue_tasks: 0,
                 overdue_deadlines: 0,
-                events_today: 0,
             },
         })
 
@@ -595,227 +368,6 @@ describe('DashboardPage', () => {
         expect(text).toContain('Membros ativos')
 
         expect(text).toContain('4')
-    })
-
-    it('renderiza tarefas pendentes no resumo operacional', async () => {
-        const { wrapper } = await mountPage({
-            summary: {
-                clients: 12,
-                folders: 8,
-                active_members: 4,
-                pending_tasks: 7,
-                pending_deadlines: 3,
-                upcoming_events: 5,
-                overdue_tasks: 0,
-                overdue_deadlines: 0,
-                events_today: 0,
-            },
-        })
-
-        expect(wrapper.text()).toContain('Tarefas pendentes')
-
-        expect(wrapper.text()).toContain('7')
-    })
-
-    it('renderiza prazos pendentes no resumo operacional', async () => {
-        const { wrapper } = await mountPage({
-            summary: {
-                clients: 12,
-                folders: 8,
-                active_members: 4,
-                pending_tasks: 7,
-                pending_deadlines: 3,
-                upcoming_events: 5,
-                overdue_tasks: 0,
-                overdue_deadlines: 0,
-                events_today: 0,
-            },
-        })
-
-        expect(wrapper.text()).toContain('Prazos pendentes')
-
-        expect(wrapper.text()).toContain('3')
-    })
-
-    it('renderiza proximos compromissos no resumo operacional', async () => {
-        const { wrapper } = await mountPage({
-            summary: {
-                clients: 12,
-                folders: 8,
-                active_members: 4,
-                pending_tasks: 7,
-                pending_deadlines: 3,
-                upcoming_events: 5,
-                overdue_tasks: 0,
-                overdue_deadlines: 0,
-                events_today: 0,
-            },
-        })
-
-        expect(wrapper.text()).toContain('Próximos compromissos')
-
-        expect(wrapper.text()).toContain('5')
-    })
-
-    it('renderiza lista de proximos compromissos', async () => {
-        const { wrapper } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        const text = wrapper.text()
-
-        expect(text).toContain('Audiência de instrução')
-
-        expect(text).toContain('Reunião com cliente')
-
-        expect(text).toContain('Ação indenizatória')
-
-        expect(text).toContain('Ação de cobrança')
-    })
-
-    it('renderiza lista de proximos prazos', async () => {
-        const { wrapper } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        const text = wrapper.text()
-
-        expect(text).toContain('Apresentar manifestação')
-
-        expect(text).toContain('Interpor recurso')
-
-        expect(text).toContain('Ação indenizatória')
-
-        expect(text).toContain('Ação revisional')
-    })
-
-    it('renderiza lista de tarefas pendentes', async () => {
-        const { wrapper } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        const text = wrapper.text()
-
-        expect(text).toContain('Revisar documentos')
-
-        expect(text).toContain('Telefonar para cliente')
-
-        expect(text).toContain('Ação de cobrança')
-
-        expect(text).toContain('Ação indenizatória')
-    })
-
-    it('renderiza estados vazios das listas operacionais', async () => {
-        const { wrapper } = await mountPage({
-            operational: emptyOperational(),
-        })
-
-        const text = wrapper.text()
-
-        expect(text).toContain('Nenhum compromisso futuro.')
-
-        expect(text).toContain('Nenhum prazo pendente.')
-
-        expect(text).toContain('Nenhuma tarefa pendente.')
-    })
-
-    it('navega para a pasta a partir de compromisso operacional', async () => {
-        const { wrapper, router } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        const button = wrapper.find('[data-testid="dashboard-event-folder-10"]')
-
-        expect(button.exists()).toBe(true)
-
-        await button.trigger('click')
-
-        await flushPromises()
-
-        expect(router.currentRoute.value.name).toBe('folders.show')
-
-        expect(router.currentRoute.value.params.id).toBe('10')
-    })
-
-    it('navega para a pasta a partir de prazo operacional', async () => {
-        const { wrapper, router } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        const button = wrapper.find('[data-testid="dashboard-deadline-folder-10"]')
-
-        expect(button.exists()).toBe(true)
-
-        await button.trigger('click')
-
-        await flushPromises()
-
-        expect(router.currentRoute.value.name).toBe('folders.show')
-
-        expect(router.currentRoute.value.params.id).toBe('10')
-    })
-
-    it('navega para a pasta a partir de tarefa operacional', async () => {
-        const { wrapper, router } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        const button = wrapper.find('[data-testid="dashboard-task-folder-11"]')
-
-        expect(button.exists()).toBe(true)
-
-        await button.trigger('click')
-
-        await flushPromises()
-
-        expect(router.currentRoute.value.name).toBe('folders.show')
-
-        expect(router.currentRoute.value.params.id).toBe('11')
-    })
-
-    it('mostra Concluir em tarefa pendente quando possui folders.update', async () => {
-        const { wrapper } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        expect(findButtons(wrapper, 'Concluir tarefa')).toHaveLength(2)
-    })
-
-    it('nao mostra Concluir tarefa sem folders.update', async () => {
-        const { wrapper } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        expect(findButtons(wrapper, 'Concluir tarefa')).toHaveLength(0)
-    })
-
-    it('conclui tarefa pelo dashboard e recarrega dados operacionais', async () => {
-        const { wrapper, folderTasksStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        const completeSpy = vi.spyOn(folderTasksStore, 'completeTask').mockResolvedValue({
-            id: 301,
-            status: 'completed',
-        })
-
-        const button = findButtons(wrapper, 'Concluir tarefa')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(completeSpy).toHaveBeenCalledWith(11, 301)
-        })
-
-        await vi.waitFor(() => {
-            expect(fetchDashboardSpy).toHaveBeenCalledTimes(2)
-        })
     })
 
     it('renderiza pastas recentes', async () => {
@@ -938,168 +490,6 @@ describe('DashboardPage', () => {
         expect(findButton(wrapper, 'Nova pasta')).toBeUndefined()
     })
 
-    it('exibe erro quando conclusao de tarefa falha', async () => {
-        const { wrapper, folderTasksStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        vi.spyOn(folderTasksStore, 'completeTask').mockRejectedValue(new Error('Falha ao concluir'))
-
-        const button = findButtons(wrapper, 'Concluir tarefa')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(wrapper.text()).toContain('Não foi possível concluir a tarefa. Tente novamente.')
-        })
-
-        expect(fetchDashboardSpy).toHaveBeenCalledTimes(1)
-    })
-
-    it('mostra Concluir prazo quando possui folders.update', async () => {
-        const { wrapper } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        expect(findButtons(wrapper, 'Concluir prazo')).toHaveLength(2)
-    })
-
-    it('nao mostra Concluir prazo sem folders.update', async () => {
-        const { wrapper } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        expect(findButtons(wrapper, 'Concluir prazo')).toHaveLength(0)
-    })
-
-    it('conclui prazo pelo dashboard e recarrega dados operacionais', async () => {
-        const { wrapper, folderDeadlinesStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        const completeSpy = vi.spyOn(folderDeadlinesStore, 'completeDeadline').mockResolvedValue({
-            id: 201,
-            status: 'completed',
-        })
-
-        const button = findButtons(wrapper, 'Concluir prazo')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(completeSpy).toHaveBeenCalledWith(10, 201)
-        })
-
-        await vi.waitFor(() => {
-            expect(fetchDashboardSpy).toHaveBeenCalledTimes(2)
-        })
-    })
-
-    it('exibe erro quando conclusao de prazo falha', async () => {
-        const { wrapper, folderDeadlinesStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        vi.spyOn(folderDeadlinesStore, 'completeDeadline').mockRejectedValue(
-            new Error('Falha ao concluir'),
-        )
-
-        const button = findButtons(wrapper, 'Concluir prazo')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(wrapper.text()).toContain('Não foi possível concluir o prazo. Tente novamente.')
-        })
-
-        expect(fetchDashboardSpy).toHaveBeenCalledTimes(1)
-    })
-
-    it('mostra Concluir compromisso quando possui folders.update', async () => {
-        const { wrapper } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        expect(findButtons(wrapper, 'Concluir compromisso')).toHaveLength(2)
-    })
-
-    it('nao mostra Concluir compromisso sem folders.update', async () => {
-        const { wrapper } = await mountPage({
-            operational: defaultOperational(),
-        })
-
-        expect(findButtons(wrapper, 'Concluir compromisso')).toHaveLength(0)
-    })
-
-    it('conclui compromisso pelo dashboard e recarrega dados operacionais', async () => {
-        const { wrapper, folderEventsStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        const completeSpy = vi.spyOn(folderEventsStore, 'completeEvent').mockResolvedValue({
-            id: 101,
-            status: 'completed',
-        })
-
-        const button = findButtons(wrapper, 'Concluir compromisso')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(completeSpy).toHaveBeenCalledWith(10, 101)
-        })
-
-        await vi.waitFor(() => {
-            expect(fetchDashboardSpy).toHaveBeenCalledTimes(2)
-        })
-    })
-
-    it('exibe erro quando conclusao de compromisso falha', async () => {
-        const { wrapper, folderEventsStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            operational: defaultOperational(),
-        })
-
-        vi.spyOn(folderEventsStore, 'completeEvent').mockRejectedValue(
-            new Error('Falha ao concluir'),
-        )
-
-        const button = findButtons(wrapper, 'Concluir compromisso')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(wrapper.text()).toContain(
-                'Não foi possível concluir o compromisso. Tente novamente.',
-            )
-        })
-
-        expect(fetchDashboardSpy).toHaveBeenCalledTimes(1)
-    })
-
     /*
     |--------------------------------------------------------------------------
     | Central de Atenção
@@ -1117,7 +507,6 @@ describe('DashboardPage', () => {
                 upcoming_events: 5,
                 overdue_tasks: 2,
                 overdue_deadlines: 1,
-                events_today: 3,
             },
         })
 
@@ -1139,7 +528,6 @@ describe('DashboardPage', () => {
                 upcoming_events: 0,
                 overdue_tasks: 2,
                 overdue_deadlines: 0,
-                events_today: 0,
             },
         })
 
@@ -1161,7 +549,6 @@ describe('DashboardPage', () => {
                 upcoming_events: 0,
                 overdue_tasks: 0,
                 overdue_deadlines: 1,
-                events_today: 0,
             },
         })
 
@@ -1170,28 +557,6 @@ describe('DashboardPage', () => {
         expect(text).toContain('Prazos vencidos')
 
         expect(text).toContain('1')
-    })
-
-    it('renderiza compromissos de hoje na central de atencao', async () => {
-        const { wrapper } = await mountPage({
-            summary: {
-                clients: 0,
-                folders: 0,
-                active_members: 0,
-                pending_tasks: 0,
-                pending_deadlines: 0,
-                upcoming_events: 0,
-                overdue_tasks: 0,
-                overdue_deadlines: 0,
-                events_today: 3,
-            },
-        })
-
-        const text = wrapper.text()
-
-        expect(text).toContain('Compromissos hoje')
-
-        expect(text).toContain('3')
     })
 
     it('renderiza itens detalhados da central de atencao', async () => {
@@ -1204,10 +569,6 @@ describe('DashboardPage', () => {
         expect(text).toContain('Protocolar petição vencida')
 
         expect(text).toContain('Apresentar contestação vencida')
-
-        expect(text).toContain('Audiência de conciliação hoje')
-
-        expect(text).toContain('Fórum de Pelotas')
     })
 
     it('renderiza estados vazios dos itens da central de atencao', async () => {
@@ -1220,8 +581,6 @@ describe('DashboardPage', () => {
         expect(text).toContain('Nenhuma tarefa vencida.')
 
         expect(text).toContain('Nenhum prazo vencido.')
-
-        expect(text).toContain('Nenhum compromisso restante para hoje.')
     })
 
     it('navega para a pasta a partir de tarefa vencida', async () => {
@@ -1260,24 +619,6 @@ describe('DashboardPage', () => {
         expect(router.currentRoute.value.params.id).toBe('12')
     })
 
-    it('navega para a pasta a partir de compromisso de hoje', async () => {
-        const { wrapper, router } = await mountPage({
-            attention: defaultAttention(),
-        })
-
-        const button = wrapper.find('[data-testid="dashboard-attention-event-folder-13"]')
-
-        expect(button.exists()).toBe(true)
-
-        await button.trigger('click')
-
-        await flushPromises()
-
-        expect(router.currentRoute.value.name).toBe('folders.show')
-
-        expect(router.currentRoute.value.params.id).toBe('13')
-    })
-
     it('mostra acoes da central de atencao com folders.update', async () => {
         const { wrapper } = await mountPage({
             permissions: ['folders.update'],
@@ -1288,8 +629,6 @@ describe('DashboardPage', () => {
         expect(findButtons(wrapper, 'Concluir tarefa')).toHaveLength(1)
 
         expect(findButtons(wrapper, 'Concluir prazo')).toHaveLength(1)
-
-        expect(findButtons(wrapper, 'Concluir compromisso')).toHaveLength(1)
     })
 
     it('nao mostra acoes da central de atencao sem folders.update', async () => {
@@ -1300,8 +639,6 @@ describe('DashboardPage', () => {
         expect(findButtons(wrapper, 'Concluir tarefa')).toHaveLength(0)
 
         expect(findButtons(wrapper, 'Concluir prazo')).toHaveLength(0)
-
-        expect(findButtons(wrapper, 'Concluir compromisso')).toHaveLength(0)
     })
 
     it('conclui tarefa vencida pela central de atencao e recarrega dashboard', async () => {
@@ -1358,33 +695,6 @@ describe('DashboardPage', () => {
         })
     })
 
-    it('conclui compromisso de hoje pela central de atencao e recarrega dashboard', async () => {
-        const { wrapper, folderEventsStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            attention: defaultAttention(),
-        })
-
-        const completeSpy = vi.spyOn(folderEventsStore, 'completeEvent').mockResolvedValue({
-            id: 601,
-            status: 'completed',
-        })
-
-        const button = findButtons(wrapper, 'Concluir compromisso')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(completeSpy).toHaveBeenCalledWith(13, 601)
-        })
-
-        await vi.waitFor(() => {
-            expect(fetchDashboardSpy).toHaveBeenCalledTimes(2)
-        })
-    })
-
     it('exibe erro quando conclusao de tarefa vencida pela central falha', async () => {
         const { wrapper, folderTasksStore, fetchDashboardSpy } = await mountPage({
             permissions: ['folders.update'],
@@ -1426,32 +736,6 @@ describe('DashboardPage', () => {
 
         await vi.waitFor(() => {
             expect(wrapper.text()).toContain('Não foi possível concluir o prazo. Tente novamente.')
-        })
-
-        expect(fetchDashboardSpy).toHaveBeenCalledTimes(1)
-    })
-
-    it('exibe erro quando conclusao de compromisso de hoje pela central falha', async () => {
-        const { wrapper, folderEventsStore, fetchDashboardSpy } = await mountPage({
-            permissions: ['folders.update'],
-
-            attention: defaultAttention(),
-        })
-
-        vi.spyOn(folderEventsStore, 'completeEvent').mockRejectedValue(
-            new Error('Falha ao concluir'),
-        )
-
-        const button = findButtons(wrapper, 'Concluir compromisso')[0]
-
-        expect(button).toBeTruthy()
-
-        await button.trigger('click')
-
-        await vi.waitFor(() => {
-            expect(wrapper.text()).toContain(
-                'Não foi possível concluir o compromisso. Tente novamente.',
-            )
         })
 
         expect(fetchDashboardSpy).toHaveBeenCalledTimes(1)
@@ -1987,5 +1271,176 @@ describe('DashboardPage', () => {
         })
 
         expect(fetchDashboardSpy).toHaveBeenCalledTimes(1)
+    })
+
+    /*
+    |--------------------------------------------------------------------------
+    | Arquitetura visual do Dashboard
+    |--------------------------------------------------------------------------
+    */
+
+    it('organiza o dashboard em uma area principal de trabalho', async () => {
+        const { wrapper } = await mountPage()
+
+        const workspace = wrapper.find('[data-testid="dashboard-workspace"]')
+
+        expect(workspace.exists()).toBe(true)
+    })
+
+    it('apresenta agenda de hoje como area propria do dashboard', async () => {
+        const { wrapper } = await mountPage()
+
+        expect(wrapper.find('[data-testid="dashboard-today-agenda"]').exists()).toBe(true)
+    })
+
+    it('mantem meu trabalho como area propria da nova composicao', async () => {
+        const { wrapper } = await mountPage()
+
+        expect(wrapper.find('[data-testid="dashboard-my-work"]').exists()).toBe(true)
+    })
+
+    it('agrupa atividade e pastas recentes na area secundaria', async () => {
+        const { wrapper } = await mountPage()
+
+        const secondary = wrapper.find('[data-testid="dashboard-secondary"]')
+
+        expect(secondary.exists()).toBe(true)
+
+        expect(secondary.text()).toContain('Atividade recente')
+
+        expect(secondary.text()).toContain('Pastas recentes')
+    })
+
+    it('apresenta indicadores institucionais identificaveis', async () => {
+        const { wrapper } = await mountPage()
+
+        expect(wrapper.find('[data-testid="dashboard-stat-clients"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="dashboard-stat-folders"]').exists()).toBe(true)
+
+        expect(wrapper.find('[data-testid="dashboard-stat-members"]').exists()).toBe(true)
+    })
+
+    it('apresenta prioridades juridicas e agenda em composicao conjunta', async () => {
+        const { wrapper } = await mountPage()
+
+        const priorities = wrapper.find('[data-testid="dashboard-priorities-layout"]')
+
+        expect(priorities.exists()).toBe(true)
+
+        expect(priorities.find('[data-testid="dashboard-legal-alerts"]').exists()).toBe(true)
+
+        expect(priorities.find('[data-testid="dashboard-today-agenda"]').exists()).toBe(true)
+    })
+
+    it('apresenta movimento do escritorio como area secundaria', async () => {
+        const { wrapper } = await mountPage()
+
+        const movement = wrapper.find('[data-testid="dashboard-office-movement"]')
+
+        expect(movement.exists()).toBe(true)
+
+        expect(movement.text()).toContain('Atividade recente')
+
+        expect(movement.text()).toContain('Pastas recentes')
+    })
+
+    it('renderiza tarefa de hoje na agenda consolidada', async () => {
+        const { wrapper } = await mountPage({
+            todayAgenda: [
+                {
+                    kind: 'task',
+                    id: 901,
+                    title: 'Revisar contestação',
+                    scheduled_at: '2026-08-24T15:00:00.000000Z',
+                    priority: 'high',
+
+                    folder: {
+                        id: 10,
+                        name: 'Ação indenizatória',
+                        process_number: '5000000-00.2026.8.21.0001',
+                    },
+                },
+            ],
+        })
+
+        const agenda = wrapper.get('[data-testid="dashboard-today-agenda"]')
+
+        expect(agenda.text()).toContain('Revisar contestação')
+
+        expect(agenda.text()).toContain('Tarefa')
+
+        expect(agenda.text()).toContain('Ação indenizatória')
+    })
+
+    it('renderiza prazo de hoje na agenda consolidada', async () => {
+        const { wrapper } = await mountPage({
+            todayAgenda: [
+                {
+                    kind: 'deadline',
+                    id: 902,
+                    title: 'Protocolar manifestação',
+                    scheduled_at: '2026-08-24T18:00:00.000000Z',
+
+                    folder: {
+                        id: 11,
+                        name: 'Ação revisional',
+                        process_number: '5002222-33.2026.8.21.0022',
+                    },
+                },
+            ],
+        })
+
+        const agenda = wrapper.get('[data-testid="dashboard-today-agenda"]')
+
+        expect(agenda.text()).toContain('Protocolar manifestação')
+
+        expect(agenda.text()).toContain('Prazo')
+
+        expect(agenda.text()).toContain('Ação revisional')
+    })
+
+    it('renderiza compromisso de hoje na agenda consolidada', async () => {
+        const { wrapper } = await mountPage({
+            todayAgenda: [
+                {
+                    kind: 'event',
+                    id: 903,
+                    title: 'Audiência de instrução',
+                    scheduled_at: '2026-08-24T19:00:00.000000Z',
+                    type: 'hearing',
+                    location: 'Fórum de Pelotas',
+
+                    folder: {
+                        id: 12,
+                        name: 'Ação de alimentos',
+                        process_number: '5003333-44.2026.8.21.0022',
+                    },
+                },
+            ],
+        })
+
+        const agenda = wrapper.get('[data-testid="dashboard-today-agenda"]')
+
+        expect(agenda.text()).toContain('Audiência de instrução')
+
+        expect(agenda.text()).toContain('Audiência')
+
+        expect(agenda.text()).toContain('Fórum de Pelotas')
+    })
+
+    it('renderiza estado vazio quando agenda consolidada do dia esta vazia', async () => {
+        const { wrapper } = await mountPage({
+            attention: {
+                overdue_tasks: [],
+                overdue_deadlines: [],
+            },
+
+            todayAgenda: [],
+        })
+
+        const agenda = wrapper.get('[data-testid="dashboard-today-agenda"]')
+
+        expect(agenda.text()).toContain('Nenhum item restante para hoje.')
     })
 })

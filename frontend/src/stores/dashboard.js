@@ -20,9 +20,7 @@ function emptySummary() {
 
         overdue_tasks: 0,
 
-        overdue_deadlines: 0,
-
-        events_today: 0,
+        overdue_deadlines: 0
     }
 }
 
@@ -30,19 +28,7 @@ function emptyAttention() {
     return {
         overdue_tasks: [],
 
-        overdue_deadlines: [],
-
-        events_today: [],
-    }
-}
-
-function emptyOperational() {
-    return {
-        upcoming_events: [],
-
-        pending_deadlines: [],
-
-        pending_tasks: [],
+        overdue_deadlines: []
     }
 }
 
@@ -67,9 +53,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
     const attention = ref(emptyAttention())
 
-    const recentFolders = ref([])
+    const todayAgenda = ref([])
 
-    const operational = ref(emptyOperational())
+    const recentFolders = ref([])
 
     const recentActivity = ref([])
 
@@ -107,9 +93,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
             overdue_tasks: Number(payload?.summary?.overdue_tasks) || 0,
 
-            overdue_deadlines: Number(payload?.summary?.overdue_deadlines) || 0,
-
-            events_today: Number(payload?.summary?.events_today) || 0,
+            overdue_deadlines: Number(payload?.summary?.overdue_deadlines) || 0
         }
 
         /*
@@ -126,11 +110,15 @@ export const useDashboardStore = defineStore('dashboard', () => {
             overdue_deadlines: Array.isArray(payload?.attention?.overdue_deadlines)
                 ? payload.attention.overdue_deadlines
                 : [],
-
-            events_today: Array.isArray(payload?.attention?.events_today)
-                ? payload.attention.events_today
-                : [],
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Agenda de hoje
+        |--------------------------------------------------------------------------
+        */
+
+        todayAgenda.value = Array.isArray(payload?.today_agenda) ? payload.today_agenda : []
 
         /*
         |--------------------------------------------------------------------------
@@ -139,26 +127,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
         */
 
         recentFolders.value = Array.isArray(payload?.recent_folders) ? payload.recent_folders : []
-
-        /*
-        |--------------------------------------------------------------------------
-        | Visão operacional
-        |--------------------------------------------------------------------------
-        */
-
-        operational.value = {
-            upcoming_events: Array.isArray(payload?.operational?.upcoming_events)
-                ? payload.operational.upcoming_events
-                : [],
-
-            pending_deadlines: Array.isArray(payload?.operational?.pending_deadlines)
-                ? payload.operational.pending_deadlines
-                : [],
-
-            pending_tasks: Array.isArray(payload?.operational?.pending_tasks)
-                ? payload.operational.pending_tasks
-                : [],
-        }
 
         /*
         |--------------------------------------------------------------------------
@@ -201,9 +169,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
             attention: attention.value,
 
-            recent_folders: recentFolders.value,
+            today_agenda: todayAgenda.value,
 
-            operational: operational.value,
+            recent_folders: recentFolders.value,
 
             recent_activity: recentActivity.value,
 
@@ -222,9 +190,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
         attention.value = emptyAttention()
 
-        recentFolders.value = []
+        todayAgenda.value = []
 
-        operational.value = emptyOperational()
+        recentFolders.value = []
 
         recentActivity.value = []
 
@@ -242,9 +210,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
         attention,
 
-        recentFolders,
+        todayAgenda,
 
-        operational,
+        recentFolders,
 
         recentActivity,
 

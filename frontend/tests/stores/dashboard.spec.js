@@ -20,7 +20,6 @@ function emptySummary() {
         upcoming_events: 0,
         overdue_tasks: 0,
         overdue_deadlines: 0,
-        events_today: 0,
     }
 }
 
@@ -28,15 +27,6 @@ function emptyAttention() {
     return {
         overdue_tasks: [],
         overdue_deadlines: [],
-        events_today: [],
-    }
-}
-
-function emptyOperational() {
-    return {
-        upcoming_events: [],
-        pending_deadlines: [],
-        pending_tasks: [],
     }
 }
 
@@ -64,14 +54,12 @@ describe('dashboard store', () => {
 
         expect(store.recentFolders).toEqual([])
 
-        expect(store.operational).toEqual(emptyOperational())
-
         expect(store.recentActivity).toEqual([])
 
         expect(store.myWork).toEqual(emptyMyWork())
     })
 
-    it('fetchDashboard carrega resumo, central de atencao, pastas recentes, listas operacionais, atividade recente e meu trabalho', async () => {
+    it('fetchDashboard carrega resumo, central de atencao, pastas recentes, atividade recente e meu trabalho', async () => {
         getDashboard.mockResolvedValue({
             data: {
                 summary: {
@@ -83,7 +71,6 @@ describe('dashboard store', () => {
                     upcoming_events: 5,
                     overdue_tasks: 2,
                     overdue_deadlines: 1,
-                    events_today: 3,
                 },
 
                 attention: {
@@ -119,23 +106,6 @@ describe('dashboard store', () => {
                             },
                         },
                     ],
-
-                    events_today: [
-                        {
-                            id: 601,
-                            folder_id: 12,
-                            type: 'hearing',
-                            title: 'Audiência hoje',
-                            starts_at: '2026-08-19T19:00:00.000000Z',
-                            status: 'scheduled',
-
-                            folder: {
-                                id: 12,
-                                name: 'Ação revisional',
-                                process_number: '5002222-33.2026.8.21.0022',
-                            },
-                        },
-                    ],
                 },
 
                 recent_folders: [
@@ -153,36 +123,6 @@ describe('dashboard store', () => {
                         created_at: '2026-08-16T10:00:00.000000Z',
                     },
                 ],
-
-                operational: {
-                    upcoming_events: [
-                        {
-                            id: 101,
-                            folder_id: 10,
-                            title: 'Audiência de instrução',
-                            starts_at: '2026-08-20T14:00:00.000000Z',
-                        },
-                    ],
-
-                    pending_deadlines: [
-                        {
-                            id: 201,
-                            folder_id: 10,
-                            title: 'Apresentar manifestação',
-                            due_at: '2026-08-21T23:59:59.000000Z',
-                        },
-                    ],
-
-                    pending_tasks: [
-                        {
-                            id: 301,
-                            folder_id: 11,
-                            title: 'Revisar documentos',
-                            priority: 'high',
-                            due_at: '2026-08-22T18:00:00.000000Z',
-                        },
-                    ],
-                },
 
                 recent_activity: [
                     {
@@ -295,7 +235,6 @@ describe('dashboard store', () => {
             upcoming_events: 5,
             overdue_tasks: 2,
             overdue_deadlines: 1,
-            events_today: 3,
         })
 
         expect(store.attention).toEqual({
@@ -331,23 +270,6 @@ describe('dashboard store', () => {
                     },
                 },
             ],
-
-            events_today: [
-                {
-                    id: 601,
-                    folder_id: 12,
-                    type: 'hearing',
-                    title: 'Audiência hoje',
-                    starts_at: '2026-08-19T19:00:00.000000Z',
-                    status: 'scheduled',
-
-                    folder: {
-                        id: 12,
-                        name: 'Ação revisional',
-                        process_number: '5002222-33.2026.8.21.0022',
-                    },
-                },
-            ],
         })
 
         expect(store.recentFolders).toHaveLength(2)
@@ -357,36 +279,6 @@ describe('dashboard store', () => {
             name: 'Ação indenizatória',
             process_number: '5000000-00.2026.8.21.0001',
             created_at: '2026-08-17T10:00:00.000000Z',
-        })
-
-        expect(store.operational).toEqual({
-            upcoming_events: [
-                {
-                    id: 101,
-                    folder_id: 10,
-                    title: 'Audiência de instrução',
-                    starts_at: '2026-08-20T14:00:00.000000Z',
-                },
-            ],
-
-            pending_deadlines: [
-                {
-                    id: 201,
-                    folder_id: 10,
-                    title: 'Apresentar manifestação',
-                    due_at: '2026-08-21T23:59:59.000000Z',
-                },
-            ],
-
-            pending_tasks: [
-                {
-                    id: 301,
-                    folder_id: 11,
-                    title: 'Revisar documentos',
-                    priority: 'high',
-                    due_at: '2026-08-22T18:00:00.000000Z',
-                },
-            ],
         })
 
         expect(store.recentActivity).toEqual([
@@ -488,9 +380,9 @@ describe('dashboard store', () => {
 
             attention: store.attention,
 
-            recent_folders: store.recentFolders,
+            today_agenda: store.todayAgenda,
 
-            operational: store.operational,
+            recent_folders: store.recentFolders,
 
             recent_activity: store.recentActivity,
 
@@ -515,7 +407,6 @@ describe('dashboard store', () => {
             data: {
                 summary: {},
                 recent_folders: [],
-                operational: {},
             },
         })
 
@@ -537,13 +428,9 @@ describe('dashboard store', () => {
                     overdue_deadlines: {
                         id: 1,
                     },
-
-                    events_today: 'valor inválido',
                 },
 
                 recent_folders: [],
-
-                operational: {},
             },
         })
 
@@ -573,13 +460,9 @@ describe('dashboard store', () => {
                     overdue_tasks: [task],
 
                     overdue_deadlines: null,
-
-                    events_today: [event],
                 },
 
                 recent_folders: [],
-
-                operational: {},
             },
         })
 
@@ -591,8 +474,6 @@ describe('dashboard store', () => {
             overdue_tasks: [task],
 
             overdue_deadlines: [],
-
-            events_today: [event],
         })
     })
 
@@ -608,7 +489,6 @@ describe('dashboard store', () => {
                     upcoming_events: 6,
                     overdue_tasks: 7,
                     overdue_deadlines: 8,
-                    events_today: 9,
                 },
 
                 recent_folders: null,
@@ -634,7 +514,6 @@ describe('dashboard store', () => {
                     upcoming_events: '6',
                     overdue_tasks: '2',
                     overdue_deadlines: '1',
-                    events_today: '8',
                 },
 
                 recent_folders: [],
@@ -654,109 +533,6 @@ describe('dashboard store', () => {
             upcoming_events: 6,
             overdue_tasks: 2,
             overdue_deadlines: 1,
-            events_today: 8,
-        })
-    })
-
-    it('normaliza operational ausente', async () => {
-        getDashboard.mockResolvedValue({
-            data: {
-                summary: {
-                    clients: 1,
-                    folders: 2,
-                    active_members: 3,
-                    pending_tasks: 4,
-                    pending_deadlines: 5,
-                    upcoming_events: 6,
-                    overdue_tasks: 0,
-                    overdue_deadlines: 0,
-                    events_today: 0,
-                },
-
-                recent_folders: [],
-            },
-        })
-
-        const store = useDashboardStore()
-
-        await store.fetchDashboard()
-
-        expect(store.operational).toEqual(emptyOperational())
-    })
-
-    it('normaliza colecoes operacionais invalidas', async () => {
-        getDashboard.mockResolvedValue({
-            data: {
-                summary: {
-                    clients: 1,
-                    folders: 2,
-                    active_members: 3,
-                    pending_tasks: 4,
-                    pending_deadlines: 5,
-                    upcoming_events: 6,
-                    overdue_tasks: 0,
-                    overdue_deadlines: 0,
-                    events_today: 0,
-                },
-
-                recent_folders: [],
-
-                operational: {
-                    upcoming_events: null,
-
-                    pending_deadlines: {
-                        id: 1,
-                    },
-
-                    pending_tasks: 'valor inválido',
-                },
-            },
-        })
-
-        const store = useDashboardStore()
-
-        await store.fetchDashboard()
-
-        expect(store.operational).toEqual(emptyOperational())
-    })
-
-    it('normaliza cada colecao operacional de forma independente', async () => {
-        const event = {
-            id: 101,
-            title: 'Audiência',
-        }
-
-        const task = {
-            id: 301,
-            title: 'Revisar documentos',
-        }
-
-        getDashboard.mockResolvedValue({
-            data: {
-                summary: {},
-
-                recent_folders: [],
-
-                operational: {
-                    upcoming_events: [event],
-
-                    pending_deadlines: null,
-
-                    pending_tasks: [task],
-                },
-            },
-        })
-
-        const store = useDashboardStore()
-
-        await store.fetchDashboard()
-
-        expect(store.operational).toEqual({
-            upcoming_events: [event],
-
-            pending_deadlines: [],
-
-            pending_tasks: [task],
         })
     })
 
@@ -768,8 +544,6 @@ describe('dashboard store', () => {
                 attention: {},
 
                 recent_folders: [],
-
-                operational: {},
             },
         })
 
@@ -788,8 +562,6 @@ describe('dashboard store', () => {
                 attention: {},
 
                 recent_folders: [],
-
-                operational: {},
 
                 recent_activity: {
                     id: 701,
@@ -829,8 +601,6 @@ describe('dashboard store', () => {
 
                 recent_folders: [],
 
-                operational: {},
-
                 recent_activity: recentActivity,
             },
         })
@@ -851,8 +621,6 @@ describe('dashboard store', () => {
 
                 recent_folders: [],
 
-                operational: {},
-
                 recent_activity: [],
             },
         })
@@ -872,8 +640,6 @@ describe('dashboard store', () => {
                 attention: {},
 
                 recent_folders: [],
-
-                operational: {},
 
                 recent_activity: [],
 
@@ -915,8 +681,6 @@ describe('dashboard store', () => {
 
                 recent_folders: [],
 
-                operational: {},
-
                 recent_activity: [],
 
                 my_work: {
@@ -954,7 +718,6 @@ describe('dashboard store', () => {
             upcoming_events: 60,
             overdue_tasks: 70,
             overdue_deadlines: 80,
-            events_today: 90,
         }
 
         store.attention = {
@@ -969,12 +732,6 @@ describe('dashboard store', () => {
                     id: 2,
                 },
             ],
-
-            events_today: [
-                {
-                    id: 3,
-                },
-            ],
         }
 
         store.recentFolders = [
@@ -983,26 +740,6 @@ describe('dashboard store', () => {
                 name: 'Pasta teste',
             },
         ]
-
-        store.operational = {
-            upcoming_events: [
-                {
-                    id: 4,
-                },
-            ],
-
-            pending_deadlines: [
-                {
-                    id: 5,
-                },
-            ],
-
-            pending_tasks: [
-                {
-                    id: 6,
-                },
-            ],
-        }
 
         store.recentActivity = [
             {
@@ -1032,6 +769,14 @@ describe('dashboard store', () => {
             ],
         }
 
+        store.todayAgenda = [
+            {
+                kind: 'task',
+                id: 11,
+                title: 'Tarefa de hoje',
+            },
+        ]
+
         store.clear()
 
         expect(store.summary).toEqual(emptySummary())
@@ -1040,10 +785,115 @@ describe('dashboard store', () => {
 
         expect(store.recentFolders).toEqual([])
 
-        expect(store.operational).toEqual(emptyOperational())
-
         expect(store.recentActivity).toEqual([])
 
         expect(store.myWork).toEqual(emptyMyWork())
+
+        expect(store.todayAgenda).toEqual([])
+    })
+
+    it('carrega a agenda do dia consolidada', async () => {
+        const todayAgenda = [
+            {
+                kind: 'task',
+                id: 901,
+                title: 'Revisar contestação',
+                scheduled_at: '2026-08-24T15:00:00.000000Z',
+                priority: 'high',
+
+                folder: {
+                    id: 10,
+                    name: 'Ação indenizatória',
+                    process_number: '5000000-00.2026.8.21.0001',
+                },
+            },
+
+            {
+                kind: 'deadline',
+                id: 902,
+                title: 'Protocolar manifestação',
+                scheduled_at: '2026-08-24T18:00:00.000000Z',
+
+                folder: {
+                    id: 11,
+                    name: 'Ação revisional',
+                    process_number: '5002222-33.2026.8.21.0022',
+                },
+            },
+
+            {
+                kind: 'event',
+                id: 903,
+                title: 'Audiência de instrução',
+                scheduled_at: '2026-08-24T19:00:00.000000Z',
+                type: 'hearing',
+                location: 'Fórum de Pelotas',
+
+                folder: {
+                    id: 12,
+                    name: 'Ação de alimentos',
+                    process_number: '5003333-44.2026.8.21.0022',
+                },
+            },
+        ]
+
+        getDashboard.mockResolvedValue({
+            data: {
+                summary: {},
+                attention: {},
+                today_agenda: todayAgenda,
+                recent_folders: [],
+                recent_activity: [],
+                my_work: {},
+            },
+        })
+
+        const store = useDashboardStore()
+
+        const result = await store.fetchDashboard()
+
+        expect(store.todayAgenda).toEqual(todayAgenda)
+
+        expect(result.today_agenda).toEqual(todayAgenda)
+    })
+
+    it('normaliza agenda do dia ausente', async () => {
+        getDashboard.mockResolvedValue({
+            data: {
+                summary: {},
+                attention: {},
+                recent_folders: [],
+                recent_activity: [],
+                my_work: {},
+            },
+        })
+
+        const store = useDashboardStore()
+
+        await store.fetchDashboard()
+
+        expect(store.todayAgenda).toEqual([])
+    })
+
+    it('normaliza agenda do dia invalida', async () => {
+        getDashboard.mockResolvedValue({
+            data: {
+                summary: {},
+                attention: {},
+                today_agenda: {
+                    kind: 'task',
+                    id: 901,
+                },
+                recent_folders: [],
+                recent_activity: [],
+                my_work: {},
+            },
+        })
+
+        const store = useDashboardStore()
+
+        await store.fetchDashboard()
+
+        expect(store.todayAgenda).toEqual([])
     })
 })

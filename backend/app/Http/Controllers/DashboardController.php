@@ -145,30 +145,6 @@ class DashboardController extends Controller
             )
             ->count();
 
-        $eventsToday =
-            FolderEvent::query()
-            ->whereIn(
-                'folder_id',
-                clone $organizationFolderIds,
-            )
-            ->where(
-                'status',
-                'scheduled',
-            )
-            ->where(
-                'starts_at',
-                '>=',
-                now(),
-            )
-            ->where(
-                'starts_at',
-                '<=',
-                now()
-                    ->copy()
-                    ->endOfDay(),
-            )
-            ->count();
-
         /*
         |--------------------------------------------------------------------------
         | Central de Atenção - Tarefas vencidas
@@ -256,11 +232,148 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Central de Atenção - Compromissos restantes de hoje
+        | Agenda de hoje consolidada
         |--------------------------------------------------------------------------
+        |
+        | Reúne:
+        | - tarefas pendentes com vencimento no dia;
+        | - prazos pendentes com vencimento no dia;
+        | - compromissos agendados ainda restantes no dia.
+        |
+        | Tarefas e prazos vencidos mais cedo no próprio dia continuam
+        | aparecendo enquanto permanecerem pendentes.
+        |
         */
 
-        $attentionEventsToday =
+        $todayStart =
+            now()
+            ->copy()
+            ->startOfDay();
+
+        $todayEnd =
+            now()
+            ->copy()
+            ->endOfDay();
+
+        $todayTasks =
+            FolderTask::query()
+            ->whereIn(
+                'folder_id',
+                clone $organizationFolderIds,
+            )
+            ->where(
+                'status',
+                'pending',
+            )
+            ->whereNotNull(
+                'due_at'
+            )
+            ->whereBetween(
+                'due_at',
+                [
+                    $todayStart,
+                    $todayEnd,
+                ],
+            )
+            ->with([
+                'folder:id,name,process_number',
+            ])
+            ->orderBy(
+                'due_at'
+            )
+            ->orderBy(
+                'id'
+            )
+            ->get([
+                'id',
+                'folder_id',
+                'title',
+                'priority',
+                'due_at',
+                'status',
+            ])
+            ->map(
+                fn(FolderTask $task): array => [
+                    'kind' =>
+                    'task',
+
+                    'id' =>
+                    $task->id,
+
+                    'title' =>
+                    $task->title,
+
+                    'scheduled_at' =>
+                    $task->due_at,
+
+                    'priority' =>
+                    $task->priority,
+
+                    'folder' =>
+                    $this->serializeActivityFolder(
+                        $task->folder,
+                    ),
+                ]
+            );
+
+        $todayDeadlines =
+            FolderDeadline::query()
+            ->whereIn(
+                'folder_id',
+                clone $organizationFolderIds,
+            )
+            ->where(
+                'status',
+                'pending',
+            )
+            ->whereNotNull(
+                'due_at'
+            )
+            ->whereBetween(
+                'due_at',
+                [
+                    $todayStart,
+                    $todayEnd,
+                ],
+            )
+            ->with([
+                'folder:id,name,process_number',
+            ])
+            ->orderBy(
+                'due_at'
+            )
+            ->orderBy(
+                'id'
+            )
+            ->get([
+                'id',
+                'folder_id',
+                'title',
+                'due_at',
+                'status',
+            ])
+            ->map(
+                fn(FolderDeadline $deadline): array => [
+                    'kind' =>
+                    'deadline',
+
+                    'id' =>
+                    $deadline->id,
+
+                    'title' =>
+                    $deadline->title,
+
+                    'scheduled_at' =>
+                    $deadline->due_at,
+
+                    'folder' =>
+                    $this->serializeActivityFolder(
+                        $deadline->folder,
+                    ),
+                ]
+            );
+
+        $todayEvents =
             FolderEvent::query()
             ->whereIn(
                 'folder_id',
@@ -278,9 +391,7 @@ class DashboardController extends Controller
             ->where(
                 'starts_at',
                 '<=',
-                now()
-                    ->copy()
-                    ->endOfDay(),
+                $todayEnd,
             )
             ->with([
                 'folder:id,name,process_number',
@@ -291,7 +402,6 @@ class DashboardController extends Controller
             ->orderBy(
                 'id'
             )
-            ->limit(5)
             ->get([
                 'id',
                 'folder_id',
@@ -301,133 +411,52 @@ class DashboardController extends Controller
                 'ends_at',
                 'location',
                 'status',
-            ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Próximos compromissos
-        |--------------------------------------------------------------------------
-        */
-
-        $operationalEvents =
-            FolderEvent::query()
-            ->whereIn(
-                'folder_id',
-                clone $organizationFolderIds,
-            )
-            ->where(
-                'status',
-                'scheduled',
-            )
-            ->where(
-                'starts_at',
-                '>=',
-                now(),
-            )
-            ->with([
-                'folder:id,name,process_number',
             ])
-            ->orderBy(
-                'starts_at'
-            )
-            ->orderBy(
-                'id'
-            )
-            ->limit(5)
-            ->get([
-                'id',
-                'folder_id',
-                'type',
-                'title',
-                'starts_at',
-                'ends_at',
-                'location',
-            ]);
+            ->map(
+                fn(FolderEvent $event): array => [
+                    'kind' =>
+                    'event',
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prazos pendentes
-        |--------------------------------------------------------------------------
-        */
+                    'id' =>
+                    $event->id,
 
-        $operationalDeadlines =
-            FolderDeadline::query()
-            ->whereIn(
-                'folder_id',
-                clone $organizationFolderIds,
-            )
-            ->where(
-                'status',
-                'pending',
-            )
-            ->with([
-                'folder:id,name,process_number',
-            ])
-            ->orderByRaw(
-                'CASE WHEN due_at IS NULL THEN 1 ELSE 0 END'
-            )
-            ->orderBy(
-                'due_at'
-            )
-            ->orderBy(
-                'id'
-            )
-            ->limit(5)
-            ->get([
-                'id',
-                'folder_id',
-                'title',
-                'due_at',
-                'status',
-            ]);
+                    'title' =>
+                    $event->title,
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tarefas pendentes
-        |--------------------------------------------------------------------------
-        */
+                    'scheduled_at' =>
+                    $event->starts_at,
 
-        $operationalTasks =
-            FolderTask::query()
-            ->whereIn(
-                'folder_id',
-                clone $organizationFolderIds,
+                    'type' =>
+                    $event->type,
+
+                    'location' =>
+                    $event->location,
+
+                    'folder' =>
+                    $this->serializeActivityFolder(
+                        $event->folder,
+                    ),
+                ]
+            );
+
+        $todayAgenda =
+            collect()
+            ->concat(
+                $todayTasks
             )
-            ->where(
-                'status',
-                'pending',
+            ->concat(
+                $todayDeadlines
             )
-            ->with([
-                'folder:id,name,process_number',
-            ])
-            ->orderByRaw(
-                'CASE WHEN due_at IS NULL THEN 1 ELSE 0 END'
+            ->concat(
+                $todayEvents
             )
-            ->orderBy(
-                'due_at'
+            ->sortBy(
+                fn(array $item) =>
+                $item['scheduled_at']
+                    ?->getTimestamp()
+                    ?? PHP_INT_MAX
             )
-            ->orderByRaw(
-                "
-                CASE priority
-                    WHEN 'high' THEN 0
-                    WHEN 'medium' THEN 1
-                    WHEN 'low' THEN 2
-                    ELSE 3
-                END
-                "
-            )
-            ->orderBy(
-                'id'
-            )
-            ->limit(5)
-            ->get([
-                'id',
-                'folder_id',
-                'title',
-                'priority',
-                'due_at',
-                'status',
-            ]);
+            ->values();
 
         /*
         |--------------------------------------------------------------------------
@@ -780,9 +809,6 @@ class DashboardController extends Controller
 
                 'overdue_deadlines' =>
                 $overdueDeadlines,
-
-                'events_today' =>
-                $eventsToday,
             ],
 
             'attention' => [
@@ -791,21 +817,10 @@ class DashboardController extends Controller
 
                 'overdue_deadlines' =>
                 $attentionOverdueDeadlines,
-
-                'events_today' =>
-                $attentionEventsToday,
             ],
 
-            'operational' => [
-                'upcoming_events' =>
-                $operationalEvents,
-
-                'pending_deadlines' =>
-                $operationalDeadlines,
-
-                'pending_tasks' =>
-                $operationalTasks,
-            ],
+            'today_agenda' =>
+            $todayAgenda,
 
             'my_work' => [
                 'pending_tasks' =>

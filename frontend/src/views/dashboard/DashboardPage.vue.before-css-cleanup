@@ -1533,6 +1533,20 @@ onMounted(
 }
 
 .dashboard-eyebrow,
+.dashboard-section-kicker {
+  display: block;
+
+  margin-bottom: var(--space-1);
+
+  color: var(--color-primary);
+
+  font-size: 0.72rem;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .dashboard-title {
   margin: 0;
 
@@ -1543,6 +1557,14 @@ onMounted(
 }
 
 .dashboard-description,
+.dashboard-section-description {
+  margin: var(--space-2) 0 0;
+
+  color: var(--color-text-muted);
+
+  line-height: 1.5;
+}
+
 .dashboard-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1737,6 +1759,36 @@ onMounted(
 .dashboard-attention,
 .dashboard-my-work,
 .dashboard-activity,
+.dashboard-recent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dashboard-section-header{
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dashboard-section-header--compact {
+  margin-bottom: calc(var(--space-2) * -1);
+}
+
+.dashboard-section-title {
+  margin: 0;
+
+  color: var(--color-text);
+
+  font-size: 1.2rem;
+  font-weight: 750;
+}
+
+.dashboard-section-title--small {
+  font-size: 1rem;
+}
+
 /* Prioridades */
 
 .dashboard-priorities-layout {
@@ -1760,6 +1812,134 @@ onMounted(
 
 .dashboard-today-agenda {
   min-width: 0;
+}
+
+.dashboard-attention-card {
+  position: relative;
+
+  min-height: 100%;
+
+  overflow: hidden;
+}
+
+.dashboard-attention-card::before {
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+  left: 0;
+
+  width: 4px;
+
+  content: '';
+}
+
+.dashboard-attention-card--critical::before {
+  background: var(--color-danger);
+}
+
+.dashboard-attention-card--today::before {
+  background: var(--color-warning);
+}
+
+.dashboard-agenda-card {
+  height: 100%;
+}
+
+.dashboard-attention-content {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dashboard-attention-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dashboard-attention-title-group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-attention-label {
+  color: var(--color-text);
+
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+}
+
+.dashboard-attention-value {
+  color: var(--color-text);
+
+  font-size: 2rem;
+  font-weight: 750;
+
+  line-height: 1;
+}
+
+.dashboard-attention-card--critical .dashboard-attention-value {
+  color: var(--color-danger);
+}
+
+.dashboard-attention-card--today .dashboard-attention-value {
+  color: var(--color-warning);
+}
+
+.dashboard-attention-indicator {
+  width: 0.6rem;
+  height: 0.6rem;
+
+  flex: 0 0 auto;
+
+  margin-top: 0.25rem;
+
+  border-radius: 999px;
+}
+
+.dashboard-attention-indicator--critical {
+  background: var(--color-danger);
+}
+
+.dashboard-attention-indicator--today {
+  background: var(--color-warning);
+}
+
+.dashboard-attention-description {
+  color: var(--color-text-muted);
+
+  font-size: var(--font-size-sm);
+
+  line-height: 1.45;
+}
+
+.dashboard-attention-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  margin-top: var(--space-1);
+
+  border-top: 1px solid var(--color-border);
+}
+
+.dashboard-attention-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  padding: var(--space-3) 0;
+
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-attention-item:last-child {
+  border-bottom: 0;
 }
 
 .dashboard-attention-item-heading {
@@ -1792,9 +1972,87 @@ onMounted(
   line-height: 1.4;
 }
 
+.dashboard-attention-empty {
+  display: flex;
+
+  min-height: 5rem;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: var(--space-4) 0;
+
+  color: var(--color-text-muted);
+
+  font-size: var(--font-size-sm);
+
+  text-align: center;
+}
+
 /* Agenda */
 
+.dashboard-agenda-item {
+  display: grid;
 
+  grid-template-columns:
+    3.5rem minmax(0, 1fr);
+
+  gap: var(--space-3);
+
+  flex-direction: initial;
+}
+
+.dashboard-agenda-time {
+  padding-top: 0.1rem;
+
+  color: var(--color-primary);
+
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.dashboard-agenda-body {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  padding-left: var(--space-3);
+}
+
+.dashboard-agenda-body::before {
+  position: absolute;
+
+  top: 0.25rem;
+  bottom: -1rem;
+  left: 0;
+
+  width: 1px;
+
+  background:
+    color-mix(in srgb,
+      var(--color-warning) 35%,
+      var(--color-border));
+
+  content: '';
+}
+
+.dashboard-agenda-body::after {
+  position: absolute;
+
+  top: 0.2rem;
+  left: -0.23rem;
+
+  width: 0.5rem;
+  height: 0.5rem;
+
+  border-radius: 999px;
+
+  background: var(--color-warning);
+
+  content: '';
+}
 
 /* Listas */
 
@@ -1807,6 +2065,77 @@ onMounted(
 
   gap: var(--space-4);
 }
+
+.dashboard-list-card {
+  height: 100%;
+}
+
+.dashboard-list-card--personal {
+  position: relative;
+
+  overflow: hidden;
+}
+
+.dashboard-list-card--personal::before {
+  position: absolute;
+
+  top: 0;
+  right: 0;
+  left: 0;
+
+  height: 3px;
+
+  background:
+    linear-gradient(90deg,
+      var(--color-primary),
+      var(--color-warning));
+
+  content: '';
+}
+
+.dashboard-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-item {
+  padding: var(--space-4) 0;
+
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-item:first-child {
+  padding-top: 0;
+}
+
+.dashboard-item:last-child {
+  padding-bottom: 0;
+
+  border-bottom: 0;
+}
+
+.dashboard-item-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dashboard-item-title {
+  min-width: 0;
+
+  color: var(--color-text);
+
+  font-weight: 650;
+}
+
 .dashboard-item-badge {
   display: inline-flex;
 
@@ -1839,9 +2168,27 @@ onMounted(
   color: var(--color-success);
 }
 
+.dashboard-activity-badge--task {
+  color: var(--color-primary);
+}
 
+.dashboard-activity-badge--deadline {
+  color: var(--color-warning);
+}
 
+.dashboard-activity-badge--event {
+  color: var(--color-success);
+}
 
+.dashboard-item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  color: var(--color-text-muted);
+
+  font-size: var(--font-size-sm);
+}
 
 .dashboard-item-actions {
   display: flex;
@@ -1910,19 +2257,110 @@ onMounted(
   gap: var(--space-4);
 }
 
+.dashboard-activity-item {
+  position: relative;
 
+  padding-left: var(--space-5);
+}
 
+.dashboard-activity-item::before {
+  position: absolute;
+
+  top: calc(var(--space-4) + 0.25rem);
+  left: 0.15rem;
+
+  width: 0.55rem;
+  height: 0.55rem;
+
+  border-radius: 999px;
+
+  background: var(--color-primary);
+
+  content: '';
+}
+
+.dashboard-activity-item:not(:last-child)::after {
+  position: absolute;
+
+  top: calc(var(--space-4) + 0.8rem);
+  bottom: -0.3rem;
+  left: 0.4rem;
+
+  width: 1px;
+
+  background: var(--color-border);
+
+  content: '';
+}
 
 /* Pastas recentes */
 
+.dashboard-folders {
+  display: flex;
+  flex-direction: column;
+}
 
+.dashboard-folder {
+  display: flex;
 
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
 
+  padding: var(--space-4) 0;
 
+  border-bottom: 1px solid var(--color-border);
+}
 
+.dashboard-folder:first-child {
+  padding-top: 0;
+}
 
+.dashboard-folder:last-child {
+  padding-bottom: 0;
 
+  border-bottom: 0;
+}
 
+.dashboard-folder-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dashboard-folder-name {
+  overflow: hidden;
+
+  color: var(--color-text);
+
+  font-weight: 650;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.dashboard-folder-process,
+.dashboard-folder-date {
+  color: var(--color-text-muted);
+
+  font-size: var(--font-size-sm);
+}
+
+.dashboard-folder-date {
+  flex: 0 0 auto;
+}
+
+.dashboard-empty {
+  padding: var(--space-5) 0;
+
+  color: var(--color-text-muted);
+
+  font-size: var(--font-size-sm);
+
+  text-align: center;
+}
 
 
 /* Meu trabalho refinado */
@@ -2924,6 +3362,7 @@ button.dashboard-my-work-card__footer-link:focus-visible {
     justify-content: flex-start;
   }
 
+  .dashboard-item-heading,
   .dashboard-attention-item-heading {
     flex-direction: column;
   }
@@ -2932,7 +3371,24 @@ button.dashboard-my-work-card__footer-link:focus-visible {
     justify-content: flex-start;
   }
 
+  .dashboard-folder {
+    align-items: flex-start;
+    flex-direction: column;
 
+    gap: var(--space-2);
+  }
+
+  .dashboard-stat-content {
+    min-height: auto;
+  }
+
+  .dashboard-agenda-item {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-agenda-time {
+    font-size: 0.75rem;
+  }
 }
 
 /* Prioridades do dia + agenda — composição de referência */
@@ -3074,6 +3530,10 @@ button.dashboard-my-work-card__footer-link:focus-visible {
 
 .dashboard-priority-row__icon--danger {
   background: #d52e2e;
+}
+
+.dashboard-priority-row__icon--warning {
+  background: #f79214;
 }
 
 .dashboard-priority-row__content {

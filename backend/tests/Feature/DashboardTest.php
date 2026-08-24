@@ -647,399 +647,6 @@ class DashboardTest extends TestCase
             );
     }
 
-    public function test_dashboard_retorna_listas_operacionais_da_organizacao(): void
-    {
-        $token =
-            $this->loginAsSuperAdmin();
-
-        $user =
-            User::query()
-            ->where(
-                'email',
-                'super-admin@legalis.local',
-            )
-            ->firstOrFail();
-
-        $folder =
-            $this->organization
-            ->folders()
-            ->create([
-                'name' =>
-                'Ação de cobrança',
-
-                'process_number' =>
-                '5009876-54.2026.8.21.0022',
-            ]);
-
-        /*
-         * Agenda:
-         * o compromisso mais próximo deve aparecer primeiro.
-         */
-
-        $nextEvent =
-            $folder
-            ->events()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'type' =>
-                'hearing',
-
-                'title' =>
-                'Audiência de conciliação',
-
-                'starts_at' =>
-                now()->addDays(2),
-
-                'location' =>
-                'Fórum de Pelotas',
-
-                'status' =>
-                'scheduled',
-            ]);
-
-        $folder
-            ->events()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'type' =>
-                'meeting',
-
-                'title' =>
-                'Reunião posterior',
-
-                'starts_at' =>
-                now()->addDays(6),
-
-                'status' =>
-                'scheduled',
-            ]);
-
-        /*
-         * Este evento não pode integrar
-         * a coleção operacional.
-         */
-
-        $folder
-            ->events()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'type' =>
-                'meeting',
-
-                'title' =>
-                'Evento passado',
-
-                'starts_at' =>
-                now()->subDay(),
-
-                'status' =>
-                'scheduled',
-            ]);
-
-        /*
-         * Prazos:
-         * ordenados por due_at crescente.
-         */
-
-        $nextDeadline =
-            $folder
-            ->deadlines()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'title' =>
-                'Apresentar manifestação',
-
-                'due_at' =>
-                now()->addDay(),
-
-                'status' =>
-                'pending',
-            ]);
-
-        $folder
-            ->deadlines()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'title' =>
-                'Interpor recurso',
-
-                'due_at' =>
-                now()->addDays(8),
-
-                'status' =>
-                'pending',
-            ]);
-
-        /*
-         * O prazo concluído não deve aparecer
-         * em operational.pending_deadlines.
-         */
-
-        $folder
-            ->deadlines()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'title' =>
-                'Prazo concluído',
-
-                'due_at' =>
-                now()->addHours(6),
-
-                'status' =>
-                'completed',
-
-                'completed_at' =>
-                now(),
-            ]);
-
-        /*
-         * Tarefas:
-         * vencimentos mais próximos primeiro.
-         */
-
-        $nextTask =
-            $folder
-            ->tasks()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'title' =>
-                'Revisar documentos',
-
-                'priority' =>
-                'high',
-
-                'due_at' =>
-                now()->addHours(12),
-
-                'status' =>
-                'pending',
-            ]);
-
-        $folder
-            ->tasks()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'title' =>
-                'Telefonar para cliente',
-
-                'priority' =>
-                'medium',
-
-                'due_at' =>
-                now()->addDays(4),
-
-                'status' =>
-                'pending',
-            ]);
-
-        /*
-         * A concluída também não pode aparecer
-         * em operational.pending_tasks.
-         */
-
-        $folder
-            ->tasks()
-            ->create([
-                'user_id' =>
-                $user->id,
-
-                'title' =>
-                'Tarefa concluída',
-
-                'priority' =>
-                'low',
-
-                'due_at' =>
-                now()->addHour(),
-
-                'status' =>
-                'completed',
-
-                'completed_at' =>
-                now(),
-            ]);
-
-        $response =
-            $this
-            ->asTenant(
-                $token,
-                $this->organization,
-            )
-            ->getJson(
-                '/api/dashboard'
-            );
-
-        $response
-            ->assertOk()
-            ->assertJsonPath(
-                'operational.upcoming_events.0.id',
-                $nextEvent->id,
-            )
-            ->assertJsonPath(
-                'operational.upcoming_events.0.title',
-                'Audiência de conciliação',
-            )
-            ->assertJsonPath(
-                'operational.upcoming_events.0.folder.id',
-                $folder->id,
-            )
-            ->assertJsonPath(
-                'operational.upcoming_events.0.folder.name',
-                'Ação de cobrança',
-            )
-            ->assertJsonPath(
-                'operational.pending_deadlines.0.id',
-                $nextDeadline->id,
-            )
-            ->assertJsonPath(
-                'operational.pending_deadlines.0.title',
-                'Apresentar manifestação',
-            )
-            ->assertJsonPath(
-                'operational.pending_deadlines.0.folder.id',
-                $folder->id,
-            )
-            ->assertJsonPath(
-                'operational.pending_tasks.0.id',
-                $nextTask->id,
-            )
-            ->assertJsonPath(
-                'operational.pending_tasks.0.title',
-                'Revisar documentos',
-            )
-            ->assertJsonPath(
-                'operational.pending_tasks.0.priority',
-                'high',
-            )
-            ->assertJsonPath(
-                'operational.pending_tasks.0.folder.id',
-                $folder->id,
-            )
-            ->assertJsonStructure([
-                'operational' => [
-                    'upcoming_events' => [
-                        '*' => [
-                            'id',
-                            'type',
-                            'title',
-                            'starts_at',
-                            'ends_at',
-                            'location',
-                            'folder' => [
-                                'id',
-                                'name',
-                                'process_number',
-                            ],
-                        ],
-                    ],
-
-                    'pending_deadlines' => [
-                        '*' => [
-                            'id',
-                            'title',
-                            'due_at',
-                            'status',
-                            'folder' => [
-                                'id',
-                                'name',
-                                'process_number',
-                            ],
-                        ],
-                    ],
-
-                    'pending_tasks' => [
-                        '*' => [
-                            'id',
-                            'title',
-                            'priority',
-                            'due_at',
-                            'status',
-                            'folder' => [
-                                'id',
-                                'name',
-                                'process_number',
-                            ],
-                        ],
-                    ],
-                ],
-            ]);
-
-        /*
-         * As verificações de ausência são restritas
-         * às respectivas coleções operacionais.
-         *
-         * Itens concluídos podem aparecer legitimamente
-         * em recent_activity.
-         */
-
-        $upcomingEventTitles =
-            collect(
-                $response->json(
-                    'operational.upcoming_events',
-                    [],
-                )
-            )
-            ->pluck(
-                'title'
-            )
-            ->all();
-
-        $pendingDeadlineTitles =
-            collect(
-                $response->json(
-                    'operational.pending_deadlines',
-                    [],
-                )
-            )
-            ->pluck(
-                'title'
-            )
-            ->all();
-
-        $pendingTaskTitles =
-            collect(
-                $response->json(
-                    'operational.pending_tasks',
-                    [],
-                )
-            )
-            ->pluck(
-                'title'
-            )
-            ->all();
-
-        $this->assertNotContains(
-            'Evento passado',
-            $upcomingEventTitles,
-        );
-
-        $this->assertNotContains(
-            'Prazo concluído',
-            $pendingDeadlineTitles,
-        );
-
-        $this->assertNotContains(
-            'Tarefa concluída',
-            $pendingTaskTitles,
-        );
-    }
-
     private function loginAsSuperAdmin(): string
     {
         $user =
@@ -1086,4 +693,365 @@ class DashboardTest extends TestCase
                 $organization->slug,
             );
     }
+
+    public function test_dashboard_retorna_agenda_do_dia_consolidada(): void
+{
+    $token =
+        $this->loginAsSuperAdmin();
+
+    $user =
+        User::query()
+        ->where(
+            'email',
+            'super-admin@legalis.local',
+        )
+        ->firstOrFail();
+
+    $folder =
+        $this->organization
+        ->folders()
+        ->create([
+            'name' =>
+                'Ação indenizatória',
+
+            'process_number' =>
+                '5001234-56.2026.8.21.0022',
+        ]);
+
+    /*
+     * Tarefa pendente para hoje.
+     */
+
+    $task =
+        $folder
+        ->tasks()
+        ->create([
+            'user_id' =>
+                $user->id,
+
+            'title' =>
+                'Revisar contestação',
+
+            'priority' =>
+                'high',
+
+            'due_at' =>
+                now()
+                    ->copy()
+                    ->addHour(),
+
+            'status' =>
+                'pending',
+        ]);
+
+    /*
+     * Prazo pendente para hoje.
+     */
+
+    $deadline =
+        $folder
+        ->deadlines()
+        ->create([
+            'user_id' =>
+                $user->id,
+
+            'title' =>
+                'Protocolar manifestação',
+
+            'due_at' =>
+                now()
+                    ->copy()
+                    ->addHours(2),
+
+            'status' =>
+                'pending',
+        ]);
+
+    /*
+     * Compromisso restante de hoje.
+     */
+
+    $event =
+        $folder
+        ->events()
+        ->create([
+            'user_id' =>
+                $user->id,
+
+            'type' =>
+                'hearing',
+
+            'title' =>
+                'Audiência de instrução',
+
+            'starts_at' =>
+                now()
+                    ->copy()
+                    ->addHours(3),
+
+            'location' =>
+                'Fórum de Pelotas',
+
+            'status' =>
+                'scheduled',
+        ]);
+
+    $response =
+        $this
+        ->asTenant(
+            $token,
+            $this->organization,
+        )
+        ->getJson(
+            '/api/dashboard'
+        );
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(
+            3,
+            'today_agenda',
+        )
+        ->assertJsonPath(
+            'today_agenda.0.kind',
+            'task',
+        )
+        ->assertJsonPath(
+            'today_agenda.0.id',
+            $task->id,
+        )
+        ->assertJsonPath(
+            'today_agenda.0.title',
+            'Revisar contestação',
+        )
+        ->assertJsonPath(
+            'today_agenda.0.priority',
+            'high',
+        )
+        ->assertJsonPath(
+            'today_agenda.1.kind',
+            'deadline',
+        )
+        ->assertJsonPath(
+            'today_agenda.1.id',
+            $deadline->id,
+        )
+        ->assertJsonPath(
+            'today_agenda.1.title',
+            'Protocolar manifestação',
+        )
+        ->assertJsonPath(
+            'today_agenda.2.kind',
+            'event',
+        )
+        ->assertJsonPath(
+            'today_agenda.2.id',
+            $event->id,
+        )
+        ->assertJsonPath(
+            'today_agenda.2.title',
+            'Audiência de instrução',
+        )
+        ->assertJsonPath(
+            'today_agenda.2.type',
+            'hearing',
+        )
+        ->assertJsonPath(
+            'today_agenda.2.location',
+            'Fórum de Pelotas',
+        )
+        ->assertJsonStructure([
+            'today_agenda' => [
+                '*' => [
+                    'kind',
+                    'id',
+                    'title',
+                    'scheduled_at',
+                    'folder' => [
+                        'id',
+                        'name',
+                        'process_number',
+                    ],
+                ],
+            ],
+        ]);
+}
+
+
+public function test_dashboard_agenda_do_dia_ignora_itens_fora_do_dia_e_concluidos(): void
+{
+    $token =
+        $this->loginAsSuperAdmin();
+
+    $user =
+        User::query()
+        ->where(
+            'email',
+            'super-admin@legalis.local',
+        )
+        ->firstOrFail();
+
+    $folder =
+        $this->organization
+        ->folders()
+        ->create([
+            'name' =>
+                'Pasta agenda',
+
+            'process_number' =>
+                null,
+        ]);
+
+    /*
+     * Deve aparecer.
+     */
+
+    $folder
+        ->tasks()
+        ->create([
+            'user_id' =>
+                $user->id,
+
+            'title' =>
+                'Tarefa de hoje',
+
+            'priority' =>
+                'medium',
+
+            'due_at' =>
+                now()
+                    ->copy()
+                    ->addHour(),
+
+            'status' =>
+                'pending',
+        ]);
+
+    /*
+     * Amanhã: não aparece.
+     */
+
+    $folder
+        ->tasks()
+        ->create([
+            'user_id' =>
+                $user->id,
+
+            'title' =>
+                'Tarefa de amanhã',
+
+            'priority' =>
+                'low',
+
+            'due_at' =>
+                now()
+                    ->copy()
+                    ->addDay(),
+
+            'status' =>
+                'pending',
+        ]);
+
+    /*
+     * Concluído: não aparece.
+     */
+
+    $folder
+        ->deadlines()
+        ->create([
+            'user_id' =>
+                $user->id,
+
+            'title' =>
+                'Prazo concluído hoje',
+
+            'due_at' =>
+                now()
+                    ->copy()
+                    ->addHours(2),
+
+            'status' =>
+                'completed',
+
+            'completed_at' =>
+                now(),
+        ]);
+
+    /*
+     * Evento de amanhã: não aparece.
+     */
+
+    $folder
+        ->events()
+        ->create([
+            'user_id' =>
+                $user->id,
+
+            'type' =>
+                'meeting',
+
+            'title' =>
+                'Reunião de amanhã',
+
+            'starts_at' =>
+                now()
+                    ->copy()
+                    ->addDay(),
+
+            'status' =>
+                'scheduled',
+        ]);
+
+    $response =
+        $this
+        ->asTenant(
+            $token,
+            $this->organization,
+        )
+        ->getJson(
+            '/api/dashboard'
+        );
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(
+            1,
+            'today_agenda',
+        )
+        ->assertJsonPath(
+            'today_agenda.0.kind',
+            'task',
+        )
+        ->assertJsonPath(
+            'today_agenda.0.title',
+            'Tarefa de hoje',
+        );
+
+    $titles =
+        collect(
+            $response->json(
+                'today_agenda',
+                [],
+            )
+        )
+        ->pluck(
+            'title'
+        )
+        ->all();
+
+    $this->assertNotContains(
+        'Tarefa de amanhã',
+        $titles,
+    );
+
+    $this->assertNotContains(
+        'Prazo concluído hoje',
+        $titles,
+    );
+
+    $this->assertNotContains(
+        'Reunião de amanhã',
+        $titles,
+    );
+}
 }

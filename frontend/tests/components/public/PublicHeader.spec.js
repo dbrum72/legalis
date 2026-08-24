@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mount } from '@vue/test-utils'
 
@@ -92,6 +92,38 @@ async function mountHeader() {
         authStore: useAuthStore(),
     }
 }
+
+const storage = new Map()
+
+Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+
+    value: {
+        getItem(key) {
+            return storage.has(key) ? storage.get(key) : null
+        },
+
+        setItem(key, value) {
+            storage.set(key, String(value))
+        },
+
+        removeItem(key) {
+            storage.delete(key)
+        },
+
+        clear() {
+            storage.clear()
+        },
+
+        key(index) {
+            return Array.from(storage.keys())[index] ?? null
+        },
+
+        get length() {
+            return storage.size
+        },
+    },
+})
 
 describe('PublicHeader', () => {
     beforeEach(() => {

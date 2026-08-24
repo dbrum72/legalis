@@ -1,0 +1,2231 @@
+<template>
+  <PageContainer>
+    <div class="dashboard-page">
+      <header class="dashboard-header">
+        <div class="dashboard-heading">
+          <h1 class="dashboard-title">
+            Dashboard
+          </h1>
+
+          <p class="dashboard-description">
+            Acompanhe um resumo do escritÃ³rio.
+          </p>
+        </div>
+
+        <div v-if="hasQuickActions" class="dashboard-actions">
+          <AppButton v-if="
+            authStore.hasPermission(
+              'clients.create',
+            )
+          " type="button" variant="outline" @click="goToClientCreate">
+            Novo cliente
+          </AppButton>
+
+          <AppButton v-if="
+            authStore.hasPermission(
+              'folders.create',
+            )
+          " type="button" @click="goToFolderCreate">
+            Nova pasta
+          </AppButton>
+        </div>
+      </header>
+
+      <div v-if="errorMessage" class="dashboard-alert" role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <div v-if="eventActionError" class="dashboard-alert" role="alert">
+        {{ eventActionError }}
+      </div>
+
+      <div v-if="deadlineActionError" class="dashboard-alert" role="alert">
+        {{ deadlineActionError }}
+      </div>
+
+      <div v-if="taskActionError" class="dashboard-alert" role="alert">
+        {{ taskActionError }}
+      </div>
+
+      <div class="dashboard-workspace" data-testid="dashboard-workspace">
+        <section class="dashboard-summary" aria-label="Resumo do escritÃ³rio">
+          <AppCard class="dashboard-summary-card">
+            <div class="dashboard-metric">
+              <span class="dashboard-metric-label">
+                Clientes
+              </span>
+
+              <strong class="dashboard-metric-value">
+                {{ dashboardStore.summary.clients }}
+              </strong>
+            </div>
+          </AppCard>
+
+          <AppCard class="dashboard-summary-card">
+            <div class="dashboard-metric">
+              <span class="dashboard-metric-label">
+                Pastas
+              </span>
+
+              <strong class="dashboard-metric-value">
+                {{ dashboardStore.summary.folders }}
+              </strong>
+            </div>
+          </AppCard>
+
+          <AppCard class="dashboard-summary-card">
+            <div class="dashboard-metric">
+              <span class="dashboard-metric-label">
+                Membros ativos
+              </span>
+
+              <strong class="dashboard-metric-value">
+                {{
+                  dashboardStore.summary
+                    .active_members
+                }}
+              </strong>
+            </div>
+          </AppCard>
+        </section>
+
+        <section class="dashboard-attention" aria-labelledby="dashboard-attention-title"
+          data-testid="dashboard-priorities">
+          <header class="dashboard-section-header">
+            <div>
+              <h2 id="dashboard-attention-title" class="dashboard-section-title">
+                Central de AtenÃ§Ã£o
+              </h2>
+
+              <p class="dashboard-section-description">
+                Itens que exigem aÃ§Ã£o imediata.
+              </p>
+            </div>
+          </header>
+
+          <div class="dashboard-attention-grid">
+            <AppCard class="
+                dashboard-attention-card
+                dashboard-attention-card--critical
+              ">
+              <div class="dashboard-attention-content">
+                <div class="dashboard-attention-heading">
+                  <div class="dashboard-attention-title-group">
+                    <span class="dashboard-attention-label">
+                      Tarefas vencidas
+                    </span>
+
+                    <strong class="dashboard-attention-value">
+                      {{
+                        dashboardStore.summary
+                          .overdue_tasks
+                      }}
+                    </strong>
+                  </div>
+
+                  <span class="
+                      dashboard-attention-indicator
+                      dashboard-attention-indicator--critical
+                    " aria-hidden="true" />
+                </div>
+
+                <span class="dashboard-attention-description">
+                  Tarefas pendentes com vencimento ultrapassado.
+                </span>
+
+                <div class="dashboard-attention-list">
+                  <div v-if="
+                    dashboardStore.attention
+                      .overdue_tasks.length === 0
+                  " class="dashboard-attention-empty">
+                    Nenhuma tarefa vencida.
+                  </div>
+
+                  <article v-for="
+task in
+                        dashboardStore.attention
+                          .overdue_tasks
+                    " v-else :key="task.id" class="dashboard-attention-item">
+                    <div class="dashboard-attention-item-heading">
+                      <strong class="dashboard-attention-item-title">
+                        {{ task.title }}
+                      </strong>
+
+                      <span class="dashboard-item-badge" :class="`dashboard-item-badge--${task.priority}`">
+                        {{
+                          priorityLabel(
+                            task.priority,
+                          )
+                        }}
+                      </span>
+                    </div>
+
+                    <div class="dashboard-attention-item-meta">
+                      <span v-if="task.due_at">
+                        Venceu em:
+                        {{
+                          formatDateTime(
+                            task.due_at,
+                          )
+                        }}
+                      </span>
+                    </div>
+
+                    <button v-if="task.folder" :data-testid="`dashboard-attention-task-folder-${task.folder.id}`"
+                      type="button" class="dashboard-folder-link" @click="
+                        goToFolder(
+                          task.folder.id,
+                        )
+                        ">
+                      {{ task.folder.name }}
+
+                      <span v-if="task.folder.process_number" class="dashboard-folder-link-process">
+                        {{
+                          task.folder
+                            .process_number
+                        }}
+                      </span>
+                    </button>
+
+                    <div v-if="
+                      authStore.hasPermission(
+                        'folders.update',
+                      )
+                    " class="dashboard-item-actions">
+                      <AppButton type="button" size="sm" variant="outline" :disabled="completingTaskId !==
+                        null
+                        " @click="completeTask(task)">
+                        Concluir tarefa
+                      </AppButton>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </AppCard>
+
+            <AppCard class="
+                dashboard-attention-card
+                dashboard-attention-card--critical
+              ">
+              <div class="dashboard-attention-content">
+                <div class="dashboard-attention-heading">
+                  <div class="dashboard-attention-title-group">
+                    <span class="dashboard-attention-label">
+                      Prazos vencidos
+                    </span>
+
+                    <strong class="dashboard-attention-value">
+                      {{
+                        dashboardStore.summary
+                          .overdue_deadlines
+                      }}
+                    </strong>
+                  </div>
+
+                  <span class="
+                      dashboard-attention-indicator
+                      dashboard-attention-indicator--critical
+                    " aria-hidden="true" />
+                </div>
+
+                <span class="dashboard-attention-description">
+                  Prazos processuais pendentes jÃ¡ vencidos.
+                </span>
+
+                <div class="dashboard-attention-list">
+                  <div v-if="
+                    dashboardStore.attention
+                      .overdue_deadlines.length === 0
+                  " class="dashboard-attention-empty">
+                    Nenhum prazo vencido.
+                  </div>
+
+                  <article v-for="
+deadline in
+                        dashboardStore.attention
+                          .overdue_deadlines
+                    " v-else :key="deadline.id" class="dashboard-attention-item">
+                    <strong class="dashboard-attention-item-title">
+                      {{ deadline.title }}
+                    </strong>
+
+                    <div class="dashboard-attention-item-meta">
+                      <span v-if="deadline.due_at">
+                        Venceu em:
+                        {{
+                          formatDateTime(
+                            deadline.due_at,
+                          )
+                        }}
+                      </span>
+                    </div>
+
+                    <button v-if="deadline.folder"
+                      :data-testid="`dashboard-attention-deadline-folder-${deadline.folder.id}`" type="button"
+                      class="dashboard-folder-link" @click="
+                        goToFolder(
+                          deadline.folder.id,
+                        )
+                        ">
+                      {{ deadline.folder.name }}
+
+                      <span v-if="deadline.folder.process_number" class="dashboard-folder-link-process">
+                        {{
+                          deadline.folder
+                            .process_number
+                        }}
+                      </span>
+                    </button>
+
+                    <div v-if="
+                      authStore.hasPermission(
+                        'folders.update',
+                      )
+                    " class="dashboard-item-actions">
+                      <AppButton type="button" size="sm" variant="outline" :disabled="completingDeadlineId !==
+                        null
+                        " @click="
+                          completeDeadline(
+                            deadline,
+                          )
+                          ">
+                        Concluir prazo
+                      </AppButton>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </AppCard>
+
+            <div class="dashboard-today-agenda" data-testid="dashboard-today-agenda">
+              <AppCard class="
+                  dashboard-attention-card
+                  dashboard-attention-card--today
+                ">
+                <div class="dashboard-attention-content">
+                  <div class="dashboard-attention-heading">
+                    <div class="dashboard-attention-title-group">
+                      <span class="dashboard-attention-label">
+                        Compromissos hoje
+                      </span>
+
+                      <strong class="dashboard-attention-value">
+                        {{
+                          dashboardStore.summary
+                            .events_today
+                        }}
+                      </strong>
+                    </div>
+
+                    <span class="
+                        dashboard-attention-indicator
+                        dashboard-attention-indicator--today
+                      " aria-hidden="true" />
+                  </div>
+
+                  <span class="dashboard-attention-description">
+                    Compromissos ainda pendentes para o dia de hoje.
+                  </span>
+
+                  <div class="dashboard-attention-list">
+                    <div v-if="
+                      dashboardStore.attention
+                        .events_today.length === 0
+                    " class="dashboard-attention-empty">
+                      Nenhum compromisso restante para hoje.
+                    </div>
+
+                    <article v-for="
+event in
+                          dashboardStore.attention
+                            .events_today
+                      " v-else :key="event.id" class="dashboard-attention-item">
+                      <div class="dashboard-attention-item-heading">
+                        <strong class="dashboard-attention-item-title">
+                          {{ event.title }}
+                        </strong>
+
+                        <span class="dashboard-item-badge">
+                          {{
+                            eventTypeLabel(
+                              event.type,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <div class="dashboard-attention-item-meta">
+                        <span v-if="event.starts_at">
+                          {{
+                            formatDateTime(
+                              event.starts_at,
+                            )
+                          }}
+                        </span>
+
+                        <span v-if="event.location">
+                          {{ event.location }}
+                        </span>
+                      </div>
+
+                      <button v-if="event.folder" :data-testid="`dashboard-attention-event-folder-${event.folder.id}`"
+                        type="button" class="dashboard-folder-link" @click="
+                          goToFolder(
+                            event.folder.id,
+                          )
+                          ">
+                        {{ event.folder.name }}
+
+                        <span v-if="event.folder.process_number" class="dashboard-folder-link-process">
+                          {{
+                            event.folder
+                              .process_number
+                          }}
+                        </span>
+                      </button>
+
+                      <div v-if="
+                        authStore.hasPermission(
+                          'folders.update',
+                        )
+                      " class="dashboard-item-actions">
+                        <AppButton type="button" size="sm" variant="outline" :disabled="completingEventId !==
+                          null
+                          " @click="
+                            completeEvent(
+                              event,
+                            )
+                            ">
+                          Concluir compromisso
+                        </AppButton>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </AppCard>
+            </div>
+          </div>
+        </section>
+
+        <section class="dashboard-operational" aria-labelledby="dashboard-operational-title"
+          data-testid="dashboard-operational">
+          <header class="dashboard-section-header">
+            <div>
+              <h2 id="dashboard-operational-title" class="dashboard-section-title">
+                VisÃ£o operacional
+              </h2>
+
+              <p class="dashboard-section-description">
+                Acompanhe os principais itens que exigem atenÃ§Ã£o.
+              </p>
+            </div>
+          </header>
+
+          <div class="dashboard-operational-grid">
+            <AppCard class="dashboard-operational-card">
+              <div class="dashboard-metric">
+                <span class="dashboard-metric-label">
+                  Tarefas pendentes
+                </span>
+
+                <strong class="dashboard-metric-value">
+                  {{
+                    dashboardStore.summary
+                      .pending_tasks
+                  }}
+                </strong>
+              </div>
+            </AppCard>
+
+            <AppCard class="dashboard-operational-card">
+              <div class="dashboard-metric">
+                <span class="dashboard-metric-label">
+                  Prazos pendentes
+                </span>
+
+                <strong class="dashboard-metric-value">
+                  {{
+                    dashboardStore.summary
+                      .pending_deadlines
+                  }}
+                </strong>
+              </div>
+            </AppCard>
+
+            <AppCard class="dashboard-operational-card">
+              <div class="dashboard-metric">
+                <span class="dashboard-metric-label">
+                  PrÃ³ximos compromissos
+                </span>
+
+                <strong class="dashboard-metric-value">
+                  {{
+                    dashboardStore.summary
+                      .upcoming_events
+                  }}
+                </strong>
+              </div>
+            </AppCard>
+          </div>
+        </section>
+
+        <section class="dashboard-work" aria-label="Itens operacionais">
+          <div class="dashboard-work-grid">
+            <section class="dashboard-work-section" aria-labelledby="dashboard-events-title">
+              <header class="dashboard-work-header">
+                <div>
+                  <h2 id="dashboard-events-title" class="dashboard-section-title">
+                    Agenda prÃ³xima
+                  </h2>
+
+                  <p class="dashboard-section-description">
+                    Compromissos futuros mais prÃ³ximos.
+                  </p>
+                </div>
+              </header>
+
+              <AppCard>
+                <div v-if="
+                  dashboardStore.operational
+                    .upcoming_events.length === 0
+                " class="dashboard-empty">
+                  Nenhum compromisso futuro.
+                </div>
+
+                <div v-else class="dashboard-items">
+                  <article v-for="
+event in
+                        dashboardStore.operational
+                          .upcoming_events
+                    " :key="event.id" class="dashboard-item">
+                    <div class="dashboard-item-main">
+                      <div class="dashboard-item-heading">
+                        <strong class="dashboard-item-title">
+                          {{ event.title }}
+                        </strong>
+
+                        <span class="dashboard-item-badge">
+                          {{
+                            eventTypeLabel(
+                              event.type,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <div class="dashboard-item-meta">
+                        <span v-if="event.starts_at">
+                          {{
+                            formatDateTime(
+                              event.starts_at,
+                            )
+                          }}
+                        </span>
+
+                        <span v-if="event.location">
+                          {{ event.location }}
+                        </span>
+                      </div>
+
+                      <button v-if="event.folder" :data-testid="`dashboard-event-folder-${event.folder.id}`"
+                        type="button" class="dashboard-folder-link" @click="
+                          goToFolder(
+                            event.folder.id,
+                          )
+                          ">
+                        {{ event.folder.name }}
+
+                        <span v-if="event.folder.process_number" class="dashboard-folder-link-process">
+                          {{
+                            event.folder
+                              .process_number
+                          }}
+                        </span>
+                      </button>
+
+                      <div v-if="
+                        authStore.hasPermission(
+                          'folders.update',
+                        )
+                      " class="dashboard-item-actions">
+                        <AppButton type="button" size="sm" variant="outline" :disabled="completingEventId !==
+                          null
+                          " @click="
+                            completeEvent(
+                              event,
+                            )
+                            ">
+                          Concluir compromisso
+                        </AppButton>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </AppCard>
+            </section>
+
+            <section class="dashboard-work-section" aria-labelledby="dashboard-deadlines-title">
+              <header class="dashboard-work-header">
+                <div>
+                  <h2 id="dashboard-deadlines-title" class="dashboard-section-title">
+                    PrÃ³ximos prazos
+                  </h2>
+
+                  <p class="dashboard-section-description">
+                    Prazos pendentes com vencimento mais prÃ³ximo.
+                  </p>
+                </div>
+              </header>
+
+              <AppCard>
+                <div v-if="
+                  dashboardStore.operational
+                    .pending_deadlines.length === 0
+                " class="dashboard-empty">
+                  Nenhum prazo pendente.
+                </div>
+
+                <div v-else class="dashboard-items">
+                  <article v-for="
+deadline in
+                        dashboardStore.operational
+                          .pending_deadlines
+                    " :key="deadline.id" class="dashboard-item">
+                    <div class="dashboard-item-main">
+                      <strong class="dashboard-item-title">
+                        {{ deadline.title }}
+                      </strong>
+
+                      <div class="dashboard-item-meta">
+                        <span v-if="deadline.due_at">
+                          Vence em:
+                          {{
+                            formatDateTime(
+                              deadline.due_at,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <button v-if="deadline.folder" :data-testid="`dashboard-deadline-folder-${deadline.folder.id}`"
+                        type="button" class="dashboard-folder-link" @click="
+                          goToFolder(
+                            deadline.folder.id,
+                          )
+                          ">
+                        {{ deadline.folder.name }}
+
+                        <span v-if="deadline.folder.process_number" class="dashboard-folder-link-process">
+                          {{
+                            deadline.folder
+                              .process_number
+                          }}
+                        </span>
+                      </button>
+
+                      <div v-if="
+                        authStore.hasPermission(
+                          'folders.update',
+                        )
+                      " class="dashboard-item-actions">
+                        <AppButton type="button" size="sm" variant="outline" :disabled="completingDeadlineId !==
+                          null
+                          " @click="
+                            completeDeadline(
+                              deadline,
+                            )
+                            ">
+                          Concluir prazo
+                        </AppButton>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </AppCard>
+            </section>
+
+            <section class="dashboard-work-section" aria-labelledby="dashboard-tasks-title">
+              <header class="dashboard-work-header">
+                <div>
+                  <h2 id="dashboard-tasks-title" class="dashboard-section-title">
+                    Tarefas em aberto
+                  </h2>
+
+                  <p class="dashboard-section-description">
+                    Tarefas pendentes que exigem acompanhamento.
+                  </p>
+                </div>
+              </header>
+
+              <AppCard>
+                <div v-if="
+                  dashboardStore.operational
+                    .pending_tasks.length === 0
+                " class="dashboard-empty">
+                  Nenhuma tarefa pendente.
+                </div>
+
+                <div v-else class="dashboard-items">
+                  <article v-for="
+task in
+                        dashboardStore.operational
+                          .pending_tasks
+                    " :key="task.id" class="dashboard-item">
+                    <div class="dashboard-item-main">
+                      <div class="dashboard-item-heading">
+                        <strong class="dashboard-item-title">
+                          {{ task.title }}
+                        </strong>
+
+                        <span class="dashboard-item-badge" :class="`dashboard-item-badge--${task.priority}`">
+                          {{
+                            priorityLabel(
+                              task.priority,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <div class="dashboard-item-meta">
+                        <span v-if="task.due_at">
+                          Vence em:
+                          {{
+                            formatDateTime(
+                              task.due_at,
+                            )
+                          }}
+                        </span>
+
+                        <span v-else>
+                          Sem vencimento
+                        </span>
+                      </div>
+
+                      <button v-if="task.folder" :data-testid="`dashboard-task-folder-${task.folder.id}`" type="button"
+                        class="dashboard-folder-link" @click="
+                          goToFolder(
+                            task.folder.id,
+                          )
+                          ">
+                        {{ task.folder.name }}
+
+                        <span v-if="task.folder.process_number" class="dashboard-folder-link-process">
+                          {{
+                            task.folder
+                              .process_number
+                          }}
+                        </span>
+                      </button>
+
+                      <div v-if="
+                        authStore.hasPermission(
+                          'folders.update',
+                        )
+                      " class="dashboard-item-actions">
+                        <AppButton type="button" size="sm" variant="outline" :disabled="completingTaskId !==
+                          null
+                          " @click="completeTask(task)">
+                          Concluir tarefa
+                        </AppButton>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </AppCard>
+            </section>
+          </div>
+        </section>
+
+        <section class="dashboard-my-work" aria-labelledby="dashboard-my-work-title" data-testid="dashboard-my-work">
+          <header class="dashboard-section-header">
+            <div>
+              <h2 id="dashboard-my-work-title" class="dashboard-section-title">
+                Meu trabalho
+              </h2>
+
+              <p class="dashboard-section-description">
+                Itens sob sua responsabilidade.
+              </p>
+            </div>
+          </header>
+
+          <div class="dashboard-my-work-grid">
+            <section class="dashboard-work-section" aria-labelledby="dashboard-my-work-tasks-title">
+              <header class="dashboard-work-header">
+                <div>
+                  <h3 id="dashboard-my-work-tasks-title" class="dashboard-section-title">
+                    Minhas tarefas
+                  </h3>
+
+                  <p class="dashboard-section-description">
+                    Tarefas pendentes atribuÃ­das a vocÃª.
+                  </p>
+                </div>
+              </header>
+
+              <AppCard>
+                <div v-if="
+                  dashboardStore.myWork
+                    .pending_tasks.length === 0
+                " class="dashboard-empty">
+                  Nenhuma tarefa atribuÃ­da a vocÃª.
+                </div>
+
+                <div v-else class="dashboard-items">
+                  <article v-for="
+task in
+                        dashboardStore.myWork
+                          .pending_tasks
+                    " :key="task.id" class="dashboard-item">
+                    <div class="dashboard-item-main">
+                      <div class="dashboard-item-heading">
+                        <strong class="dashboard-item-title">
+                          {{ task.title }}
+                        </strong>
+
+                        <span class="dashboard-item-badge" :class="`dashboard-item-badge--${task.priority}`">
+                          {{ priorityLabel(task.priority) }}
+                        </span>
+                      </div>
+
+                      <div class="dashboard-item-meta">
+                        <span v-if="task.due_at">
+                          Vence em:
+                          {{ formatDateTime(task.due_at) }}
+                        </span>
+
+                        <span v-else>
+                          Sem vencimento
+                        </span>
+                      </div>
+
+                      <button v-if="task.folder" :data-testid="`dashboard-my-work-task-folder-${task.folder.id}`"
+                        type="button" class="dashboard-folder-link" @click="goToFolder(task.folder.id)">
+                        {{ task.folder.name }}
+
+                        <span v-if="task.folder.process_number" class="dashboard-folder-link-process">
+                          {{ task.folder.process_number }}
+                        </span>
+                      </button>
+
+                      <div v-if="
+                        authStore.hasPermission(
+                          'folders.update',
+                        )
+                      " class="dashboard-item-actions">
+                        <AppButton :data-testid="`dashboard-my-work-task-complete-${task.id}`" type="button" size="sm"
+                          variant="outline" :disabled="completingTaskId !==
+                            null
+                            " @click="completeTask(task)">
+                          Concluir tarefa
+                        </AppButton>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </AppCard>
+            </section>
+
+            <section class="dashboard-work-section" aria-labelledby="dashboard-my-work-deadlines-title">
+              <header class="dashboard-work-header">
+                <div>
+                  <h3 id="dashboard-my-work-deadlines-title" class="dashboard-section-title">
+                    Meus prazos
+                  </h3>
+
+                  <p class="dashboard-section-description">
+                    Prazos pendentes atribuÃ­dos a vocÃª.
+                  </p>
+                </div>
+              </header>
+
+              <AppCard>
+                <div v-if="
+                  dashboardStore.myWork
+                    .pending_deadlines.length === 0
+                " class="dashboard-empty">
+                  Nenhum prazo atribuÃ­do a vocÃª.
+                </div>
+
+                <div v-else class="dashboard-items">
+                  <article v-for="
+deadline in
+                        dashboardStore.myWork
+                          .pending_deadlines
+                    " :key="deadline.id" class="dashboard-item">
+                    <div class="dashboard-item-main">
+                      <strong class="dashboard-item-title">
+                        {{ deadline.title }}
+                      </strong>
+
+                      <div class="dashboard-item-meta">
+                        <span v-if="deadline.due_at">
+                          Vence em:
+                          {{
+                            formatDateTime(
+                              deadline.due_at,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <button v-if="deadline.folder"
+                        :data-testid="`dashboard-my-work-deadline-folder-${deadline.folder.id}`" type="button"
+                        class="dashboard-folder-link" @click="
+                          goToFolder(
+                            deadline.folder.id,
+                          )
+                          ">
+                        {{ deadline.folder.name }}
+
+                        <span v-if="
+                          deadline.folder
+                            .process_number
+                        " class="dashboard-folder-link-process">
+                          {{
+                            deadline.folder
+                              .process_number
+                          }}
+                        </span>
+                      </button>
+
+                      <div v-if="
+                        authStore.hasPermission(
+                          'folders.update',
+                        )
+                      " class="dashboard-item-actions">
+                        <AppButton :data-testid="`dashboard-my-work-deadline-complete-${deadline.id}`" type="button"
+                          size="sm" variant="outline" :disabled="completingDeadlineId !==
+                            null
+                            " @click="
+                            completeDeadline(
+                              deadline,
+                            )
+                            ">
+                          Concluir prazo
+                        </AppButton>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </AppCard>
+            </section>
+
+            <section class="dashboard-work-section" aria-labelledby="dashboard-my-work-events-title">
+              <header class="dashboard-work-header">
+                <div>
+                  <h3 id="dashboard-my-work-events-title" class="dashboard-section-title">
+                    Meus compromissos
+                  </h3>
+
+                  <p class="dashboard-section-description">
+                    PrÃ³ximos compromissos atribuÃ­dos a vocÃª.
+                  </p>
+                </div>
+              </header>
+
+              <AppCard>
+                <div v-if="
+                  dashboardStore.myWork
+                    .upcoming_events.length === 0
+                " class="dashboard-empty">
+                  Nenhum compromisso atribuÃ­do a vocÃª.
+                </div>
+
+                <div v-else class="dashboard-items">
+                  <article v-for="
+event in
+                        dashboardStore.myWork
+                          .upcoming_events
+                    " :key="event.id" class="dashboard-item">
+                    <div class="dashboard-item-main">
+                      <div class="dashboard-item-heading">
+                        <strong class="dashboard-item-title">
+                          {{ event.title }}
+                        </strong>
+
+                        <span class="dashboard-item-badge">
+                          {{
+                            eventTypeLabel(
+                              event.type,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <div class="dashboard-item-meta">
+                        <span v-if="event.starts_at">
+                          {{
+                            formatDateTime(
+                              event.starts_at,
+                            )
+                          }}
+                        </span>
+
+                        <span v-if="event.location">
+                          {{ event.location }}
+                        </span>
+                      </div>
+
+                      <button v-if="event.folder" :data-testid="`dashboard-my-work-event-folder-${event.folder.id}`"
+                        type="button" class="dashboard-folder-link" @click="
+                          goToFolder(
+                            event.folder.id,
+                          )
+                          ">
+                        {{ event.folder.name }}
+
+                        <span v-if="
+                          event.folder
+                            .process_number
+                        " class="dashboard-folder-link-process">
+                          {{
+                            event.folder
+                              .process_number
+                          }}
+                        </span>
+                      </button>
+
+                      <div v-if="
+                        authStore.hasPermission(
+                          'folders.update',
+                        )
+                      " class="dashboard-item-actions">
+                        <AppButton :data-testid="`dashboard-my-work-event-complete-${event.id}`" type="button" size="sm"
+                          variant="outline" :disabled="completingEventId !==
+                            null
+                            " @click="
+                            completeEvent(
+                              event,
+                            )
+                            ">
+                          Concluir compromisso
+                        </AppButton>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </AppCard>
+            </section>
+          </div>
+        </section>
+
+        <div class="dashboard-secondary" data-testid="dashboard-secondary">
+          <section class="dashboard-activity" aria-labelledby="dashboard-activity-title">
+            <header class="dashboard-section-header">
+              <div>
+                <h2 id="dashboard-activity-title" class="dashboard-section-title">
+                  Atividade recente
+                </h2>
+
+                <p class="dashboard-section-description">
+                  Ãšltimas atividades concluÃ­das no escritÃ³rio.
+                </p>
+              </div>
+            </header>
+
+            <AppCard>
+              <div data-testid="dashboard-recent-activity">
+                <div v-if="
+                  dashboardStore.recentActivity
+                    .length === 0
+                " class="dashboard-empty">
+                  Nenhuma atividade recente.
+                </div>
+
+                <div v-else class="dashboard-items">
+                  <article v-for="
+activity in
+                        dashboardStore.recentActivity
+                    " :key="`${activity.type}-${activity.id}`" class="
+                      dashboard-item
+                      dashboard-activity-item
+                    ">
+                    <div class="dashboard-item-main">
+                      <div class="dashboard-item-heading">
+                        <strong class="dashboard-item-title">
+                          {{ activity.title }}
+                        </strong>
+
+                        <span class="dashboard-item-badge" :class="`dashboard-activity-badge--${activity.type}`">
+                          {{
+                            activityTypeLabel(
+                              activity.type,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <div class="dashboard-item-meta">
+                        <span v-if="activity.completed_at">
+                          ConcluÃ­do em:
+                          {{
+                            formatDateTime(
+                              activity.completed_at,
+                            )
+                          }}
+                        </span>
+                      </div>
+
+                      <button v-if="activity.folder" :data-testid="`dashboard-activity-folder-${activity.folder.id}`"
+                        type="button" class="dashboard-folder-link" @click="
+                          goToFolder(
+                            activity.folder.id,
+                          )
+                          ">
+                        {{ activity.folder.name }}
+
+                        <span v-if="
+                          activity.folder
+                            .process_number
+                        " class="dashboard-folder-link-process">
+                          {{
+                            activity.folder
+                              .process_number
+                          }}
+                        </span>
+                      </button>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </AppCard>
+          </section>
+
+          <section class="dashboard-recent" aria-labelledby="recent-folders-title">
+            <header class="dashboard-section-header">
+              <div>
+                <h2 id="recent-folders-title" class="dashboard-section-title">
+                  Pastas recentes
+                </h2>
+
+                <p class="dashboard-section-description">
+                  Ãšltimas pastas adicionadas ao escritÃ³rio.
+                </p>
+              </div>
+            </header>
+
+            <AppCard>
+              <div v-if="
+                dashboardStore.recentFolders
+                  .length === 0
+              " class="dashboard-empty">
+                Nenhuma pasta recente.
+              </div>
+
+              <div v-else class="dashboard-folders">
+                <article v-for="
+folder in
+                      dashboardStore.recentFolders
+                  " :key="folder.id" class="dashboard-folder">
+                  <div class="dashboard-folder-main">
+                    <strong class="dashboard-folder-name">
+                      {{ folder.name }}
+                    </strong>
+
+                    <span class="dashboard-folder-process">
+                      {{
+                        folder.process_number ||
+                        'â€”'
+                      }}
+                    </span>
+                  </div>
+
+                  <time v-if="folder.created_at" class="dashboard-folder-date" :datetime="folder.created_at">
+                    {{
+                      formatDate(
+                        folder.created_at,
+                      )
+                    }}
+                  </time>
+                </article>
+              </div>
+            </AppCard>
+          </section>
+        </div>
+      </div>
+    </div>
+  </PageContainer>
+</template>
+
+<script setup>
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
+
+import {
+  useRouter,
+} from 'vue-router'
+
+import {
+  PageContainer,
+} from '@/components/layout'
+
+import {
+  AppButton,
+  AppCard,
+} from '@/components/ui'
+
+import {
+  useAuthStore,
+} from '@/stores/auth.js'
+
+import {
+  useDashboardStore,
+} from '@/stores/dashboard.js'
+
+import {
+  useFolderDeadlinesStore,
+} from '@/stores/folder-deadlines.js'
+
+import {
+  useFolderEventsStore,
+} from '@/stores/folder-events.js'
+
+import {
+  useFolderTasksStore,
+} from '@/stores/folder-tasks.js'
+
+const router =
+  useRouter()
+
+const authStore =
+  useAuthStore()
+
+const dashboardStore =
+  useDashboardStore()
+
+const folderDeadlinesStore =
+  useFolderDeadlinesStore()
+
+const folderEventsStore =
+  useFolderEventsStore()
+
+const folderTasksStore =
+  useFolderTasksStore()
+
+const errorMessage =
+  ref('')
+
+const eventActionError =
+  ref('')
+
+const deadlineActionError =
+  ref('')
+
+const taskActionError =
+  ref('')
+
+const completingEventId =
+  ref(null)
+
+const completingDeadlineId =
+  ref(null)
+
+const completingTaskId =
+  ref(null)
+
+const hasQuickActions =
+  computed(
+    () =>
+      authStore.hasPermission(
+        'clients.create',
+      ) ||
+      authStore.hasPermission(
+        'folders.create',
+      ),
+  )
+
+function formatDate(value) {
+  if (!value) {
+    return ''
+  }
+
+  const date =
+    new Date(value)
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return ''
+  }
+
+  return new Intl.DateTimeFormat(
+    'pt-BR',
+    {
+      day:
+        '2-digit',
+
+      month:
+        '2-digit',
+
+      year:
+        'numeric',
+    },
+  ).format(date)
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return ''
+  }
+
+  const date =
+    new Date(value)
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return ''
+  }
+
+  return new Intl.DateTimeFormat(
+    'pt-BR',
+    {
+      dateStyle:
+        'short',
+
+      timeStyle:
+        'short',
+    },
+  ).format(date)
+}
+
+function eventTypeLabel(type) {
+  const labels = {
+    hearing:
+      'AudiÃªncia',
+
+    meeting:
+      'ReuniÃ£o',
+
+    expert_exam:
+      'PerÃ­cia',
+
+    diligence:
+      'DiligÃªncia',
+
+    other:
+      'Outro',
+  }
+
+  return labels[type] ??
+    type ??
+    'â€”'
+}
+
+function activityTypeLabel(type) {
+  const labels = {
+    task:
+      'Tarefa',
+
+    deadline:
+      'Prazo',
+
+    event:
+      'Compromisso',
+  }
+
+  return labels[type] ??
+    type ??
+    'â€”'
+}
+
+function priorityLabel(priority) {
+  const labels = {
+    high:
+      'Alta',
+
+    medium:
+      'MÃ©dia',
+
+    low:
+      'Baixa',
+  }
+
+  return labels[priority] ??
+    priority ??
+    'â€”'
+}
+
+function goToClientCreate() {
+  return router.push({
+    name:
+      'clients.create',
+  })
+}
+
+function goToFolderCreate() {
+  return router.push({
+    name:
+      'folders.create',
+  })
+}
+
+function goToFolder(folderId) {
+  if (!folderId) {
+    return
+  }
+
+  return router.push({
+    name:
+      'folders.show',
+
+    params: {
+      id:
+        folderId,
+    },
+  })
+}
+
+async function completeEvent(
+  event,
+) {
+  if (
+    completingEventId.value !== null ||
+    !event?.id ||
+    !event?.folder?.id
+  ) {
+    return
+  }
+
+  eventActionError.value =
+    ''
+
+  completingEventId.value =
+    event.id
+
+  try {
+    await folderEventsStore.completeEvent(
+      event.folder.id,
+      event.id,
+    )
+
+    await dashboardStore.fetchDashboard()
+  } catch {
+    eventActionError.value =
+      'NÃ£o foi possÃ­vel concluir o compromisso. Tente novamente.'
+  } finally {
+    completingEventId.value =
+      null
+  }
+}
+
+async function completeDeadline(
+  deadline,
+) {
+  if (
+    completingDeadlineId.value !== null ||
+    !deadline?.id ||
+    !deadline?.folder?.id
+  ) {
+    return
+  }
+
+  deadlineActionError.value =
+    ''
+
+  completingDeadlineId.value =
+    deadline.id
+
+  try {
+    await folderDeadlinesStore.completeDeadline(
+      deadline.folder.id,
+      deadline.id,
+    )
+
+    await dashboardStore.fetchDashboard()
+  } catch {
+    deadlineActionError.value =
+      'NÃ£o foi possÃ­vel concluir o prazo. Tente novamente.'
+  } finally {
+    completingDeadlineId.value =
+      null
+  }
+}
+
+async function completeTask(
+  task,
+) {
+  if (
+    completingTaskId.value !== null ||
+    !task?.id ||
+    !task?.folder?.id
+  ) {
+    return
+  }
+
+  taskActionError.value =
+    ''
+
+  completingTaskId.value =
+    task.id
+
+  try {
+    await folderTasksStore.completeTask(
+      task.folder.id,
+      task.id,
+    )
+
+    await dashboardStore.fetchDashboard()
+  } catch {
+    taskActionError.value =
+      'NÃ£o foi possÃ­vel concluir a tarefa. Tente novamente.'
+  } finally {
+    completingTaskId.value =
+      null
+  }
+}
+
+async function loadDashboard() {
+  errorMessage.value =
+    ''
+
+  try {
+    await dashboardStore
+      .fetchDashboard()
+  } catch {
+    errorMessage.value =
+      'NÃ£o foi possÃ­vel carregar o resumo do escritÃ³rio.'
+  }
+}
+
+onMounted(
+  loadDashboard,
+)
+</script>
+
+<style scoped>
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.dashboard-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dashboard-heading {
+  min-width: 0;
+}
+
+.dashboard-title {
+  margin: 0;
+
+  color:
+    var(--color-text);
+}
+
+.dashboard-description,
+.dashboard-section-description {
+  margin:
+    var(--space-2) 0 0;
+
+  color:
+    var(--color-text-muted);
+}
+
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.dashboard-alert {
+  padding:
+    var(--space-3) var(--space-4);
+
+  border:
+    1px solid var(--color-danger);
+
+  border-radius:
+    var(--radius-md);
+
+  background:
+    var(--color-danger-soft);
+
+  color:
+    var(--color-danger);
+
+  font-size:
+    var(--font-size-sm);
+}
+
+.dashboard-summary,
+.dashboard-operational-grid,
+.dashboard-attention-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3,
+      minmax(0, 1fr));
+
+  gap:
+    var(--space-4);
+}
+
+.dashboard-summary-card,
+.dashboard-operational-card,
+.dashboard-attention-card {
+  min-width: 0;
+}
+
+.dashboard-today-agenda {
+  min-width: 0;
+}
+
+.dashboard-metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-metric-label {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+
+  font-weight:
+    600;
+}
+
+.dashboard-metric-value {
+  color:
+    var(--color-text);
+
+  font-size:
+    2rem;
+
+  font-weight:
+    700;
+
+  line-height:
+    1;
+}
+
+.dashboard-attention,
+.dashboard-operational,
+.dashboard-my-work,
+.dashboard-activity,
+.dashboard-recent,
+.dashboard-work-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dashboard-attention-card {
+  position: relative;
+
+  min-height: 100%;
+
+  overflow: hidden;
+}
+
+.dashboard-attention-card::before {
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+  left: 0;
+
+  width: 4px;
+
+  content: '';
+}
+
+.dashboard-attention-card--critical::before {
+  background:
+    var(--color-danger);
+}
+
+.dashboard-attention-card--today::before {
+  background:
+    var(--color-warning);
+}
+
+.dashboard-attention-content {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dashboard-attention-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dashboard-attention-title-group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-attention-label {
+  color:
+    var(--color-text);
+
+  font-size:
+    var(--font-size-sm);
+
+  font-weight:
+    700;
+}
+
+.dashboard-attention-indicator {
+  width: 0.6rem;
+  height: 0.6rem;
+
+  flex: 0 0 auto;
+
+  margin-top:
+    0.25rem;
+
+  border-radius:
+    999px;
+}
+
+.dashboard-attention-indicator--critical {
+  background:
+    var(--color-danger);
+}
+
+.dashboard-attention-indicator--today {
+  background:
+    var(--color-warning);
+}
+
+.dashboard-attention-value {
+  color:
+    var(--color-text);
+
+  font-size:
+    2rem;
+
+  font-weight:
+    700;
+
+  line-height:
+    1;
+}
+
+.dashboard-attention-card--critical .dashboard-attention-value {
+  color:
+    var(--color-danger);
+}
+
+.dashboard-attention-description {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+
+  line-height:
+    1.45;
+}
+
+.dashboard-attention-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  margin-top:
+    var(--space-1);
+
+  border-top:
+    1px solid var(--color-border);
+}
+
+.dashboard-attention-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  padding:
+    var(--space-3) 0;
+
+  border-bottom:
+    1px solid var(--color-border);
+}
+
+.dashboard-attention-item:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-attention-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.dashboard-attention-item-title {
+  min-width: 0;
+
+  color:
+    var(--color-text);
+
+  font-size:
+    var(--font-size-sm);
+
+  font-weight:
+    600;
+
+  line-height:
+    1.4;
+}
+
+.dashboard-attention-item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+
+  line-height:
+    1.4;
+}
+
+.dashboard-attention-empty {
+  display: flex;
+  min-height: 5rem;
+  align-items: center;
+  justify-content: center;
+
+  padding:
+    var(--space-4) 0;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+
+  text-align:
+    center;
+}
+
+.dashboard-section-header,
+.dashboard-work-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dashboard-section-title {
+  margin: 0;
+
+  color:
+    var(--color-text);
+
+  font-size:
+    1.125rem;
+
+  font-weight:
+    700;
+}
+
+.dashboard-work-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3,
+      minmax(0, 1fr));
+
+  gap:
+    var(--space-4);
+}
+
+.dashboard-my-work-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3,
+      minmax(0, 1fr));
+
+  gap:
+    var(--space-4);
+}
+
+.dashboard-secondary {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2,
+      minmax(0, 1fr));
+
+  gap:
+    var(--space-4);
+}
+
+.dashboard-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-item {
+  padding:
+    var(--space-4) 0;
+
+  border-bottom:
+    1px solid var(--color-border);
+}
+
+.dashboard-item:first-child {
+  padding-top: 0;
+}
+
+.dashboard-item:last-child {
+  padding-bottom: 0;
+
+  border-bottom: 0;
+}
+
+.dashboard-item-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dashboard-item-title {
+  min-width: 0;
+
+  color:
+    var(--color-text);
+
+  font-weight:
+    600;
+}
+
+.dashboard-item-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+
+  min-height:
+    1.5rem;
+
+  padding:
+    0 var(--space-2);
+
+  border-radius:
+    999px;
+
+  background:
+    var(--color-surface-muted);
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+
+  font-weight:
+    600;
+}
+
+.dashboard-item-badge--high {
+  color:
+    var(--color-danger);
+}
+
+.dashboard-item-badge--medium {
+  color:
+    var(--color-warning);
+}
+
+.dashboard-item-badge--low {
+  color:
+    var(--color-success);
+}
+
+.dashboard-activity-badge--task {
+  color:
+    var(--color-primary);
+}
+
+.dashboard-activity-badge--deadline {
+  color:
+    var(--color-warning);
+}
+
+.dashboard-activity-badge--event {
+  color:
+    var(--color-success);
+}
+
+.dashboard-item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+}
+
+.dashboard-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+
+  margin-top:
+    var(--space-1);
+}
+
+.dashboard-activity-item {
+  position: relative;
+
+  padding-left:
+    var(--space-4);
+}
+
+.dashboard-activity-item::before {
+  position: absolute;
+
+  top:
+    calc(var(--space-4) + 0.35rem);
+
+  left: 0;
+
+  width:
+    0.5rem;
+
+  height:
+    0.5rem;
+
+  border-radius:
+    999px;
+
+  background:
+    var(--color-primary);
+
+  content: '';
+}
+
+.dashboard-folder-link {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  padding: 0;
+
+  border: 0;
+
+  background:
+    transparent;
+
+  color:
+    var(--color-primary);
+
+  cursor:
+    pointer;
+
+  font:
+    inherit;
+
+  text-align:
+    left;
+}
+
+.dashboard-folder-link:hover {
+  text-decoration:
+    underline;
+}
+
+.dashboard-folder-link:focus-visible {
+  outline:
+    2px solid var(--color-primary);
+
+  outline-offset:
+    3px;
+
+  border-radius:
+    var(--radius-sm);
+}
+
+.dashboard-folder-link-process {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+}
+
+.dashboard-folders {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-folder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+
+  padding:
+    var(--space-4) 0;
+
+  border-bottom:
+    1px solid var(--color-border);
+}
+
+.dashboard-folder:first-child {
+  padding-top: 0;
+}
+
+.dashboard-folder:last-child {
+  padding-bottom: 0;
+
+  border-bottom: 0;
+}
+
+.dashboard-folder-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dashboard-folder-name {
+  overflow: hidden;
+
+  color:
+    var(--color-text);
+
+  font-weight:
+    600;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.dashboard-folder-process,
+.dashboard-folder-date {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+}
+
+.dashboard-folder-date {
+  flex: 0 0 auto;
+}
+
+.dashboard-empty {
+  padding:
+    var(--space-4) 0;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    var(--font-size-sm);
+
+  text-align:
+    center;
+}
+
+@media (max-width: 1100px) {
+
+  .dashboard-work-grid,
+  .dashboard-my-work-grid,
+  .dashboard-secondary {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+@media (max-width: 900px) {
+
+  .dashboard-summary,
+  .dashboard-operational-grid,
+  .dashboard-attention-grid {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-header {
+    flex-direction:
+      column;
+  }
+
+  .dashboard-actions {
+    width:
+      100%;
+
+    justify-content:
+      flex-start;
+  }
+
+  .dashboard-item-heading,
+  .dashboard-attention-item-heading {
+    flex-direction:
+      column;
+  }
+
+  .dashboard-item-actions {
+    justify-content:
+      flex-start;
+  }
+
+  .dashboard-folder {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+
+    gap:
+      var(--space-2);
+  }
+}
+</style>

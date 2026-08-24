@@ -1737,6 +1737,12 @@ onMounted(
 .dashboard-attention,
 .dashboard-my-work,
 .dashboard-activity,
+.dashboard-recent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 /* Prioridades */
 
 .dashboard-priorities-layout {
@@ -1760,6 +1766,20 @@ onMounted(
 
 .dashboard-today-agenda {
   min-width: 0;
+}
+
+.dashboard-attention-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  padding: var(--space-3) 0;
+
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-attention-item:last-child {
+  border-bottom: 0;
 }
 
 .dashboard-attention-item-heading {

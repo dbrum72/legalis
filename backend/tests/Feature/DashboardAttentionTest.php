@@ -243,7 +243,7 @@ class DashboardAttentionTest extends TestCase
         | 2 compromissos ainda futuros no dia de hoje.
         |
         | O compromisso de hoje cujo horário já passou
-        | NÃO deve integrar events_today.
+        | NÃO deve integrar today_agenda, pois seu horário já passou.
         |
         | Também ficam de fora:
         |
@@ -381,10 +381,6 @@ class DashboardAttentionTest extends TestCase
             ->assertJsonPath(
                 'summary.overdue_deadlines',
                 2,
-            )
-            ->assertJsonPath(
-                'summary.events_today',
-                2,
             );
 
         /*
@@ -461,42 +457,6 @@ class DashboardAttentionTest extends TestCase
             ->assertJsonPath(
                 'attention.overdue_deadlines.1.title',
                 'Prazo vencido pela manhã',
-            );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Compromissos restantes de hoje
-        |--------------------------------------------------------------------------
-        */
-
-        $response
-            ->assertJsonCount(
-                2,
-                'attention.events_today',
-            )
-            ->assertJsonPath(
-                'attention.events_today.0.title',
-                'Audiência hoje',
-            )
-            ->assertJsonPath(
-                'attention.events_today.0.type',
-                'hearing',
-            )
-            ->assertJsonPath(
-                'attention.events_today.0.folder.id',
-                $folder->id,
-            )
-            ->assertJsonPath(
-                'attention.events_today.0.folder.name',
-                'Pasta com itens críticos',
-            )
-            ->assertJsonPath(
-                'attention.events_today.0.folder.process_number',
-                '5001234-56.2026.8.21.0022',
-            )
-            ->assertJsonPath(
-                'attention.events_today.1.title',
-                'Reunião hoje',
             );
     }
 
@@ -597,10 +557,6 @@ class DashboardAttentionTest extends TestCase
                 'summary.overdue_deadlines',
                 6,
             )
-            ->assertJsonPath(
-                'summary.events_today',
-                6,
-            )
             ->assertJsonCount(
                 5,
                 'attention.overdue_tasks',
@@ -608,10 +564,6 @@ class DashboardAttentionTest extends TestCase
             ->assertJsonCount(
                 5,
                 'attention.overdue_deadlines',
-            )
-            ->assertJsonCount(
-                5,
-                'attention.events_today',
             );
     }
 
@@ -771,10 +723,6 @@ class DashboardAttentionTest extends TestCase
                 'summary.overdue_deadlines',
                 1,
             )
-            ->assertJsonPath(
-                'summary.events_today',
-                1,
-            )
             ->assertJsonCount(
                 1,
                 'attention.overdue_tasks',
@@ -783,10 +731,6 @@ class DashboardAttentionTest extends TestCase
                 1,
                 'attention.overdue_deadlines',
             )
-            ->assertJsonCount(
-                1,
-                'attention.events_today',
-            )
             ->assertJsonPath(
                 'attention.overdue_tasks.0.title',
                 'Tarefa vencida atual',
@@ -794,10 +738,6 @@ class DashboardAttentionTest extends TestCase
             ->assertJsonPath(
                 'attention.overdue_deadlines.0.title',
                 'Prazo vencido atual',
-            )
-            ->assertJsonPath(
-                'attention.events_today.0.title',
-                'Compromisso atual hoje',
             );
     }
 
