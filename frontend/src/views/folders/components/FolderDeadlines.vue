@@ -162,21 +162,15 @@ import {
     AppConfirmDialog,
 } from '@/components/ui'
 
-import {
-    formatShortDateTime,
-} from '@/utils/date'
+import { formatShortDateTime } from '@/utils/date'
 
-import {
-    folderDeadlineStatusLabel,
-} from '@/constants/folder'
+import { folderDeadlineStatusLabel } from '@/constants/folder'
 
-import {
-    useAuthStore,
-} from '@/stores/auth.js'
+import { useDeleteConfirmation } from '@/composables/useDeleteConfirmation.js'
 
-import {
-    useFolderDeadlinesStore,
-} from '@/stores/folder-deadlines.js'
+import { useAuthStore } from '@/stores/auth.js'
+
+import { useFolderDeadlinesStore } from '@/stores/folder-deadlines.js'
 
 const props = defineProps({
     folderId: {
@@ -199,6 +193,14 @@ const authStore =
 const folderDeadlinesStore =
     useFolderDeadlinesStore()
 
+const {
+    itemToDelete: deadlineToDelete,
+    deleting,
+    requestDelete,
+    cancelDelete,
+    clearDelete,
+} = useDeleteConfirmation()
+
 const loadError =
     ref('')
 
@@ -218,12 +220,6 @@ const submitting =
     ref(false)
 
 const completingId =
-    ref(null)
-
-const deleting =
-    ref(false)
-
-const deadlineToDelete =
     ref(null)
 
 const form =
@@ -379,28 +375,6 @@ async function completeDeadline(
     }
 }
 
-function requestDelete(
-    deadline,
-) {
-    deadlineToDelete.value =
-        deadline
-
-    deleteError.value =
-        ''
-}
-
-function cancelDelete() {
-    if (deleting.value) {
-        return
-    }
-
-    deadlineToDelete.value =
-        null
-
-    deleteError.value =
-        ''
-}
-
 async function confirmDelete() {
     if (
         !deadlineToDelete.value ||
@@ -424,8 +398,7 @@ async function confirmDelete() {
             'changed',
         )
 
-        deadlineToDelete.value =
-            null
+        clearDelete()
     } catch {
         deleteError.value =
             'Não foi possível excluir o prazo. Tente novamente.'

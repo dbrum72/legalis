@@ -138,9 +138,12 @@ import {
 
 import { useClientsStore } from '@/stores/clients.js'
 
+import { useMaritalStatusesStore } from '@/stores/marital-statuses.js'
+
 import {
-    useMaritalStatusesStore,
-} from '@/stores/marital-statuses.js'
+    applyValidationErrors,
+    clearValidationErrors,
+} from '@/utils/validationErrors'
 
 const route =
     useRoute()
@@ -233,76 +236,27 @@ const submitLabel =
     )
 
 function clearErrors() {
-    Object
-        .keys(errors)
-        .forEach(
-            (key) => {
-                errors[key] =
-                    ''
-            },
-        )
-
-    submitError.value =
-        ''
+    clearValidationErrors(
+        errors,
+    )
+    submitError.value = ''
 }
 
 function applyClient(client) {
-    form.name =
-        client?.name ??
-        ''
-
-    form.document =
-        client?.document ??
-        ''
-
-    form.identity_document =
-        client?.identity_document ??
-        ''
-
-    form.identity_issuer =
-        client?.identity_issuer ??
-        ''
-
-    form.marital_status_id =
-        client?.marital_status_id ??
-        ''
-
-    form.profession =
-        client?.profession ??
-        ''
-
-    form.address =
-        client?.address ??
-        ''
-
-    form.address_complement =
-        client?.address_complement ??
-        ''
-
-    form.district =
-        client?.district ??
-        ''
-
-    form.city =
-        client?.city ??
-        ''
-
-    form.postal_code =
-        client?.postal_code ??
-        ''
-
-    form.phone =
-        client?.phone ??
-        ''
-
-    form.whatsapp =
-        Boolean(
-            client?.whatsapp,
-        )
-
-    form.email =
-        client?.email ??
-        ''
+    form.name = client?.name ?? ''
+    form.document = client?.document ?? ''
+    form.identity_document = client?.identity_document ?? ''
+    form.identity_issuer = client?.identity_issuer ?? ''
+    form.marital_status_id = client?.marital_status_id ?? ''
+    form.profession = client?.profession ?? ''
+    form.address = client?.address ?? ''
+    form.address_complement = client?.address_complement ?? ''
+    form.district = client?.district ?? ''
+    form.city = client?.city ?? ''
+    form.postal_code = client?.postal_code ?? ''
+    form.phone = client?.phone ?? ''
+    form.whatsapp = Boolean(client?.whatsapp)
+    form.email = client?.email ?? ''
 }
 
 function nullable(value) {
@@ -406,22 +360,6 @@ function buildPayload() {
     }
 }
 
-function applyValidationErrors(
-    validationErrors = {},
-) {
-    Object
-        .keys(errors)
-        .forEach(
-            (key) => {
-                errors[key] =
-                    validationErrors[
-                    key
-                    ]?.[0] ??
-                    ''
-            },
-        )
-}
-
 async function handleSubmit() {
     if (submitting.value) {
         return
@@ -468,21 +406,19 @@ async function handleSubmit() {
             name: 'clients',
         })
     } catch (error) {
-        const status =
-            error.response?.status
+        if (error?.response?.status === 422) {
+            const validationErrors =
+                error.response?.data?.errors ??
+                {}
 
-        if (status === 422) {
             applyValidationErrors(
-                error.response
-                    ?.data
-                    ?.errors,
+                errors,
+                validationErrors,
             )
 
             return
         }
-
-        submitError.value =
-            'Não foi possível salvar o cliente. Tente novamente.'
+        submitError.value = 'Não foi possível salvar o cliente. Tente novamente.'
     } finally {
         submitting.value =
             false

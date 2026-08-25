@@ -131,13 +131,11 @@ import {
     AppTable,
 } from '@/components/ui'
 
-import {
-    useAuthStore,
-} from '@/stores/auth.js'
+import { useDeleteConfirmation } from '@/composables/useDeleteConfirmation.js'
 
-import {
-    useFolderDocumentsStore,
-} from '@/stores/folder-documents.js'
+import { useAuthStore } from '@/stores/auth.js'
+
+import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
 
 const props = defineProps({
     folderId: {
@@ -150,45 +148,35 @@ const props = defineProps({
     },
 })
 
-const emit = defineEmits([
-    'changed',
-])
+const emit = defineEmits(['changed'])
 
-const authStore =
-    useAuthStore()
+const authStore = useAuthStore()
 
-const folderDocumentsStore =
-    useFolderDocumentsStore()
+const folderDocumentsStore = useFolderDocumentsStore()
 
-const loadError =
-    ref('')
+const {
+    itemToDelete: documentToDelete,
+    deleting,
+    requestDelete,
+    cancelDelete,
+    clearDelete,
+} = useDeleteConfirmation()
 
-const uploadError =
-    ref('')
+const loadError = ref('')
 
-const downloadError =
-    ref('')
+const uploadError = ref('')
 
-const deleteError =
-    ref('')
+const downloadError = ref('')
 
-const showUploadForm =
-    ref(false)
+const deleteError = ref('')
 
-const uploading =
-    ref(false)
+const showUploadForm = ref(false)
 
-const downloadingId =
-    ref(null)
+const uploading = ref(false)
 
-const deleting =
-    ref(false)
+const downloadingId = ref(null)
 
-const selectedFile =
-    ref(null)
-
-const documentToDelete =
-    ref(null)
+const selectedFile = ref(null)
 
 const uploadForm =
     reactive({
@@ -392,26 +380,6 @@ async function downloadDocument(document) {
     }
 }
 
-function requestDelete(document) {
-    documentToDelete.value =
-        document
-
-    deleteError.value =
-        ''
-}
-
-function cancelDelete() {
-    if (deleting.value) {
-        return
-    }
-
-    documentToDelete.value =
-        null
-
-    deleteError.value =
-        ''
-}
-
 async function confirmDelete() {
     if (
         !documentToDelete.value ||
@@ -436,8 +404,7 @@ async function confirmDelete() {
             'changed',
         )
 
-        documentToDelete.value =
-            null
+        clearDelete()
     } catch {
         deleteError.value =
             'Não foi possível excluir o documento. Tente novamente.'

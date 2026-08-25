@@ -110,9 +110,11 @@ import {
 import { useAuthStore } from '@/stores/auth.js'
 import { useClientsStore } from '@/stores/clients.js'
 import { useFoldersStore } from '@/stores/folders.js'
+import { useQualificationsStore } from '@/stores/qualifications.js'
 import {
-    useQualificationsStore,
-} from '@/stores/qualifications.js'
+    applyValidationErrors,
+    clearValidationErrors,
+} from '@/utils/validationErrors'
 
 const props = defineProps({
     folderId: {
@@ -218,10 +220,13 @@ function clearForm() {
 
     clientSearch.value = ''
 
-    errors.client_id = ''
     errors.qualification_id = ''
 
     dialogError.value = ''
+
+    clearValidationErrors(
+        errors,
+    )
 }
 
 function resetDialogState() {
@@ -269,15 +274,8 @@ function closeDialog() {
     resetDialogState()
 }
 
-function clearValidationErrors() {
-    errors.client_id = ''
-    errors.qualification_id = ''
-
-    dialogError.value = ''
-}
-
 function validate() {
-    clearValidationErrors()
+    clearValidationErrors(errors)
 
     if (
         !isEditing.value &&
@@ -317,19 +315,6 @@ function hasDuplicateLink() {
                 form.qualification_id,
             ),
     )
-}
-
-function applyValidationErrors(
-    validationErrors = {},
-) {
-    errors.client_id =
-        validationErrors.client_id?.[0] ??
-        ''
-
-    errors.qualification_id =
-        validationErrors
-            .qualification_id?.[0] ??
-        ''
 }
 
 async function save() {
@@ -381,22 +366,15 @@ async function save() {
 
         saved = true
     } catch (error) {
-        if (
-            error.response?.status === 422
-        ) {
+        const validationErrors = error.response?.data?.errors ?? {}
+        if (error.response?.status === 422) {
             applyValidationErrors(
-                error.response?.data
-                    ?.errors,
+                errors,
+                validationErrors,
             )
-
-            if (
-                !errors.client_id &&
-                !errors.qualification_id
-            ) {
-                dialogError.value =
-                    'Não foi possível validar o vínculo informado.'
+            if (!errors.client_id && !errors.qualification_id) {
+                dialogError.value = 'Não foi possível validar o vínculo informado.'
             }
-
             return
         }
 

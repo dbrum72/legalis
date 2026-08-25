@@ -71,6 +71,11 @@ import {
 import { useAuthStore } from '@/stores/auth.js'
 import { useFoldersStore } from '@/stores/folders.js'
 
+import {
+    applyValidationErrors,
+    clearValidationErrors,
+} from '@/utils/validationErrors'
+
 import FolderClients from '@/views/folders/components/FolderClients.vue'
 
 const route = useRoute()
@@ -122,9 +127,9 @@ const submitLabel = computed(() =>
 )
 
 function clearErrors() {
-    errors.name = ''
-    errors.process_number = ''
-
+    clearValidationErrors(
+        errors,
+    )
     submitError.value = ''
 }
 
@@ -150,17 +155,6 @@ function buildPayload() {
             form.process_number.trim() ||
             null,
     }
-}
-
-function applyValidationErrors(
-    validationErrors = {},
-) {
-    errors.name =
-        validationErrors.name?.[0] ?? ''
-
-    errors.process_number =
-        validationErrors
-            .process_number?.[0] ?? ''
 }
 
 async function navigateAfterCreate(
@@ -232,12 +226,14 @@ async function handleSubmit() {
             createdFolder,
         )
     } catch (error) {
+        const validationErrors = error.response?.data?.errors ?? {}
+
         if (
             error.response?.status === 422
         ) {
             applyValidationErrors(
-                error.response?.data
-                    ?.errors,
+                errors,
+                validationErrors,
             )
 
             return

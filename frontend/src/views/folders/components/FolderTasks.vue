@@ -200,6 +200,10 @@ import {
 } from '@/constants/folder'
 
 import {
+    useDeleteConfirmation,
+} from '@/composables/useDeleteConfirmation.js'
+
+import {
     useAuthStore,
 } from '@/stores/auth.js'
 
@@ -249,11 +253,13 @@ const isSubmitting =
 const completingId =
     ref(null)
 
-const deleting =
-    ref(false)
-
-const taskToDelete =
-    ref(null)
+const {
+    itemToDelete: taskToDelete,
+    deleting,
+    requestDelete,
+    cancelDelete,
+    clearDelete,
+} = useDeleteConfirmation()
 
 const form =
     reactive({
@@ -422,28 +428,6 @@ async function completeTask(
     }
 }
 
-function requestDelete(
-    task,
-) {
-    taskToDelete.value =
-        task
-
-    deleteError.value =
-        ''
-}
-
-function cancelDelete() {
-    if (deleting.value) {
-        return
-    }
-
-    taskToDelete.value =
-        null
-
-    deleteError.value =
-        ''
-}
-
 async function confirmDelete() {
     if (
         !taskToDelete.value ||
@@ -467,8 +451,7 @@ async function confirmDelete() {
             'changed',
         )
         
-        taskToDelete.value =
-            null
+        clearDelete()
     } catch {
         deleteError.value =
             'Não foi possível excluir a tarefa. Tente novamente.'

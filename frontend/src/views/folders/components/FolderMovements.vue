@@ -131,17 +131,13 @@ import {
     AppConfirmDialog,
 } from '@/components/ui'
 
-import {
-    formatShortDate,
-} from '@/utils/date'
+import { formatShortDate } from '@/utils/date'
 
-import {
-    useAuthStore,
-} from '@/stores/auth.js'
+import { useDeleteConfirmation } from '@/composables/useDeleteConfirmation.js'
 
-import {
-    useFolderMovementsStore,
-} from '@/stores/folder-movements.js'
+import { useAuthStore } from '@/stores/auth.js'
+
+import { useFolderMovementsStore } from '@/stores/folder-movements.js'
 
 const props = defineProps({
     folderId: {
@@ -153,15 +149,21 @@ const props = defineProps({
     },
 })
 
-const emit = defineEmits([
-    'changed',
-])
+const emit = defineEmits(['changed'])
 
 const authStore =
     useAuthStore()
 
 const folderMovementsStore =
     useFolderMovementsStore()
+
+const {
+    itemToDelete: movementToDelete,
+    deleting,
+    requestDelete,
+    cancelDelete,
+    clearDelete,
+} = useDeleteConfirmation()
 
 const loadError =
     ref('')
@@ -177,12 +179,6 @@ const showCreateForm =
 
 const submitting =
     ref(false)
-
-const deleting =
-    ref(false)
-
-const movementToDelete =
-    ref(null)
 
 const form =
     reactive({
@@ -290,26 +286,6 @@ async function submitMovement() {
     }
 }
 
-function requestDelete(movement) {
-    movementToDelete.value =
-        movement
-
-    deleteError.value =
-        ''
-}
-
-function cancelDelete() {
-    if (deleting.value) {
-        return
-    }
-
-    movementToDelete.value =
-        null
-
-    deleteError.value =
-        ''
-}
-
 async function confirmDelete() {
     if (
         !movementToDelete.value ||
@@ -333,8 +309,7 @@ async function confirmDelete() {
             'changed',
         )
 
-        movementToDelete.value =
-            null
+        clearDelete()
     } catch {
         deleteError.value =
             'Não foi possível excluir a movimentação. Tente novamente.'

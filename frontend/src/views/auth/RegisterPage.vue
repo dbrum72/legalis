@@ -95,38 +95,34 @@ import {
     ref,
 } from 'vue'
 
-import {
-    useRouter,
-} from 'vue-router'
+import { useRouter } from 'vue-router'
 
 import {
     AppEmail,
     AppPassword,
 } from '@/components/forms'
 
-import AuthShell
-    from '@/components/public/AuthShell.vue'
+import AuthShell from '@/components/public/AuthShell.vue'
 
 import {
     AppButton,
     AppCard
 } from '@/components/ui'
 
+import { useAuthStore } from '@/stores/auth.js'
+
 import {
-    useAuthStore,
-} from '@/stores/auth.js'
+    applyValidationErrors,
+    clearValidationErrors,
+} from '@/utils/validationErrors'
 
-const router =
-    useRouter()
+const router = useRouter()
 
-const authStore =
-    useAuthStore()
+const authStore = useAuthStore()
 
-const loading =
-    ref(false)
+const loading = ref(false)
 
-const registerError =
-    ref('')
+const registerError = ref('')
 
 const form =
     reactive({
@@ -155,16 +151,9 @@ const errors =
     })
 
 function clearErrors() {
-    errors.name = ''
-
-    errors.organizationName = ''
-
-    errors.email = ''
-
-    errors.password = ''
-
-    errors.passwordConfirmation = ''
-
+    clearValidationErrors(
+        errors,
+    )
     registerError.value = ''
 }
 
@@ -225,35 +214,6 @@ function validate() {
     )
 }
 
-function applyValidationErrors(
-    validationErrors,
-) {
-    errors.name =
-        validationErrors
-            .name?.[0] ??
-        ''
-
-    errors.organizationName =
-        validationErrors
-            .organization_name?.[0] ??
-        ''
-
-    errors.email =
-        validationErrors
-            .email?.[0] ??
-        ''
-
-    errors.password =
-        validationErrors
-            .password?.[0] ??
-        ''
-
-    errors.passwordConfirmation =
-        validationErrors
-            .password_confirmation?.[0] ??
-        ''
-}
-
 async function handleSubmit() {
     if (
         loading.value ||
@@ -290,17 +250,20 @@ async function handleSubmit() {
         const status =
             error.response?.status
 
-        if (
-            status === 422
-        ) {
+        if (status === 422) {
             const validationErrors =
-                error.response?.data
-                    ?.errors ??
+                error.response?.data?.errors ??
                 {}
 
             applyValidationErrors(
-                validationErrors
+                errors,
+                validationErrors,
             )
+
+            errors.organizationName =
+                validationErrors
+                    .organization_name?.[0] ??
+                ''
 
             if (
                 !errors.name &&
@@ -310,7 +273,7 @@ async function handleSubmit() {
                 !errors.passwordConfirmation
             ) {
                 registerError.value =
-                    'Verifique os dados informados.'
+                    'Não foi possível criar sua conta. Tente novamente.'
             }
 
             return

@@ -69,6 +69,10 @@ import {
     AppTable,
 } from '@/components/ui'
 
+import {
+    useDeleteConfirmation,
+} from '@/composables/useDeleteConfirmation.js'
+
 import { useAuthStore } from '@/stores/auth.js'
 import { useClientsStore } from '@/stores/clients.js'
 
@@ -81,11 +85,13 @@ const authStore =
 const clientsStore =
     useClientsStore()
 
-const clientToDelete =
-    ref(null)
-
-const deleting =
-    ref(false)
+const {
+    itemToDelete: clientToDelete,
+    deleting,
+    requestDelete,
+    cancelDelete,
+    clearDelete,
+} = useDeleteConfirmation()
 
 const deleteError =
     ref('')
@@ -179,26 +185,6 @@ function editClient(client) {
     })
 }
 
-function requestDelete(client) {
-    clientToDelete.value =
-        client
-
-    deleteError.value =
-        ''
-}
-
-function cancelDelete() {
-    if (deleting.value) {
-        return
-    }
-
-    clientToDelete.value =
-        null
-
-    deleteError.value =
-        ''
-}
-
 async function confirmDelete() {
     if (
         !clientToDelete.value ||
@@ -207,25 +193,20 @@ async function confirmDelete() {
         return
     }
 
-    deleting.value =
-        true
-
-    deleteError.value =
-        ''
+    deleting.value = true
+    deleteError.value = ''
 
     try {
         await clientsStore.remove(
             clientToDelete.value.id,
         )
 
-        clientToDelete.value =
-            null
-    } catch {
+        clearDelete()
+    } catch (error) {
         deleteError.value =
             'Não foi possível excluir o cliente. Tente novamente.'
     } finally {
-        deleting.value =
-            false
+        deleting.value = false
     }
 }
 

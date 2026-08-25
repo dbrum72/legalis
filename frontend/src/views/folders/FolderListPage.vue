@@ -67,6 +67,10 @@ import {
     AppTable,
 } from '@/components/ui'
 
+import {
+    useDeleteConfirmation,
+} from '@/composables/useDeleteConfirmation.js'
+
 import { useAuthStore } from '@/stores/auth.js'
 import { useFoldersStore } from '@/stores/folders.js'
 
@@ -79,11 +83,13 @@ const authStore =
 const foldersStore =
     useFoldersStore()
 
-const folderToDelete =
-    ref(null)
-
-const deleting =
-    ref(false)
+const {
+    itemToDelete: folderToDelete,
+    deleting,
+    requestDelete,
+    cancelDelete,
+    clearDelete,
+} = useDeleteConfirmation()
 
 const deleteError =
     ref('')
@@ -162,26 +168,6 @@ function editFolder(folder) {
     })
 }
 
-function requestDelete(folder) {
-    folderToDelete.value =
-        folder
-
-    deleteError.value =
-        ''
-}
-
-function cancelDelete() {
-    if (deleting.value) {
-        return
-    }
-
-    folderToDelete.value =
-        null
-
-    deleteError.value =
-        ''
-}
-
 async function confirmDelete() {
     if (
         !folderToDelete.value ||
@@ -201,8 +187,7 @@ async function confirmDelete() {
             folderToDelete.value.id,
         )
 
-        folderToDelete.value =
-            null
+        clearDelete()
     } catch {
         deleteError.value =
             'Não foi possível excluir a pasta. Tente novamente.'

@@ -230,22 +230,18 @@ import {
     AppConfirmDialog,
 } from '@/components/ui'
 
-import {
-    formatShortDateTime,
-} from '@/utils/date'
+import { formatShortDateTime } from '@/utils/date'
 
 import {
     folderEventTypeLabel,
     folderEventStatusLabel,
 } from '@/constants/folder'
 
-import {
-    useAuthStore,
-} from '@/stores/auth.js'
+import { useDeleteConfirmation } from '@/composables/useDeleteConfirmation.js'
 
-import {
-    useFolderEventsStore,
-} from '@/stores/folder-events.js'
+import { useAuthStore } from '@/stores/auth.js'
+
+import { useFolderEventsStore } from '@/stores/folder-events.js'
 
 const props = defineProps({
     folderId: {
@@ -268,6 +264,14 @@ const authStore =
 const folderEventsStore =
     useFolderEventsStore()
 
+const {
+    itemToDelete: eventToDelete,
+    deleting,
+    requestDelete,
+    cancelDelete,
+    clearDelete,
+} = useDeleteConfirmation()
+
 const loadError =
     ref('')
 
@@ -287,12 +291,6 @@ const isSubmitting =
     ref(false)
 
 const completingId =
-    ref(null)
-
-const deleting =
-    ref(false)
-
-const eventToDelete =
     ref(null)
 
 const form =
@@ -508,28 +506,6 @@ async function completeEvent(
     }
 }
 
-function requestDelete(
-    event,
-) {
-    eventToDelete.value =
-        event
-
-    deleteError.value =
-        ''
-}
-
-function cancelDelete() {
-    if (deleting.value) {
-        return
-    }
-
-    eventToDelete.value =
-        null
-
-    deleteError.value =
-        ''
-}
-
 async function confirmDelete() {
     if (
         !eventToDelete.value ||
@@ -550,8 +526,7 @@ async function confirmDelete() {
             eventToDelete.value.id,
         )
 
-        eventToDelete.value =
-            null
+        clearDelete()
 
         emit(
             'changed',
