@@ -1,1795 +1,1660 @@
 <template>
-  <PageContainer>
-    <div class="dashboard-page">
-      <header class="dashboard-header">
-        <div class="dashboard-heading">
-          <span class="dashboard-eyebrow">
-            Visão geral
-          </span>
+    <PageContainer>
+        <div class="dashboard-page">
+            <header class="dashboard-header">
+                <div class="dashboard-heading">
+                    <span class="dashboard-eyebrow">
+                        Visão geral
+                    </span>
 
-          <h1 class="dashboard-title">
-            Dashboard
-          </h1>
+                    <h1 class="dashboard-title">
+                        Dashboard
+                    </h1>
 
-          <p class="dashboard-description">
-            Acompanhe um resumo do escritório.
-          </p>
-        </div>
-
-        <div v-if="hasQuickActions" class="dashboard-actions">
-          <AppButton v-if="authStore.hasPermission('clients.create')" type="button" variant="outline"
-            @click="goToClientCreate">
-            Novo cliente
-          </AppButton>
-
-          <AppButton v-if="authStore.hasPermission('folders.create')" type="button" @click="goToFolderCreate">
-            Nova pasta
-          </AppButton>
-        </div>
-      </header>
-
-      <div v-if="errorMessage" class="dashboard-alert" role="alert">
-        {{ errorMessage }}
-      </div>
-
-      <div v-if="eventActionError" class="dashboard-alert" role="alert">
-        {{ eventActionError }}
-      </div>
-
-      <div v-if="deadlineActionError" class="dashboard-alert" role="alert">
-        {{ deadlineActionError }}
-      </div>
-
-      <div v-if="taskActionError" class="dashboard-alert" role="alert">
-        {{ taskActionError }}
-      </div>
-
-      <div class="dashboard-workspace" data-testid="dashboard-workspace">
-        <!-- Indicadores institucionais -->
-        <section class="dashboard-summary" aria-label="Resumo do escritório">
-          <article class="dashboard-stat-card dashboard-stat-card--clients" data-testid="dashboard-stat-clients">
-            <div class="dashboard-stat-card__body">
-              <div class="dashboard-stat-card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6.5 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM9 13c-4.42 0-8 2.24-8 5v2h12.1A5.91 5.91 0 0 1 13 19c0-1.54.59-2.94 1.56-4.01C13.13 13.75 11.2 13 9 13Zm6.5.5c-2.1 0-3.9.78-5.06 1.94A5.96 5.96 0 0 1 15 21h8v-1.75c0-3.18-3.36-5.75-7.5-5.75Z" />
-                </svg>
-              </div>
-
-              <div class="dashboard-stat-card__content">
-                <span class="dashboard-stat-card__label">
-                  Clientes
-                </span>
-
-                <strong class="dashboard-stat-card__value">
-                  {{ dashboardStore.summary.clients }}
-                </strong>
-
-                <span class="dashboard-stat-card__description">
-                  clientes ativos
-                </span>
-              </div>
-            </div>
-
-            <div class="dashboard-stat-card__footer">
-              <span class="dashboard-stat-card__trend-icon" aria-hidden="true">
-                ↗
-              </span>
-
-              <span>Total atual</span>
-            </div>
-          </article>
-
-          <article class="dashboard-stat-card dashboard-stat-card--folders" data-testid="dashboard-stat-folders">
-            <div class="dashboard-stat-card__body">
-              <div class="dashboard-stat-card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M2 6.75A2.75 2.75 0 0 1 4.75 4h4.69c.73 0 1.43.29 1.94.81L13.56 7H19.25A2.75 2.75 0 0 1 22 9.75v.61H7.45a2.75 2.75 0 0 0-2.58 1.79L2 19.84V6.75Z" />
-                  <path
-                    d="M5.8 12.85A1.75 1.75 0 0 1 7.45 11.7H22l-2.57 6.84A2.25 2.25 0 0 1 17.32 20H3.12L5.8 12.85Z" />
-                </svg>
-              </div>
-
-              <div class="dashboard-stat-card__content">
-                <span class="dashboard-stat-card__label">
-                  Pastas
-                </span>
-
-                <strong class="dashboard-stat-card__value">
-                  {{ dashboardStore.summary.folders }}
-                </strong>
-
-                <span class="dashboard-stat-card__description">
-                  pastas cadastradas
-                </span>
-              </div>
-            </div>
-
-            <div class="dashboard-stat-card__footer">
-              <span class="dashboard-stat-card__trend-icon" aria-hidden="true">
-                ↗
-              </span>
-
-              <span>Total atual</span>
-            </div>
-          </article>
-
-          <article class="dashboard-stat-card dashboard-stat-card--members" data-testid="dashboard-stat-members">
-            <div class="dashboard-stat-card__body">
-              <div class="dashboard-stat-card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6.5 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM9 13c-4.42 0-8 2.24-8 5v2h12.1A5.91 5.91 0 0 1 13 19c0-1.54.59-2.94 1.56-4.01C13.13 13.75 11.2 13 9 13Zm6.5.5c-2.1 0-3.9.78-5.06 1.94A5.96 5.96 0 0 1 15 21h8v-1.75c0-3.18-3.36-5.75-7.5-5.75Z" />
-                </svg>
-              </div>
-
-              <div class="dashboard-stat-card__content">
-                <span class="dashboard-stat-card__label">
-                  Equipe
-                </span>
-
-                <strong class="dashboard-stat-card__value">
-                  {{ dashboardStore.summary.active_members }}
-                </strong>
-
-                <span class="dashboard-stat-card__description">
-                  Membros ativos
-                </span>
-              </div>
-            </div>
-
-            <div class="dashboard-stat-card__footer">
-              <span class="dashboard-stat-card__neutral-icon" aria-hidden="true">
-                −
-              </span>
-
-              <span>Sem alterações</span>
-            </div>
-          </article>
-        </section>
-
-        <!-- Prioridades do dia + Agenda de hoje -->
-        <section class="dashboard-attention" aria-labelledby="dashboard-attention-title"
-          data-testid="dashboard-priorities">
-          <h2 id="dashboard-attention-title" class="dashboard-visually-hidden">
-            Central de Atenção
-          </h2>
-
-          <p class="dashboard-visually-hidden">
-            Itens que exigem ação imediata.
-          </p>
-
-          <div class="dashboard-priorities-layout dashboard-focus-panel" data-testid="dashboard-priorities-layout">
-            <section class="dashboard-focus-panel__priorities" data-testid="dashboard-legal-alerts"
-              aria-labelledby="dashboard-priorities-title">
-              <header class="dashboard-focus-panel__header">
-                <div class="dashboard-focus-panel__heading">
-                  <span class="dashboard-focus-panel__header-icon dashboard-focus-panel__header-icon--danger"
-                    aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M12 3v18" />
-                      <path d="M5 6h14" />
-                      <path d="M7 6 4 11h6L7 6Z" />
-                      <path d="m17 6-3 5h6l-3-5Z" />
-                      <path d="M8 21h8" />
-                    </svg>
-                  </span>
-
-                  <h3 id="dashboard-priorities-title" class="dashboard-focus-panel__title">
-                    Prioridades do dia
-                  </h3>
+                    <p class="dashboard-description">
+                        Acompanhe um resumo do escritório.
+                    </p>
                 </div>
-              </header>
 
-              <div class="dashboard-priority-list">
-                <article class="dashboard-priority-block">
-                  <button type="button" class="dashboard-priority-row" :aria-expanded="expandedPriority === 'tasks'"
-                    @click="togglePriority('tasks')">
-                    <span class="dashboard-priority-row__icon dashboard-priority-row__icon--danger" aria-hidden="true">
-                      !
-                    </span>
+                <div v-if="hasQuickActions" class="dashboard-actions">
+                    <AppButton v-if="authStore.hasPermission('clients.create')" type="button" variant="outline"
+                        @click="goToClientCreate">
+                        Novo cliente
+                    </AppButton>
 
-                    <span class="dashboard-priority-row__content">
-                      <span class="dashboard-visually-hidden">
-                        Tarefas vencidas
-                      </span>
+                    <AppButton v-if="authStore.hasPermission('folders.create')" type="button" @click="goToFolderCreate">
+                        Nova pasta
+                    </AppButton>
+                </div>
+            </header>
 
-                      <strong class="dashboard-priority-row__title">
-                        {{ dashboardStore.summary.overdue_tasks }}
-                        {{ dashboardStore.summary.overdue_tasks === 1 ? 'tarefa vencida' : 'tarefas vencidas' }}
-                      </strong>
+            <div v-if="errorMessage" class="dashboard-alert" role="alert">
+                {{ errorMessage }}
+            </div>
 
-                      <span class="dashboard-priority-row__description">
-                        Tarefas pendentes com vencimento ultrapassado
-                      </span>
-                    </span>
+            <div v-if="eventActionError" class="dashboard-alert" role="alert">
+                {{ eventActionError }}
+            </div>
 
-                    <span class="dashboard-priority-row__chevron" aria-hidden="true">
-                      ›
-                    </span>
-                  </button>
+            <div v-if="deadlineActionError" class="dashboard-alert" role="alert">
+                {{ deadlineActionError }}
+            </div>
 
-                  <div v-show="expandedPriority === 'tasks'" class="dashboard-priority-details">
-                    <div v-if="dashboardStore.attention.overdue_tasks.length === 0"
-                      class="dashboard-priority-details__empty">
-                      Nenhuma tarefa vencida.
-                    </div>
+            <div v-if="taskActionError" class="dashboard-alert" role="alert">
+                {{ taskActionError }}
+            </div>
 
-                    <article v-for="task in dashboardStore.attention.overdue_tasks" v-else :key="task.id"
-                      class="dashboard-priority-details__item">
-                      <div class="dashboard-attention-item-heading">
-                        <strong class="dashboard-attention-item-title">
-                          {{ task.title }}
-                        </strong>
+            <div class="dashboard-workspace" data-testid="dashboard-workspace">
+                <!-- Indicadores institucionais -->
+                <section class="dashboard-summary" aria-label="Resumo do escritório">
+                    <article class="dashboard-stat-card dashboard-stat-card--clients"
+                        data-testid="dashboard-stat-clients">
+                        <div class="dashboard-stat-card__body">
+                            <div class="dashboard-stat-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6.5 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM9 13c-4.42 0-8 2.24-8 5v2h12.1A5.91 5.91 0 0 1 13 19c0-1.54.59-2.94 1.56-4.01C13.13 13.75 11.2 13 9 13Zm6.5.5c-2.1 0-3.9.78-5.06 1.94A5.96 5.96 0 0 1 15 21h8v-1.75c0-3.18-3.36-5.75-7.5-5.75Z" />
+                                </svg>
+                            </div>
 
-                        <span class="dashboard-item-badge" :class="`dashboard-item-badge--${task.priority}`">
-                          {{ priorityLabel(task.priority) }}
-                        </span>
-                      </div>
+                            <div class="dashboard-stat-card__content">
+                                <span class="dashboard-stat-card__label">
+                                    Clientes
+                                </span>
 
-                      <div class="dashboard-attention-item-meta">
-                        <span v-if="task.due_at">
-                          Venceu em: {{ formatDateTime(task.due_at) }}
-                        </span>
-                      </div>
+                                <strong class="dashboard-stat-card__value">
+                                    {{ dashboardStore.summary.clients }}
+                                </strong>
 
-                      <button v-if="task.folder" :data-testid="`dashboard-attention-task-folder-${task.folder.id}`"
-                        type="button" class="dashboard-folder-link" @click="goToFolder(task.folder.id)">
-                        {{ task.folder.name }}
+                                <span class="dashboard-stat-card__description">
+                                    clientes ativos
+                                </span>
+                            </div>
+                        </div>
 
-                        <span v-if="task.folder.process_number" class="dashboard-folder-link-process">
-                          {{ task.folder.process_number }}
-                        </span>
-                      </button>
+                        <div class="dashboard-stat-card__footer">
+                            <span class="dashboard-stat-card__trend-icon" aria-hidden="true">
+                                ↗
+                            </span>
 
-                      <div v-if="authStore.hasPermission('folders.update')" class="dashboard-item-actions">
-                        <AppButton type="button" size="sm" variant="outline" :disabled="completingTaskId !== null"
-                          @click="completeTask(task)">
-                          Concluir tarefa
-                        </AppButton>
-                      </div>
+                            <span>Total atual</span>
+                        </div>
                     </article>
-                  </div>
-                </article>
 
-                <article class="dashboard-priority-block">
-                  <button type="button" class="dashboard-priority-row" :aria-expanded="expandedPriority === 'deadlines'"
-                    @click="togglePriority('deadlines')">
-                    <span class="dashboard-priority-row__icon dashboard-priority-row__icon--danger" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <rect x="5" y="6" width="14" height="13" rx="2" />
-                        <path d="M8 3v5M16 3v5M5 10h14" />
-                      </svg>
-                    </span>
+                    <article class="dashboard-stat-card dashboard-stat-card--folders"
+                        data-testid="dashboard-stat-folders">
+                        <div class="dashboard-stat-card__body">
+                            <div class="dashboard-stat-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M2 6.75A2.75 2.75 0 0 1 4.75 4h4.69c.73 0 1.43.29 1.94.81L13.56 7H19.25A2.75 2.75 0 0 1 22 9.75v.61H7.45a2.75 2.75 0 0 0-2.58 1.79L2 19.84V6.75Z" />
+                                    <path
+                                        d="M5.8 12.85A1.75 1.75 0 0 1 7.45 11.7H22l-2.57 6.84A2.25 2.25 0 0 1 17.32 20H3.12L5.8 12.85Z" />
+                                </svg>
+                            </div>
 
-                    <span class="dashboard-priority-row__content">
-                      <span class="dashboard-visually-hidden">
-                        Prazos vencidos
-                      </span>
+                            <div class="dashboard-stat-card__content">
+                                <span class="dashboard-stat-card__label">
+                                    Pastas
+                                </span>
 
-                      <strong class="dashboard-priority-row__title">
-                        {{ dashboardStore.summary.overdue_deadlines }}
-                        {{ dashboardStore.summary.overdue_deadlines === 1 ? 'prazo vencido' : 'prazos vencidos' }}
-                      </strong>
+                                <strong class="dashboard-stat-card__value">
+                                    {{ dashboardStore.summary.folders }}
+                                </strong>
 
-                      <span class="dashboard-priority-row__description">
-                        Prazos com data limite ultrapassada
-                      </span>
-                    </span>
+                                <span class="dashboard-stat-card__description">
+                                    pastas cadastradas
+                                </span>
+                            </div>
+                        </div>
 
-                    <span class="dashboard-priority-row__chevron" aria-hidden="true">
-                      ›
-                    </span>
-                  </button>
+                        <div class="dashboard-stat-card__footer">
+                            <span class="dashboard-stat-card__trend-icon" aria-hidden="true">
+                                ↗
+                            </span>
 
-                  <div v-show="expandedPriority === 'deadlines'" class="dashboard-priority-details">
-                    <div v-if="dashboardStore.attention.overdue_deadlines.length === 0"
-                      class="dashboard-priority-details__empty">
-                      Nenhum prazo vencido.
-                    </div>
-
-                    <article v-for="deadline in dashboardStore.attention.overdue_deadlines" v-else :key="deadline.id"
-                      class="dashboard-priority-details__item">
-                      <strong class="dashboard-attention-item-title">
-                        {{ deadline.title }}
-                      </strong>
-
-                      <div class="dashboard-attention-item-meta">
-                        <span v-if="deadline.due_at">
-                          Venceu em: {{ formatDateTime(deadline.due_at) }}
-                        </span>
-                      </div>
-
-                      <button v-if="deadline.folder"
-                        :data-testid="`dashboard-attention-deadline-folder-${deadline.folder.id}`" type="button"
-                        class="dashboard-folder-link" @click="goToFolder(deadline.folder.id)">
-                        {{ deadline.folder.name }}
-
-                        <span v-if="deadline.folder.process_number" class="dashboard-folder-link-process">
-                          {{ deadline.folder.process_number }}
-                        </span>
-                      </button>
-
-                      <div v-if="authStore.hasPermission('folders.update')" class="dashboard-item-actions">
-                        <AppButton type="button" size="sm" variant="outline" :disabled="completingDeadlineId !== null"
-                          @click="completeDeadline(deadline)">
-                          Concluir prazo
-                        </AppButton>
-                      </div>
+                            <span>Total atual</span>
+                        </div>
                     </article>
-                  </div>
-                </article>
 
-                
-              </div>
-            </section>
+                    <article class="dashboard-stat-card dashboard-stat-card--members"
+                        data-testid="dashboard-stat-members">
+                        <div class="dashboard-stat-card__body">
+                            <div class="dashboard-stat-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6.5 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM9 13c-4.42 0-8 2.24-8 5v2h12.1A5.91 5.91 0 0 1 13 19c0-1.54.59-2.94 1.56-4.01C13.13 13.75 11.2 13 9 13Zm6.5.5c-2.1 0-3.9.78-5.06 1.94A5.96 5.96 0 0 1 15 21h8v-1.75c0-3.18-3.36-5.75-7.5-5.75Z" />
+                                </svg>
+                            </div>
 
-            <section class="dashboard-focus-panel__agenda" data-testid="dashboard-today-agenda"
-              aria-labelledby="dashboard-today-agenda-title">
-              <header class="dashboard-focus-panel__header dashboard-focus-panel__header--agenda">
-                <div class="dashboard-focus-panel__heading">
-                  <span class="dashboard-focus-panel__header-icon dashboard-focus-panel__header-icon--warning"
-                    aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <rect x="4" y="5" width="16" height="15" rx="2" />
-                      <path d="M8 2v6M16 2v6M4 10h16" />
-                    </svg>
-                  </span>
+                            <div class="dashboard-stat-card__content">
+                                <span class="dashboard-stat-card__label">
+                                    Equipe
+                                </span>
 
-                  <h3 id="dashboard-today-agenda-title" class="dashboard-focus-panel__title">
-                    Agenda de hoje
-                  </h3>
-                </div>
+                                <strong class="dashboard-stat-card__value">
+                                    {{ dashboardStore.summary.active_members }}
+                                </strong>
 
-                <button type="button" class="dashboard-agenda-link" @click="goToAgenda">
-                  Ver agenda completa
-                  <span aria-hidden="true">→</span>
-                </button>
-              </header>
+                                <span class="dashboard-stat-card__description">
+                                    Membros ativos
+                                </span>
+                            </div>
+                        </div>
 
-              <div class="dashboard-timeline">
-                <div v-if="dashboardStore.todayAgenda.length === 0" class="dashboard-timeline__empty">
-                  Nenhum item restante para hoje.
-                </div>
+                        <div class="dashboard-stat-card__footer">
+                            <span class="dashboard-stat-card__neutral-icon" aria-hidden="true">
+                                −
+                            </span>
 
-                <article v-for="item in dashboardStore.todayAgenda" v-else :key="`${item.kind}-${item.id}`"
-                  class="dashboard-timeline__item">
-                  <time v-if="item.scheduled_at" class="dashboard-timeline__time" :datetime="item.scheduled_at">
-                    {{ formatTime(item.scheduled_at) }}
-                  </time>
+                            <span>Sem alterações</span>
+                        </div>
+                    </article>
+                </section>
 
-                  <span v-else class="dashboard-timeline__time">
-                    —
-                  </span>
+                <!-- Prioridades do dia + Agenda de hoje -->
+                <section class="dashboard-attention" aria-labelledby="dashboard-attention-title"
+                    data-testid="dashboard-priorities">
+                    <h2 id="dashboard-attention-title" class="dashboard-visually-hidden">
+                        Central de Atenção
+                    </h2>
 
-                  <span class="dashboard-timeline__marker" :class="`dashboard-timeline__marker--${item.kind}`"
-                    aria-hidden="true" />
+                    <p class="dashboard-visually-hidden">
+                        Itens que exigem ação imediata.
+                    </p>
 
-                  <div class="dashboard-timeline__content">
-                    <strong class="dashboard-timeline__title">
-                      {{ item.title }}
-                    </strong>
+                    <div class="dashboard-priorities-layout dashboard-focus-panel"
+                        data-testid="dashboard-priorities-layout">
+                        <section class="dashboard-focus-panel__priorities" data-testid="dashboard-legal-alerts"
+                            aria-labelledby="dashboard-priorities-title">
+                            <header class="dashboard-focus-panel__header">
+                                <div class="dashboard-focus-panel__heading">
+                                    <span
+                                        class="dashboard-focus-panel__header-icon dashboard-focus-panel__header-icon--danger"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 3v18" />
+                                            <path d="M5 6h14" />
+                                            <path d="M7 6 4 11h6L7 6Z" />
+                                            <path d="m17 6-3 5h6l-3-5Z" />
+                                            <path d="M8 21h8" />
+                                        </svg>
+                                    </span>
 
-                    <span class="dashboard-timeline__detail">
-                      {{ todayAgendaItemDetail(item) }}
-                    </span>
+                                    <h3 id="dashboard-priorities-title" class="dashboard-focus-panel__title">
+                                        Prioridades do dia
+                                    </h3>
+                                </div>
+                            </header>
 
-                    <button v-if="item.folder"
-                      :data-testid="`dashboard-today-agenda-folder-${item.kind}-${item.folder.id}`" type="button"
-                      class="dashboard-visually-hidden dashboard-folder-link" @click="goToFolder(item.folder.id)">
-                      {{ item.folder.name }}
+                            <div class="dashboard-priority-list">
+                                <article class="dashboard-priority-block">
+                                    <button type="button" class="dashboard-priority-row"
+                                        :aria-expanded="expandedPriority === 'tasks'" @click="togglePriority('tasks')">
+                                        <span class="dashboard-priority-row__icon dashboard-priority-row__icon--danger"
+                                            aria-hidden="true">
+                                            !
+                                        </span>
 
-                      <span v-if="item.folder.process_number">
-                        {{ item.folder.process_number }}
-                      </span>
-                    </button>
-                  </div>
+                                        <span class="dashboard-priority-row__content">
+                                            <span class="dashboard-visually-hidden">
+                                                Tarefas vencidas
+                                            </span>
 
-                  <span class="dashboard-timeline__badge" :class="`dashboard-timeline__badge--${item.kind}`">
-                    {{ todayAgendaItemLabel(item) }}
-                  </span>
-                </article>
-              </div>
-            </section>
-          </div>
-        </section>
+                                            <strong class="dashboard-priority-row__title">
+                                                {{ dashboardStore.summary.overdue_tasks }}
+                                                {{ dashboardStore.summary.overdue_tasks === 1 ? 'tarefa vencida' :
+                                                    'tarefas vencidas' }}
+                                            </strong>
 
-        <!-- Operacional geral -->
-        <section class="dashboard-work" aria-label="Itens operacionais">
-          
-        </section>
+                                            <span class="dashboard-priority-row__description">
+                                                Tarefas pendentes com vencimento ultrapassado
+                                            </span>
+                                        </span>
 
-        <!-- Meu trabalho -->
-        <section class="dashboard-my-work dashboard-my-work-panel" aria-labelledby="dashboard-my-work-title"
-          data-testid="dashboard-my-work">
-          <header class="dashboard-my-work-panel__header">
-            <span class="dashboard-my-work-panel__header-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="7" r="3" />
-                <path d="M5 21a7 7 0 0 1 14 0" />
-              </svg>
-            </span>
+                                        <span class="dashboard-priority-row__chevron" aria-hidden="true">
+                                            ›
+                                        </span>
+                                    </button>
 
-            <h2 id="dashboard-my-work-title" class="dashboard-my-work-panel__title">
-              Meu trabalho
-            </h2>
+                                    <div v-show="expandedPriority === 'tasks'" class="dashboard-priority-details">
+                                        <div v-if="dashboardStore.attention.overdue_tasks.length === 0"
+                                            class="dashboard-priority-details__empty">
+                                            Nenhuma tarefa vencida.
+                                        </div>
 
-            <p class="dashboard-visually-hidden">
-              Itens sob sua responsabilidade.
-            </p>
-          </header>
+                                        <article v-for="task in dashboardStore.attention.overdue_tasks" v-else
+                                            :key="task.id" class="dashboard-priority-details__item">
+                                            <div class="dashboard-attention-item-heading">
+                                                <strong class="dashboard-attention-item-title">
+                                                    {{ task.title }}
+                                                </strong>
 
-          <div class="dashboard-my-work-grid dashboard-my-work-grid--refined">
-            <!-- Minhas tarefas -->
-            <section class="dashboard-my-work-card dashboard-my-work-card--tasks"
-              aria-labelledby="dashboard-my-work-tasks-title">
-              <header class="dashboard-my-work-card__header">
-                <div class="dashboard-my-work-card__heading">
-                  <span class="dashboard-my-work-card__icon dashboard-my-work-card__icon--tasks" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <circle cx="12" cy="12" r="8" />
-                      <path d="m8.5 12 2.2 2.2 4.8-5" />
-                    </svg>
-                  </span>
+                                                <span class="dashboard-item-badge"
+                                                    :class="`dashboard-item-badge--${task.priority}`">
+                                                    {{ folderPriorityLabel(task.priority) }}
+                                                </span>
+                                            </div>
 
-                  <h3 id="dashboard-my-work-tasks-title" class="dashboard-my-work-card__title">
-                    Minhas tarefas
-                  </h3>
-                </div>
+                                            <div class="dashboard-attention-item-meta">
+                                                <span v-if="task.due_at">
+                                                    Venceu em: {{ formatShortDateTime(task.due_at) }}
+                                                </span>
+                                            </div>
 
-                <span class="dashboard-my-work-card__count dashboard-my-work-card__count--tasks">
-                  {{ dashboardStore.myWork.pending_tasks.length }}
-                  {{
-                    dashboardStore.myWork.pending_tasks.length === 1
-                      ? 'pendente'
-                      : 'pendentes'
-                  }}
-                </span>
-              </header>
+                                            <button v-if="task.folder"
+                                                :data-testid="`dashboard-attention-task-folder-${task.folder.id}`"
+                                                type="button" class="dashboard-folder-link"
+                                                @click="goToFolder(task.folder.id)">
+                                                {{ task.folder.name }}
 
-              <div class="dashboard-my-work-card__body">
-                <div v-if="dashboardStore.myWork.pending_tasks.length === 0" class="dashboard-my-work-card__empty">
-                  Nenhuma tarefa atribuída a você.
-                </div>
+                                                <span v-if="task.folder.process_number"
+                                                    class="dashboard-folder-link-process">
+                                                    {{ task.folder.process_number }}
+                                                </span>
+                                            </button>
 
-                <article v-for="task in dashboardStore.myWork.pending_tasks.slice(0, 2)" v-else :key="task.id"
-                  class="dashboard-my-work-row">
-                  <span class="dashboard-my-work-row__leading"
-                    :class="`dashboard-my-work-row__leading--task-${task.priority || 'low'}`" aria-hidden="true">
-                    <span v-if="task.priority === 'high'">↑</span>
-                    <span v-else>−</span>
-                  </span>
+                                            <div v-if="authStore.hasPermission('folders.update')"
+                                                class="dashboard-item-actions">
+                                                <AppButton type="button" size="sm" variant="outline"
+                                                    :disabled="completingTaskId !== null" @click="completeTask(task)">
+                                                    Concluir tarefa
+                                                </AppButton>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </article>
 
-                  <div class="dashboard-my-work-row__main">
-                    <strong class="dashboard-my-work-row__title">
-                      {{ task.title }}
-                    </strong>
+                                <article class="dashboard-priority-block">
+                                    <button type="button" class="dashboard-priority-row"
+                                        :aria-expanded="expandedPriority === 'deadlines'"
+                                        @click="togglePriority('deadlines')">
+                                        <span class="dashboard-priority-row__icon dashboard-priority-row__icon--danger"
+                                            aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <rect x="5" y="6" width="14" height="13" rx="2" />
+                                                <path d="M8 3v5M16 3v5M5 10h14" />
+                                            </svg>
+                                        </span>
 
-                    <button v-if="task.folder" :data-testid="`dashboard-my-work-task-folder-${task.folder.id}`"
-                      type="button" class="dashboard-my-work-row__context" @click="goToFolder(task.folder.id)">
-                      {{ task.folder.name }}
-                    </button>
+                                        <span class="dashboard-priority-row__content">
+                                            <span class="dashboard-visually-hidden">
+                                                Prazos vencidos
+                                            </span>
 
-                    <span v-else class="dashboard-my-work-row__context">
-                      Tarefa atribuída
-                    </span>
-                  </div>
+                                            <strong class="dashboard-priority-row__title">
+                                                {{ dashboardStore.summary.overdue_deadlines }}
+                                                {{ dashboardStore.summary.overdue_deadlines === 1 ? 'prazo vencido' :
+                                                    'prazos vencidos' }}
+                                            </strong>
 
-                  <div class="dashboard-my-work-row__aside">
-                    <span class="dashboard-my-work-row__priority"
-                      :class="`dashboard-my-work-row__priority--${task.priority}`">
-                      {{ priorityLabel(task.priority) }}
-                    </span>
+                                            <span class="dashboard-priority-row__description">
+                                                Prazos com data limite ultrapassada
+                                            </span>
+                                        </span>
 
-                    <span class="dashboard-my-work-row__date">
-                      {{ formatWorkDate(task.due_at) }}
-                    </span>
-                  </div>
+                                        <span class="dashboard-priority-row__chevron" aria-hidden="true">
+                                            ›
+                                        </span>
+                                    </button>
 
-                  <div v-if="authStore.hasPermission('folders.update')" class="dashboard-visually-hidden">
-                    <AppButton :data-testid="`dashboard-my-work-task-complete-${task.id}`" type="button" size="sm"
-                      variant="outline" :disabled="completingTaskId !== null" @click="completeTask(task)">
-                      Concluir tarefa
-                    </AppButton>
-                  </div>
-                </article>
-              </div>
+                                    <div v-show="expandedPriority === 'deadlines'" class="dashboard-priority-details">
+                                        <div v-if="dashboardStore.attention.overdue_deadlines.length === 0"
+                                            class="dashboard-priority-details__empty">
+                                            Nenhum prazo vencido.
+                                        </div>
 
-              <footer class="dashboard-my-work-card__footer">
-                <span class="dashboard-my-work-card__footer-link dashboard-my-work-card__footer-link--tasks">
-                  Ver todas as tarefas
-                  <span aria-hidden="true">→</span>
-                </span>
-              </footer>
-            </section>
+                                        <article v-for="deadline in dashboardStore.attention.overdue_deadlines" v-else
+                                            :key="deadline.id" class="dashboard-priority-details__item">
+                                            <strong class="dashboard-attention-item-title">
+                                                {{ deadline.title }}
+                                            </strong>
 
-            <!-- Meus prazos -->
-            <section class="dashboard-my-work-card dashboard-my-work-card--deadlines"
-              aria-labelledby="dashboard-my-work-deadlines-title">
-              <header class="dashboard-my-work-card__header">
-                <div class="dashboard-my-work-card__heading">
-                  <span class="dashboard-my-work-card__icon dashboard-my-work-card__icon--deadlines" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <rect x="5" y="4" width="14" height="16" rx="2" />
-                      <path d="M8 2v4M16 2v4M5 9h14" />
-                    </svg>
-                  </span>
+                                            <div class="dashboard-attention-item-meta">
+                                                <span v-if="deadline.due_at">
+                                                    Venceu em: {{ formatShortDateTime(deadline.due_at) }}
+                                                </span>
+                                            </div>
 
-                  <h3 id="dashboard-my-work-deadlines-title" class="dashboard-my-work-card__title">
-                    Meus prazos
-                  </h3>
-                </div>
+                                            <button v-if="deadline.folder"
+                                                :data-testid="`dashboard-attention-deadline-folder-${deadline.folder.id}`"
+                                                type="button" class="dashboard-folder-link"
+                                                @click="goToFolder(deadline.folder.id)">
+                                                {{ deadline.folder.name }}
 
-                <span class="dashboard-my-work-card__count dashboard-my-work-card__count--deadlines">
-                  {{ dashboardStore.myWork.pending_deadlines.length }}
-                  {{
-                    dashboardStore.myWork.pending_deadlines.length === 1
-                      ? 'pendente'
-                      : 'pendentes'
-                  }}
-                </span>
-              </header>
+                                                <span v-if="deadline.folder.process_number"
+                                                    class="dashboard-folder-link-process">
+                                                    {{ deadline.folder.process_number }}
+                                                </span>
+                                            </button>
 
-              <div class="dashboard-my-work-card__body">
-                <div v-if="dashboardStore.myWork.pending_deadlines.length === 0" class="dashboard-my-work-card__empty">
-                  Nenhum prazo atribuído a você.
-                </div>
+                                            <div v-if="authStore.hasPermission('folders.update')"
+                                                class="dashboard-item-actions">
+                                                <AppButton type="button" size="sm" variant="outline"
+                                                    :disabled="completingDeadlineId !== null"
+                                                    @click="completeDeadline(deadline)">
+                                                    Concluir prazo
+                                                </AppButton>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </article>
 
-                <article v-for="deadline in dashboardStore.myWork.pending_deadlines.slice(0, 2)" v-else
-                  :key="deadline.id" class="dashboard-my-work-row">
-                  <span class="dashboard-my-work-row__leading dashboard-my-work-row__leading--deadline"
-                    aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <rect x="6" y="5" width="12" height="14" rx="2" />
-                      <path d="M9 9h6M9 13h4" />
-                    </svg>
-                  </span>
 
-                  <div class="dashboard-my-work-row__main">
-                    <strong class="dashboard-my-work-row__title">
-                      {{ deadline.title }}
-                    </strong>
+                            </div>
+                        </section>
 
-                    <button v-if="deadline.folder"
-                      :data-testid="`dashboard-my-work-deadline-folder-${deadline.folder.id}`" type="button"
-                      class="dashboard-my-work-row__context" @click="goToFolder(deadline.folder.id)">
-                      {{ deadline.folder.name }}
-                    </button>
+                        <section class="dashboard-focus-panel__agenda" data-testid="dashboard-today-agenda"
+                            aria-labelledby="dashboard-today-agenda-title">
+                            <header class="dashboard-focus-panel__header dashboard-focus-panel__header--agenda">
+                                <div class="dashboard-focus-panel__heading">
+                                    <span
+                                        class="dashboard-focus-panel__header-icon dashboard-focus-panel__header-icon--warning"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="4" y="5" width="16" height="15" rx="2" />
+                                            <path d="M8 2v6M16 2v6M4 10h16" />
+                                        </svg>
+                                    </span>
 
-                    <span v-if="deadline.folder?.process_number" class="dashboard-my-work-row__context">
-                      Processo {{ deadline.folder.process_number }}
-                    </span>
+                                    <h3 id="dashboard-today-agenda-title" class="dashboard-focus-panel__title">
+                                        Agenda de hoje
+                                    </h3>
+                                </div>
 
-                    <span v-else-if="!deadline.folder" class="dashboard-my-work-row__context">
-                      Prazo atribuído
-                    </span>
-                  </div>
+                                <button type="button" class="dashboard-agenda-link" @click="goToAgenda">
+                                    Ver agenda completa
+                                    <span aria-hidden="true">→</span>
+                                </button>
+                            </header>
 
-                  <div class="dashboard-my-work-row__aside">
-                    <span class="dashboard-my-work-row__date dashboard-my-work-row__date--primary">
-                      {{ formatWorkDay(deadline.due_at) }}
-                    </span>
+                            <div class="dashboard-timeline">
+                                <div v-if="dashboardStore.todayAgenda.length === 0" class="dashboard-timeline__empty">
+                                    Nenhum item restante para hoje.
+                                </div>
 
-                    <span class="dashboard-my-work-row__date">
-                      {{ formatWorkSecondaryDate(deadline.due_at) }}
-                    </span>
-                  </div>
+                                <article v-for="item in dashboardStore.todayAgenda" v-else
+                                    :key="`${item.kind}-${item.id}`" class="dashboard-timeline__item">
+                                    <time v-if="item.scheduled_at" class="dashboard-timeline__time"
+                                        :datetime="item.scheduled_at">
+                                        {{ formatShortTime(item.scheduled_at) }}
+                                    </time>
 
-                  <div v-if="authStore.hasPermission('folders.update')" class="dashboard-visually-hidden">
-                    <AppButton :data-testid="`dashboard-my-work-deadline-complete-${deadline.id}`" type="button"
-                      size="sm" variant="outline" :disabled="completingDeadlineId !== null"
-                      @click="completeDeadline(deadline)">
-                      Concluir prazo
-                    </AppButton>
-                  </div>
-                </article>
-              </div>
+                                    <span v-else class="dashboard-timeline__time">
+                                        —
+                                    </span>
 
-              <footer class="dashboard-my-work-card__footer">
-                <span class="dashboard-my-work-card__footer-link dashboard-my-work-card__footer-link--deadlines">
-                  Ver todos os prazos
-                  <span aria-hidden="true">→</span>
-                </span>
-              </footer>
-            </section>
+                                    <span class="dashboard-timeline__marker"
+                                        :class="`dashboard-timeline__marker--${item.kind}`" aria-hidden="true" />
 
-            <!-- Meus compromissos -->
-            <section class="dashboard-my-work-card dashboard-my-work-card--events"
-              aria-labelledby="dashboard-my-work-events-title">
-              <header class="dashboard-my-work-card__header">
-                <div class="dashboard-my-work-card__heading">
-                  <span class="dashboard-my-work-card__icon dashboard-my-work-card__icon--events" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M6 9a6 6 0 0 1 12 0v4l2 3H4l2-3V9Z" />
-                      <path d="M10 19h4" />
-                    </svg>
-                  </span>
+                                    <div class="dashboard-timeline__content">
+                                        <strong class="dashboard-timeline__title">
+                                            {{ item.title }}
+                                        </strong>
 
-                  <h3 id="dashboard-my-work-events-title" class="dashboard-my-work-card__title">
-                    Meus compromissos
-                  </h3>
-                </div>
+                                        <span class="dashboard-timeline__detail">
+                                            {{ todayAgendaItemDetail(item) }}
+                                        </span>
 
-                <span class="dashboard-my-work-card__count dashboard-my-work-card__count--events">
-                  {{ dashboardStore.myWork.upcoming_events.length }}
-                  {{
-                    dashboardStore.myWork.upcoming_events.length === 1
-                      ? 'próximo'
-                      : 'próximos'
-                  }}
-                </span>
-              </header>
+                                        <button v-if="item.folder"
+                                            :data-testid="`dashboard-today-agenda-folder-${item.kind}-${item.folder.id}`"
+                                            type="button" class="dashboard-visually-hidden dashboard-folder-link"
+                                            @click="goToFolder(item.folder.id)">
+                                            {{ item.folder.name }}
 
-              <div class="dashboard-my-work-card__body">
-                <div v-if="dashboardStore.myWork.upcoming_events.length === 0" class="dashboard-my-work-card__empty">
-                  Nenhum compromisso atribuído a você.
-                </div>
+                                            <span v-if="item.folder.process_number">
+                                                {{ item.folder.process_number }}
+                                            </span>
+                                        </button>
+                                    </div>
 
-                <article v-for="event in dashboardStore.myWork.upcoming_events.slice(0, 2)" v-else :key="event.id"
-                  class="dashboard-my-work-row">
-                  <span class="dashboard-my-work-row__leading dashboard-my-work-row__leading--event" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M5 13v-2a7 7 0 0 1 14 0v2" />
-                      <path d="M5 13h2v4H5zM17 13h2v4h-2z" />
-                    </svg>
-                  </span>
-
-                  <div class="dashboard-my-work-row__main">
-                    <strong class="dashboard-my-work-row__title">
-                      {{ event.title }}
-                    </strong>
-
-                    <button v-if="event.folder" :data-testid="`dashboard-my-work-event-folder-${event.folder.id}`"
-                      type="button" class="dashboard-my-work-row__context" @click="goToFolder(event.folder.id)">
-                      {{ event.folder.name }}
-                    </button>
-
-                    <span v-if="event.folder?.process_number" class="dashboard-my-work-row__context">
-                      Processo {{ event.folder.process_number }}
-                    </span>
-
-                    <span v-if="event.location" class="dashboard-my-work-row__context">
-                      {{ event.location }}
-                    </span>
-
-                    <span v-else-if="!event.folder" class="dashboard-my-work-row__context">
-                      {{ eventTypeLabel(event.type) }}
-                    </span>
-                  </div>
-
-                  <div class="dashboard-my-work-row__aside">
-                    <span class="dashboard-my-work-row__date dashboard-my-work-row__date--primary">
-                      {{ formatWorkDay(event.starts_at) }}
-                    </span>
-
-                    <span class="dashboard-my-work-row__date">
-                      {{ formatWorkTime(event.starts_at) }}
-                    </span>
-                  </div>
-
-                  <div v-if="authStore.hasPermission('folders.update')" class="dashboard-visually-hidden">
-                    <AppButton :data-testid="`dashboard-my-work-event-complete-${event.id}`" type="button" size="sm"
-                      variant="outline" :disabled="completingEventId !== null" @click="completeEvent(event)">
-                      Concluir compromisso
-                    </AppButton>
-                  </div>
-                </article>
-              </div>
-
-              <footer class="dashboard-my-work-card__footer">
-                <button type="button"
-                  class="dashboard-my-work-card__footer-link dashboard-my-work-card__footer-link--events"
-                  @click="goToAgenda">
-                  Ver todos os compromissos
-                  <span aria-hidden="true">→</span>
-                </button>
-              </footer>
-            </section>
-          </div>
-        </section>
-
-        <!-- Movimento do escritório -->
-        <div class="dashboard-secondary dashboard-recent-panel" data-testid="dashboard-secondary">
-          <div class="dashboard-office-movement dashboard-recent-panel__grid" data-testid="dashboard-office-movement">
-            <!-- Atividade recente -->
-            <section class="dashboard-recent-card dashboard-recent-card--activity"
-              aria-labelledby="dashboard-activity-title">
-              <header class="dashboard-recent-card__header">
-                <div class="dashboard-recent-card__heading">
-                  <span class="dashboard-recent-card__header-icon dashboard-recent-card__header-icon--activity"
-                    aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="m4 16 5-5 4 4 7-8" />
-                      <path d="M16 7h4v4" />
-                    </svg>
-                  </span>
-
-                  <h2 id="dashboard-activity-title" class="dashboard-recent-card__title">
-                    Atividade recente
-                  </h2>
-                </div>
-
-                <p class="dashboard-visually-hidden">
-                  Últimas atividades concluídas no escritório.
-                </p>
-              </header>
-
-              <div class="dashboard-recent-card__body dashboard-recent-card__body--timeline"
-                data-testid="dashboard-recent-activity">
-                <div v-if="dashboardStore.recentActivity.length === 0" class="dashboard-recent-card__empty">
-                  Nenhuma atividade recente.
-                </div>
-
-                <div v-else class="dashboard-recent-timeline">
-                  <article v-for="(activity, index) in dashboardStore.recentActivity.slice(0, 3)"
-                    :key="`${activity.type}-${activity.id}`" class="dashboard-recent-timeline__item">
-                    <div class="dashboard-recent-timeline__rail">
-                      <span class="dashboard-recent-timeline__marker" :class="{
-                        'dashboard-recent-timeline__marker--first': index === 0,
-                      }" aria-hidden="true">
-                        <svg v-if="index === 0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="m7 12 3 3 7-7" />
-                        </svg>
-
-                        <span v-else />
-                      </span>
-
-                      <span v-if="index < Math.min(dashboardStore.recentActivity.length, 3) - 1"
-                        class="dashboard-recent-timeline__line" aria-hidden="true" />
+                                    <span class="dashboard-timeline__badge"
+                                        :class="`dashboard-timeline__badge--${item.kind}`">
+                                        {{ todayAgendaItemLabel(item) }}
+                                    </span>
+                                </article>
+                            </div>
+                        </section>
                     </div>
+                </section>
 
-                    <time v-if="activity.completed_at" class="dashboard-recent-timeline__time"
-                      :datetime="activity.completed_at">
-                      {{ formatRecentActivityTime(activity.completed_at) }}
-                    </time>
-
-                    <span v-else class="dashboard-recent-timeline__time">
-                      —
-                    </span>
-
-                    <div class="dashboard-recent-timeline__content">
-                      <strong class="dashboard-recent-timeline__title">
-                        {{ recentActivityHeading(activity) }}
-                      </strong>
-
-                      <div class="dashboard-recent-timeline__detail">
-                        <span>
-                          {{ activity.title }}
+                <!-- Meu trabalho -->
+                <section class="dashboard-my-work dashboard-my-work-panel" aria-labelledby="dashboard-my-work-title"
+                    data-testid="dashboard-my-work">
+                    <header class="dashboard-my-work-panel__header">
+                        <span class="dashboard-my-work-panel__header-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="7" r="3" />
+                                <path d="M5 21a7 7 0 0 1 14 0" />
+                            </svg>
                         </span>
 
-                        <template v-if="activity.folder">
-                          <span aria-hidden="true"> — </span>
+                        <h2 id="dashboard-my-work-title" class="dashboard-my-work-panel__title">
+                            Meu trabalho
+                        </h2>
 
-                          <button :data-testid="`dashboard-activity-folder-${activity.folder.id}`" type="button"
-                            class="dashboard-recent-timeline__folder" @click="goToFolder(activity.folder.id)">
-                            {{ activity.folder.name }}
-                          </button>
-                        </template>
+                        <p class="dashboard-visually-hidden">
+                            Itens sob sua responsabilidade.
+                        </p>
+                    </header>
 
-                        <span v-if="activity.folder?.process_number" class="dashboard-visually-hidden">
-                          {{ activity.folder.process_number }}
-                        </span>
-                      </div>
+                    <div class="dashboard-my-work-grid dashboard-my-work-grid--refined">
+                        <!-- Minhas tarefas -->
+                        <section class="dashboard-my-work-card dashboard-my-work-card--tasks"
+                            aria-labelledby="dashboard-my-work-tasks-title">
+                            <header class="dashboard-my-work-card__header">
+                                <div class="dashboard-my-work-card__heading">
+                                    <span class="dashboard-my-work-card__icon dashboard-my-work-card__icon--tasks"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <circle cx="12" cy="12" r="8" />
+                                            <path d="m8.5 12 2.2 2.2 4.8-5" />
+                                        </svg>
+                                    </span>
 
-                      <span class="dashboard-visually-hidden">
-                        {{ activityTypeLabel(activity.type) }}
-                      </span>
+                                    <h3 id="dashboard-my-work-tasks-title" class="dashboard-my-work-card__title">
+                                        Minhas tarefas
+                                    </h3>
+                                </div>
 
-                      <span v-if="activity.completed_at" class="dashboard-visually-hidden">
-                        Concluído em:
-                        {{ formatDateTime(activity.completed_at) }}
-                      </span>
+                                <span class="dashboard-my-work-card__count dashboard-my-work-card__count--tasks">
+                                    {{ dashboardStore.myWork.pending_tasks.length }}
+                                    {{
+                                        dashboardStore.myWork.pending_tasks.length === 1
+                                            ? 'pendente'
+                                            : 'pendentes'
+                                    }}
+                                </span>
+                            </header>
+
+                            <div class="dashboard-my-work-card__body">
+                                <div v-if="dashboardStore.myWork.pending_tasks.length === 0"
+                                    class="dashboard-my-work-card__empty">
+                                    Nenhuma tarefa atribuída a você.
+                                </div>
+
+                                <article v-for="task in dashboardStore.myWork.pending_tasks.slice(0, 2)" v-else
+                                    :key="task.id" class="dashboard-my-work-row">
+                                    <span class="dashboard-my-work-row__leading"
+                                        :class="`dashboard-my-work-row__leading--task-${task.priority || 'low'}`"
+                                        aria-hidden="true">
+                                        <span v-if="task.priority === 'high'">↑</span>
+                                        <span v-else>−</span>
+                                    </span>
+
+                                    <div class="dashboard-my-work-row__main">
+                                        <strong class="dashboard-my-work-row__title">
+                                            {{ task.title }}
+                                        </strong>
+
+                                        <button v-if="task.folder"
+                                            :data-testid="`dashboard-my-work-task-folder-${task.folder.id}`"
+                                            type="button" class="dashboard-my-work-row__context"
+                                            @click="goToFolder(task.folder.id)">
+                                            {{ task.folder.name }}
+                                        </button>
+
+                                        <span v-else class="dashboard-my-work-row__context">
+                                            Tarefa atribuída
+                                        </span>
+                                    </div>
+
+                                    <div class="dashboard-my-work-row__aside">
+                                        <span class="dashboard-my-work-row__priority"
+                                            :class="`dashboard-my-work-row__priority--${task.priority}`">
+                                            {{ folderPriorityLabel(task.priority) }}
+                                        </span>
+
+                                        <span class="dashboard-my-work-row__date">
+                                            {{ formatWorkDate(task.due_at) }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="authStore.hasPermission('folders.update')"
+                                        class="dashboard-visually-hidden">
+                                        <AppButton :data-testid="`dashboard-my-work-task-complete-${task.id}`"
+                                            type="button" size="sm" variant="outline"
+                                            :disabled="completingTaskId !== null" @click="completeTask(task)">
+                                            Concluir tarefa
+                                        </AppButton>
+                                    </div>
+                                </article>
+                            </div>
+
+                            <footer class="dashboard-my-work-card__footer">
+                                <span
+                                    class="dashboard-my-work-card__footer-link dashboard-my-work-card__footer-link--tasks">
+                                    Ver todas as tarefas
+                                    <span aria-hidden="true">→</span>
+                                </span>
+                            </footer>
+                        </section>
+
+                        <!-- Meus prazos -->
+                        <section class="dashboard-my-work-card dashboard-my-work-card--deadlines"
+                            aria-labelledby="dashboard-my-work-deadlines-title">
+                            <header class="dashboard-my-work-card__header">
+                                <div class="dashboard-my-work-card__heading">
+                                    <span class="dashboard-my-work-card__icon dashboard-my-work-card__icon--deadlines"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="5" y="4" width="14" height="16" rx="2" />
+                                            <path d="M8 2v4M16 2v4M5 9h14" />
+                                        </svg>
+                                    </span>
+
+                                    <h3 id="dashboard-my-work-deadlines-title" class="dashboard-my-work-card__title">
+                                        Meus prazos
+                                    </h3>
+                                </div>
+
+                                <span class="dashboard-my-work-card__count dashboard-my-work-card__count--deadlines">
+                                    {{ dashboardStore.myWork.pending_deadlines.length }}
+                                    {{
+                                        dashboardStore.myWork.pending_deadlines.length === 1
+                                            ? 'pendente'
+                                            : 'pendentes'
+                                    }}
+                                </span>
+                            </header>
+
+                            <div class="dashboard-my-work-card__body">
+                                <div v-if="dashboardStore.myWork.pending_deadlines.length === 0"
+                                    class="dashboard-my-work-card__empty">
+                                    Nenhum prazo atribuído a você.
+                                </div>
+
+                                <article v-for="deadline in dashboardStore.myWork.pending_deadlines.slice(0, 2)" v-else
+                                    :key="deadline.id" class="dashboard-my-work-row">
+                                    <span
+                                        class="dashboard-my-work-row__leading dashboard-my-work-row__leading--deadline"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <rect x="6" y="5" width="12" height="14" rx="2" />
+                                            <path d="M9 9h6M9 13h4" />
+                                        </svg>
+                                    </span>
+
+                                    <div class="dashboard-my-work-row__main">
+                                        <strong class="dashboard-my-work-row__title">
+                                            {{ deadline.title }}
+                                        </strong>
+
+                                        <button v-if="deadline.folder"
+                                            :data-testid="`dashboard-my-work-deadline-folder-${deadline.folder.id}`"
+                                            type="button" class="dashboard-my-work-row__context"
+                                            @click="goToFolder(deadline.folder.id)">
+                                            {{ deadline.folder.name }}
+                                        </button>
+
+                                        <span v-if="deadline.folder?.process_number"
+                                            class="dashboard-my-work-row__context">
+                                            Processo {{ deadline.folder.process_number }}
+                                        </span>
+
+                                        <span v-else-if="!deadline.folder" class="dashboard-my-work-row__context">
+                                            Prazo atribuído
+                                        </span>
+                                    </div>
+
+                                    <div class="dashboard-my-work-row__aside">
+                                        <span class="dashboard-my-work-row__date dashboard-my-work-row__date--primary">
+                                            {{ formatWorkDay(deadline.due_at) }}
+                                        </span>
+
+                                        <span class="dashboard-my-work-row__date">
+                                            {{ formatWorkSecondaryDate(deadline.due_at) }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="authStore.hasPermission('folders.update')"
+                                        class="dashboard-visually-hidden">
+                                        <AppButton :data-testid="`dashboard-my-work-deadline-complete-${deadline.id}`"
+                                            type="button" size="sm" variant="outline"
+                                            :disabled="completingDeadlineId !== null"
+                                            @click="completeDeadline(deadline)">
+                                            Concluir prazo
+                                        </AppButton>
+                                    </div>
+                                </article>
+                            </div>
+
+                            <footer class="dashboard-my-work-card__footer">
+                                <span
+                                    class="dashboard-my-work-card__footer-link dashboard-my-work-card__footer-link--deadlines">
+                                    Ver todos os prazos
+                                    <span aria-hidden="true">→</span>
+                                </span>
+                            </footer>
+                        </section>
+
+                        <!-- Meus compromissos -->
+                        <section class="dashboard-my-work-card dashboard-my-work-card--events"
+                            aria-labelledby="dashboard-my-work-events-title">
+                            <header class="dashboard-my-work-card__header">
+                                <div class="dashboard-my-work-card__heading">
+                                    <span class="dashboard-my-work-card__icon dashboard-my-work-card__icon--events"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M6 9a6 6 0 0 1 12 0v4l2 3H4l2-3V9Z" />
+                                            <path d="M10 19h4" />
+                                        </svg>
+                                    </span>
+
+                                    <h3 id="dashboard-my-work-events-title" class="dashboard-my-work-card__title">
+                                        Meus compromissos
+                                    </h3>
+                                </div>
+
+                                <span class="dashboard-my-work-card__count dashboard-my-work-card__count--events">
+                                    {{ dashboardStore.myWork.upcoming_events.length }}
+                                    {{
+                                        dashboardStore.myWork.upcoming_events.length === 1
+                                            ? 'próximo'
+                                            : 'próximos'
+                                    }}
+                                </span>
+                            </header>
+
+                            <div class="dashboard-my-work-card__body">
+                                <div v-if="dashboardStore.myWork.upcoming_events.length === 0"
+                                    class="dashboard-my-work-card__empty">
+                                    Nenhum compromisso atribuído a você.
+                                </div>
+
+                                <article v-for="event in dashboardStore.myWork.upcoming_events.slice(0, 2)" v-else
+                                    :key="event.id" class="dashboard-my-work-row">
+                                    <span class="dashboard-my-work-row__leading dashboard-my-work-row__leading--event"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M5 13v-2a7 7 0 0 1 14 0v2" />
+                                            <path d="M5 13h2v4H5zM17 13h2v4h-2z" />
+                                        </svg>
+                                    </span>
+
+                                    <div class="dashboard-my-work-row__main">
+                                        <strong class="dashboard-my-work-row__title">
+                                            {{ event.title }}
+                                        </strong>
+
+                                        <button v-if="event.folder"
+                                            :data-testid="`dashboard-my-work-event-folder-${event.folder.id}`"
+                                            type="button" class="dashboard-my-work-row__context"
+                                            @click="goToFolder(event.folder.id)">
+                                            {{ event.folder.name }}
+                                        </button>
+
+                                        <span v-if="event.folder?.process_number"
+                                            class="dashboard-my-work-row__context">
+                                            Processo {{ event.folder.process_number }}
+                                        </span>
+
+                                        <span v-if="event.location" class="dashboard-my-work-row__context">
+                                            {{ event.location }}
+                                        </span>
+
+                                        <span v-else-if="!event.folder" class="dashboard-my-work-row__context">
+                                            {{ folderEventTypeLabel(event.type) }}
+                                        </span>
+                                    </div>
+
+                                    <div class="dashboard-my-work-row__aside">
+                                        <span class="dashboard-my-work-row__date dashboard-my-work-row__date--primary">
+                                            {{ formatWorkDay(event.starts_at) }}
+                                        </span>
+
+                                        <span class="dashboard-my-work-row__date">
+                                            {{ formatShortTime(event.starts_at) }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="authStore.hasPermission('folders.update')"
+                                        class="dashboard-visually-hidden">
+                                        <AppButton :data-testid="`dashboard-my-work-event-complete-${event.id}`"
+                                            type="button" size="sm" variant="outline"
+                                            :disabled="completingEventId !== null" @click="completeEvent(event)">
+                                            Concluir compromisso
+                                        </AppButton>
+                                    </div>
+                                </article>
+                            </div>
+
+                            <footer class="dashboard-my-work-card__footer">
+                                <button type="button"
+                                    class="dashboard-my-work-card__footer-link dashboard-my-work-card__footer-link--events"
+                                    @click="goToAgenda">
+                                    Ver todos os compromissos
+                                    <span aria-hidden="true">→</span>
+                                </button>
+                            </footer>
+                        </section>
                     </div>
-                  </article>
+                </section>
+
+                <!-- Movimento do escritório -->
+                <div class="dashboard-secondary dashboard-recent-panel" data-testid="dashboard-secondary">
+                    <div class="dashboard-office-movement dashboard-recent-panel__grid"
+                        data-testid="dashboard-office-movement">
+                        <!-- Atividade recente -->
+                        <section class="dashboard-recent-card dashboard-recent-card--activity"
+                            aria-labelledby="dashboard-activity-title">
+                            <header class="dashboard-recent-card__header">
+                                <div class="dashboard-recent-card__heading">
+                                    <span
+                                        class="dashboard-recent-card__header-icon dashboard-recent-card__header-icon--activity"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="m4 16 5-5 4 4 7-8" />
+                                            <path d="M16 7h4v4" />
+                                        </svg>
+                                    </span>
+
+                                    <h2 id="dashboard-activity-title" class="dashboard-recent-card__title">
+                                        Atividade recente
+                                    </h2>
+                                </div>
+
+                                <p class="dashboard-visually-hidden">
+                                    Últimas atividades concluídas no escritório.
+                                </p>
+                            </header>
+
+                            <div class="dashboard-recent-card__body dashboard-recent-card__body--timeline"
+                                data-testid="dashboard-recent-activity">
+                                <div v-if="dashboardStore.recentActivity.length === 0"
+                                    class="dashboard-recent-card__empty">
+                                    Nenhuma atividade recente.
+                                </div>
+
+                                <div v-else class="dashboard-recent-timeline">
+                                    <article v-for="(activity, index) in dashboardStore.recentActivity.slice(0, 3)"
+                                        :key="`${activity.type}-${activity.id}`"
+                                        class="dashboard-recent-timeline__item">
+                                        <div class="dashboard-recent-timeline__rail">
+                                            <span class="dashboard-recent-timeline__marker" :class="{
+                                                'dashboard-recent-timeline__marker--first': index === 0,
+                                            }" aria-hidden="true">
+                                                <svg v-if="index === 0" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor">
+                                                    <path d="m7 12 3 3 7-7" />
+                                                </svg>
+
+                                                <span v-else />
+                                            </span>
+
+                                            <span v-if="index < Math.min(dashboardStore.recentActivity.length, 3) - 1"
+                                                class="dashboard-recent-timeline__line" aria-hidden="true" />
+                                        </div>
+
+                                        <time v-if="activity.completed_at" class="dashboard-recent-timeline__time"
+                                            :datetime="activity.completed_at">
+                                            {{ formatRecentActivityTime(activity.completed_at) }}
+                                        </time>
+
+                                        <span v-else class="dashboard-recent-timeline__time">
+                                            —
+                                        </span>
+
+                                        <div class="dashboard-recent-timeline__content">
+                                            <strong class="dashboard-recent-timeline__title">
+                                                {{ recentActivityHeading(activity) }}
+                                            </strong>
+
+                                            <div class="dashboard-recent-timeline__detail">
+                                                <span>
+                                                    {{ activity.title }}
+                                                </span>
+
+                                                <template v-if="activity.folder">
+                                                    <span aria-hidden="true"> — </span>
+
+                                                    <button
+                                                        :data-testid="`dashboard-activity-folder-${activity.folder.id}`"
+                                                        type="button" class="dashboard-recent-timeline__folder"
+                                                        @click="goToFolder(activity.folder.id)">
+                                                        {{ activity.folder.name }}
+                                                    </button>
+                                                </template>
+
+                                                <span v-if="activity.folder?.process_number"
+                                                    class="dashboard-visually-hidden">
+                                                    {{ activity.folder.process_number }}
+                                                </span>
+                                            </div>
+
+                                            <span class="dashboard-visually-hidden">
+                                                {{ folderItemTypeLabel(activity.type) }}
+                                            </span>
+
+                                            <span v-if="activity.completed_at" class="dashboard-visually-hidden">
+                                                Concluído em:
+                                                {{ formatShortDateTime(activity.completed_at) }}
+                                            </span>
+                                        </div>
+                                    </article>
+                                </div>
+                            </div>
+
+                            <footer class="dashboard-recent-card__footer">
+                                <span class="dashboard-recent-card__link dashboard-recent-card__link--activity">
+                                    Ver histórico completo
+                                    <span aria-hidden="true">→</span>
+                                </span>
+                            </footer>
+                        </section>
+
+                        <!-- Pastas recentes -->
+                        <section class="dashboard-recent-card dashboard-recent-card--folders"
+                            aria-labelledby="recent-folders-title">
+                            <header class="dashboard-recent-card__header">
+                                <div class="dashboard-recent-card__heading">
+                                    <span
+                                        class="dashboard-recent-card__header-icon dashboard-recent-card__header-icon--folders"
+                                        aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M3.5 6.5h6l2 2H20.5v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-11Z" />
+                                        </svg>
+                                    </span>
+
+                                    <h2 id="recent-folders-title" class="dashboard-recent-card__title">
+                                        Pastas recentes
+                                    </h2>
+                                </div>
+
+                                <p class="dashboard-visually-hidden">
+                                    Últimas pastas adicionadas ao escritório.
+                                </p>
+                            </header>
+
+                            <div class="dashboard-recent-card__body">
+                                <div v-if="dashboardStore.recentFolders.length === 0"
+                                    class="dashboard-recent-card__empty">
+                                    Nenhuma pasta recente.
+                                </div>
+
+                                <div v-else class="dashboard-recent-folders">
+                                    <article v-for="folder in dashboardStore.recentFolders.slice(0, 3)" :key="folder.id"
+                                        class="dashboard-recent-folder">
+                                        <span class="dashboard-recent-folder__icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M3 7h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+                                                <path d="M3 10h18" />
+                                            </svg>
+                                        </span>
+
+                                        <button type="button" class="dashboard-recent-folder__main"
+                                            @click="goToFolder(folder.id)">
+                                            <strong class="dashboard-recent-folder__name">
+                                                {{ folder.name }}
+                                            </strong>
+
+                                            <span class="dashboard-recent-folder__meta">
+                                                {{
+                                                    folder.process_number
+                                                        ? `Processo ${folder.process_number}`
+                                                        : 'Sem número de processo'
+                                                }}
+                                            </span>
+                                        </button>
+
+                                        <time v-if="folder.created_at" class="dashboard-recent-folder__date"
+                                            :datetime="folder.created_at">
+                                            Atualizada em {{ formatShortDate(folder.created_at, { emptyValue: '' }) }}
+                                        </time>
+                                    </article>
+                                </div>
+                            </div>
+
+                            <footer class="dashboard-recent-card__footer">
+                                <span class="dashboard-recent-card__link dashboard-recent-card__link--folders">
+                                    Ver todas as pastas
+                                    <span aria-hidden="true">→</span>
+                                </span>
+                            </footer>
+                        </section>
+                    </div>
                 </div>
-              </div>
 
-              <footer class="dashboard-recent-card__footer">
-                <span class="dashboard-recent-card__link dashboard-recent-card__link--activity">
-                  Ver histórico completo
-                  <span aria-hidden="true">→</span>
-                </span>
-              </footer>
-            </section>
-
-            <!-- Pastas recentes -->
-            <section class="dashboard-recent-card dashboard-recent-card--folders"
-              aria-labelledby="recent-folders-title">
-              <header class="dashboard-recent-card__header">
-                <div class="dashboard-recent-card__heading">
-                  <span class="dashboard-recent-card__header-icon dashboard-recent-card__header-icon--folders"
-                    aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M3.5 6.5h6l2 2H20.5v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-11Z" />
-                    </svg>
-                  </span>
-
-                  <h2 id="recent-folders-title" class="dashboard-recent-card__title">
-                    Pastas recentes
-                  </h2>
-                </div>
-
-                <p class="dashboard-visually-hidden">
-                  Últimas pastas adicionadas ao escritório.
-                </p>
-              </header>
-
-              <div class="dashboard-recent-card__body">
-                <div v-if="dashboardStore.recentFolders.length === 0" class="dashboard-recent-card__empty">
-                  Nenhuma pasta recente.
-                </div>
-
-                <div v-else class="dashboard-recent-folders">
-                  <article v-for="folder in dashboardStore.recentFolders.slice(0, 3)" :key="folder.id"
-                    class="dashboard-recent-folder">
-                    <span class="dashboard-recent-folder__icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M3 7h7l2 2h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
-                        <path d="M3 10h18" />
-                      </svg>
-                    </span>
-
-                    <button type="button" class="dashboard-recent-folder__main" @click="goToFolder(folder.id)">
-                      <strong class="dashboard-recent-folder__name">
-                        {{ folder.name }}
-                      </strong>
-
-                      <span class="dashboard-recent-folder__meta">
-                        {{
-                          folder.process_number
-                            ? `Processo ${folder.process_number}`
-                            : 'Sem número de processo'
-                        }}
-                      </span>
-                    </button>
-
-                    <time v-if="folder.created_at" class="dashboard-recent-folder__date" :datetime="folder.created_at">
-                      Atualizada em {{ formatDate(folder.created_at) }}
-                    </time>
-                  </article>
-                </div>
-              </div>
-
-              <footer class="dashboard-recent-card__footer">
-                <span class="dashboard-recent-card__link dashboard-recent-card__link--folders">
-                  Ver todas as pastas
-                  <span aria-hidden="true">→</span>
-                </span>
-              </footer>
-            </section>
-          </div>
+            </div>
         </div>
-
-      </div>
-    </div>
-  </PageContainer>
+    </PageContainer>
 </template>
 
 <script setup>
 import {
-  computed,
-  onMounted,
-  ref,
+    computed,
+    onMounted,
+    ref,
 } from 'vue'
 
 import {
-  useRouter,
+    useRouter,
 } from 'vue-router'
 
 import {
-  PageContainer,
+    PageContainer,
 } from '@/components/layout'
 
 import {
-  AppButton,
-  AppCard,
+    AppButton
 } from '@/components/ui'
 
 import {
-  useAuthStore,
+    formatDayMonth,
+    formatShortDate,
+    formatShortDateTime,
+    formatShortTime,
+    formatWeekday,
+} from '@/utils/date'
+
+import {
+    folderEventTypeLabel,
+    folderPriorityLabel,
+    folderItemTypeLabel,
+} from '@/constants/folder'
+
+import {
+    useAuthStore,
 } from '@/stores/auth.js'
 
 import {
-  useDashboardStore,
+    useDashboardStore,
 } from '@/stores/dashboard.js'
 
 import {
-  useFolderDeadlinesStore,
+    useFolderDeadlinesStore,
 } from '@/stores/folder-deadlines.js'
 
 import {
-  useFolderEventsStore,
+    useFolderEventsStore,
 } from '@/stores/folder-events.js'
 
 import {
-  useFolderTasksStore,
+    useFolderTasksStore,
 } from '@/stores/folder-tasks.js'
 
 const router =
-  useRouter()
+    useRouter()
 
 const authStore =
-  useAuthStore()
+    useAuthStore()
 
 const dashboardStore =
-  useDashboardStore()
+    useDashboardStore()
 
 const folderDeadlinesStore =
-  useFolderDeadlinesStore()
+    useFolderDeadlinesStore()
 
 const folderEventsStore =
-  useFolderEventsStore()
+    useFolderEventsStore()
 
 const folderTasksStore =
-  useFolderTasksStore()
+    useFolderTasksStore()
 
 const errorMessage =
-  ref('')
+    ref('')
 
 const eventActionError =
-  ref('')
+    ref('')
 
 const deadlineActionError =
-  ref('')
+    ref('')
 
 const taskActionError =
-  ref('')
+    ref('')
 
 const completingEventId =
-  ref(null)
+    ref(null)
 
 const completingDeadlineId =
-  ref(null)
+    ref(null)
 
 const completingTaskId =
-  ref(null)
+    ref(null)
 
 const expandedPriority =
-  ref(null)
+    ref(null)
 
 const hasQuickActions =
-  computed(
-    () =>
-      authStore.hasPermission(
-        'clients.create',
-      ) ||
-      authStore.hasPermission(
-        'folders.create',
-      ),
-  )
-
-function formatDate(value) {
-  if (!value) {
-    return ''
-  }
-
-  const date =
-    new Date(value)
-
-  if (
-    Number.isNaN(
-      date.getTime(),
+    computed(
+        () =>
+            authStore.hasPermission(
+                'clients.create',
+            ) ||
+            authStore.hasPermission(
+                'folders.create',
+            ),
     )
-  ) {
-    return ''
-  }
-
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      day:
-        '2-digit',
-
-      month:
-        '2-digit',
-
-      year:
-        'numeric',
-    },
-  ).format(date)
-}
-
-function formatTime(value) {
-  if (!value) {
-    return ''
-  }
-
-  const date =
-    new Date(value)
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return ''
-  }
-
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      hour:
-        '2-digit',
-
-      minute:
-        '2-digit',
-    },
-  ).format(date)
-}
-
-function formatDateTime(value) {
-  if (!value) {
-    return ''
-  }
-
-  const date =
-    new Date(value)
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return ''
-  }
-
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      dateStyle:
-        'short',
-
-      timeStyle:
-        'short',
-    },
-  ).format(date)
-}
 
 function startOfLocalDay(value) {
-  const date =
-    new Date(value)
+    const date =
+        new Date(value)
 
-  if (
-    Number.isNaN(
-      date.getTime(),
+    if (
+        Number.isNaN(
+            date.getTime(),
+        )
+    ) {
+        return null
+    }
+
+    return new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
     )
-  ) {
-    return null
-  }
-
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  )
 }
 
 function workDayDifference(value) {
-  const target =
-    startOfLocalDay(value)
+    const target =
+        startOfLocalDay(value)
 
-  if (!target) {
-    return null
-  }
+    if (!target) {
+        return null
+    }
 
-  const today =
-    startOfLocalDay(
-      new Date(),
+    const today =
+        startOfLocalDay(
+            new Date(),
+        )
+
+    return Math.round(
+        (
+            target.getTime() -
+            today.getTime()
+        ) /
+        86400000,
     )
-
-  return Math.round(
-    (
-      target.getTime() -
-      today.getTime()
-    ) /
-    86400000,
-  )
-}
-
-function formatWorkTime(value) {
-  if (!value) {
-    return ''
-  }
-
-  const date =
-    new Date(value)
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return ''
-  }
-
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      hour:
-        '2-digit',
-
-      minute:
-        '2-digit',
-    },
-  ).format(date)
 }
 
 function formatWorkDate(value) {
-  if (!value) {
-    return 'Sem vencimento'
-  }
+    if (!value) {
+        return 'Sem vencimento'
+    }
 
-  const difference =
-    workDayDifference(value)
+    const difference =
+        workDayDifference(value)
 
-  if (difference === 0) {
-    return `Hoje, ${formatWorkTime(value)}`
-  }
+    if (difference === 0) {
+        return `Hoje, ${formatShortTime(value)}`
+    }
 
-  if (difference === 1) {
-    return 'Amanhã'
-  }
+    if (difference === 1) {
+        return 'Amanhã'
+    }
 
-  if (difference === -1) {
-    return 'Ontem'
-  }
+    if (difference === -1) {
+        return 'Ontem'
+    }
 
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      day:
-        '2-digit',
-
-      month:
-        '2-digit',
-    },
-  ).format(
-    new Date(value),
-  )
+    return formatDayMonth(
+        value,
+    )
 }
 
 function formatWorkDay(value) {
-  if (!value) {
-    return 'Sem data'
-  }
+    if (!value) {
+        return 'Sem data'
+    }
 
-  const difference =
-    workDayDifference(value)
+    const difference =
+        workDayDifference(value)
 
-  if (difference === 0) {
-    return 'Hoje'
-  }
+    if (difference === 0) {
+        return 'Hoje'
+    }
 
-  if (difference === 1) {
-    return 'Amanhã'
-  }
+    if (difference === 1) {
+        return 'Amanhã'
+    }
 
-  if (difference === -1) {
-    return 'Ontem'
-  }
+    if (difference === -1) {
+        return 'Ontem'
+    }
 
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      day:
-        '2-digit',
-
-      month:
-        '2-digit',
-    },
-  ).format(
-    new Date(value),
-  )
+    return formatDayMonth(
+        value,
+    )
 }
 
 function formatWorkSecondaryDate(value) {
-  if (!value) {
-    return ''
-  }
+    if (!value) {
+        return ''
+    }
 
-  const difference =
-    workDayDifference(value)
+    const difference =
+        workDayDifference(value)
 
-  if (
-    difference === 0 ||
-    difference === 1 ||
-    difference === -1
-  ) {
-    return formatWorkTime(value)
-  }
+    if (
+        difference === 0 ||
+        difference === 1 ||
+        difference === -1
+    ) {
+        return formatShortTime(value)
+    }
 
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      weekday:
-        'long',
-    },
-  ).format(
-    new Date(value),
-  )
-}
-
-function eventTypeLabel(type) {
-  const labels = {
-    hearing:
-      'Audiência',
-
-    meeting:
-      'Reunião',
-
-    expert_exam:
-      'Perícia',
-
-    diligence:
-      'Diligência',
-
-    other:
-      'Outro',
-  }
-
-  return labels[type] ??
-    type ??
-    '—'
+    return formatWeekday(
+        value,
+    )
 }
 
 function todayAgendaItemLabel(item) {
-  if (item?.kind === 'task') {
-    return 'Tarefa'
-  }
+    if (item?.kind === 'task') {
+        return 'Tarefa'
+    }
 
-  if (item?.kind === 'deadline') {
-    return 'Prazo'
-  }
+    if (item?.kind === 'deadline') {
+        return 'Prazo'
+    }
 
-  if (item?.kind === 'event') {
-    return eventTypeLabel(
-      item.type,
-    )
-  }
+    if (item?.kind === 'event') {
+        return folderEventTypeLabel(
+            item.type,
+        )
+    }
 
-  return 'Item'
+    return 'Item'
 }
 
 function todayAgendaItemDetail(item) {
-  if (item?.kind === 'event') {
-    return item.location ||
-      item.folder?.name ||
-      item.folder?.process_number ||
-      'Compromisso do dia'
-  }
+    if (item?.kind === 'event') {
+        return item.location ||
+            item.folder?.name ||
+            item.folder?.process_number ||
+            'Compromisso do dia'
+    }
 
-  return item.folder?.name ||
-    item.folder?.process_number ||
-    (
-      item?.kind === 'deadline'
-        ? 'Prazo do dia'
-        : 'Tarefa do dia'
-    )
+    return item.folder?.name ||
+        item.folder?.process_number ||
+        (
+            item?.kind === 'deadline'
+                ? 'Prazo do dia'
+                : 'Tarefa do dia'
+        )
 }
 
 function recentActivityHeading(activity) {
-  const labels = {
-    task:
-      'Tarefa concluída',
+    const labels = {
+        task:
+            'Tarefa concluída',
 
-    deadline:
-      'Prazo cumprido',
+        deadline:
+            'Prazo cumprido',
 
-    event:
-      'Audiência realizada',
-  }
+        event:
+            'Audiência realizada',
+    }
 
-  return labels[activity?.type] ??
-    'Atividade concluída'
+    return labels[activity?.type] ??
+        'Atividade concluída'
 }
 
 function formatRecentActivityTime(value) {
-  if (!value) {
-    return ''
-  }
+    if (!value) {
+        return ''
+    }
 
-  const date =
-    new Date(value)
+    const date =
+        new Date(value)
 
-  if (
-    Number.isNaN(
-      date.getTime(),
+    if (
+        Number.isNaN(
+            date.getTime(),
+        )
+    ) {
+        return ''
+    }
+
+    const difference =
+        workDayDifference(value)
+
+    if (difference === 0) {
+        return formatShortTime(value)
+    }
+
+    if (difference === -1) {
+        return 'Ontem'
+    }
+
+    return formatDayMonth(
+        date,
     )
-  ) {
-    return ''
-  }
-
-  const difference =
-    workDayDifference(value)
-
-  if (difference === 0) {
-    return formatWorkTime(value)
-  }
-
-  if (difference === -1) {
-    return 'Ontem'
-  }
-
-  return new Intl.DateTimeFormat(
-    'pt-BR',
-    {
-      day:
-        '2-digit',
-
-      month:
-        '2-digit',
-    },
-  ).format(date)
-}
-
-function activityTypeLabel(type) {
-  const labels = {
-    task:
-      'Tarefa',
-
-    deadline:
-      'Prazo',
-
-    event:
-      'Compromisso',
-  }
-
-  return labels[type] ??
-    type ??
-    '—'
-}
-
-function priorityLabel(priority) {
-  const labels = {
-    high:
-      'Alta',
-
-    medium:
-      'Média',
-
-    low:
-      'Baixa',
-  }
-
-  return labels[priority] ??
-    priority ??
-    '—'
 }
 
 function togglePriority(priority) {
-  expandedPriority.value =
-    expandedPriority.value === priority
-      ? null
-      : priority
+    expandedPriority.value =
+        expandedPriority.value === priority
+            ? null
+            : priority
 }
 
 function goToAgenda() {
-  return router.push('/agenda')
+    return router.push('/agenda')
 }
 
 function goToClientCreate() {
-  return router.push({
-    name:
-      'clients.create',
-  })
+    return router.push({
+        name:
+            'clients.create',
+    })
 }
 
 function goToFolderCreate() {
-  return router.push({
-    name:
-      'folders.create',
-  })
+    return router.push({
+        name:
+            'folders.create',
+    })
 }
 
 function goToFolder(folderId) {
-  if (!folderId) {
-    return
-  }
+    if (!folderId) {
+        return
+    }
 
-  return router.push({
-    name:
-      'folders.show',
+    return router.push({
+        name:
+            'folders.show',
 
-    params: {
-      id:
-        folderId,
-    },
-  })
+        params: {
+            id:
+                folderId,
+        },
+    })
 }
 
 async function completeEvent(event) {
-  if (
-    completingEventId.value !== null ||
-    !event?.id ||
-    !event?.folder?.id
-  ) {
-    return
-  }
+    if (
+        completingEventId.value !== null ||
+        !event?.id ||
+        !event?.folder?.id
+    ) {
+        return
+    }
 
-  eventActionError.value =
-    ''
-
-  completingEventId.value =
-    event.id
-
-  try {
-    await folderEventsStore.completeEvent(
-      event.folder.id,
-      event.id,
-    )
-
-    await dashboardStore.fetchDashboard()
-  } catch {
     eventActionError.value =
-      'Não foi possível concluir o compromisso. Tente novamente.'
-  } finally {
+        ''
+
     completingEventId.value =
-      null
-  }
+        event.id
+
+    try {
+        await folderEventsStore.completeEvent(
+            event.folder.id,
+            event.id,
+        )
+
+        await dashboardStore.fetchDashboard()
+    } catch {
+        eventActionError.value =
+            'Não foi possível concluir o compromisso. Tente novamente.'
+    } finally {
+        completingEventId.value =
+            null
+    }
 }
 
 async function completeDeadline(deadline) {
-  if (
-    completingDeadlineId.value !== null ||
-    !deadline?.id ||
-    !deadline?.folder?.id
-  ) {
-    return
-  }
+    if (
+        completingDeadlineId.value !== null ||
+        !deadline?.id ||
+        !deadline?.folder?.id
+    ) {
+        return
+    }
 
-  deadlineActionError.value =
-    ''
-
-  completingDeadlineId.value =
-    deadline.id
-
-  try {
-    await folderDeadlinesStore.completeDeadline(
-      deadline.folder.id,
-      deadline.id,
-    )
-
-    await dashboardStore.fetchDashboard()
-  } catch {
     deadlineActionError.value =
-      'Não foi possível concluir o prazo. Tente novamente.'
-  } finally {
+        ''
+
     completingDeadlineId.value =
-      null
-  }
+        deadline.id
+
+    try {
+        await folderDeadlinesStore.completeDeadline(
+            deadline.folder.id,
+            deadline.id,
+        )
+
+        await dashboardStore.fetchDashboard()
+    } catch {
+        deadlineActionError.value =
+            'Não foi possível concluir o prazo. Tente novamente.'
+    } finally {
+        completingDeadlineId.value =
+            null
+    }
 }
 
 async function completeTask(task) {
-  if (
-    completingTaskId.value !== null ||
-    !task?.id ||
-    !task?.folder?.id
-  ) {
-    return
-  }
+    if (
+        completingTaskId.value !== null ||
+        !task?.id ||
+        !task?.folder?.id
+    ) {
+        return
+    }
 
-  taskActionError.value =
-    ''
-
-  completingTaskId.value =
-    task.id
-
-  try {
-    await folderTasksStore.completeTask(
-      task.folder.id,
-      task.id,
-    )
-
-    await dashboardStore.fetchDashboard()
-  } catch {
     taskActionError.value =
-      'Não foi possível concluir a tarefa. Tente novamente.'
-  } finally {
+        ''
+
     completingTaskId.value =
-      null
-  }
+        task.id
+
+    try {
+        await folderTasksStore.completeTask(
+            task.folder.id,
+            task.id,
+        )
+
+        await dashboardStore.fetchDashboard()
+    } catch {
+        taskActionError.value =
+            'Não foi possível concluir a tarefa. Tente novamente.'
+    } finally {
+        completingTaskId.value =
+            null
+    }
 }
 
 async function loadDashboard() {
-  errorMessage.value =
-    ''
-
-  try {
-    await dashboardStore.fetchDashboard()
-  } catch {
     errorMessage.value =
-      'Não foi possível carregar o resumo do escritório.'
-  }
+        ''
+
+    try {
+        await dashboardStore.fetchDashboard()
+    } catch {
+        errorMessage.value =
+            'Não foi possível carregar o resumo do escritório.'
+    }
 }
 
 onMounted(
-  loadDashboard,
+    loadDashboard,
 )
 </script>
 
 <style scoped>
 .dashboard-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
 }
 
 .dashboard-workspace {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-7, 2rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7, 2rem);
 }
 
 .dashboard-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
 }
 
 .dashboard-heading {
-  min-width: 0;
+    min-width: 0;
 }
 
 .dashboard-eyebrow,
 .dashboard-title {
-  margin: 0;
+    margin: 0;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: clamp(1.65rem, 2.3vw, 2.2rem);
-  line-height: 1.1;
+    font-size: clamp(1.65rem, 2.3vw, 2.2rem);
+    line-height: 1.1;
 }
 
 .dashboard-description,
 .dashboard-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
 }
 
 .dashboard-alert {
-  padding:
-    var(--space-3) var(--space-4);
+    padding:
+        var(--space-3) var(--space-4);
 
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
+    border: 1px solid var(--color-danger);
+    border-radius: var(--radius-md);
 
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
 
-  font-size: var(--font-size-sm);
+    font-size: var(--font-size-sm);
 }
 
 /* Indicadores */
 
 .dashboard-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
 }
 
 .dashboard-stat-card {
-  --stat-accent: #167b35;
-  --stat-label: #174a28;
-  --stat-border: #cfe0cf;
-  --stat-background: #f8fbf7;
-  --stat-icon-background: #dcefdc;
-  --stat-footer-background: #eff7ed;
+    --stat-accent: #167b35;
+    --stat-label: #174a28;
+    --stat-border: #cfe0cf;
+    --stat-background: #f8fbf7;
+    --stat-icon-background: #dcefdc;
+    --stat-footer-background: #eff7ed;
 
-  min-width: 0;
-  overflow: hidden;
+    min-width: 0;
+    overflow: hidden;
 
-  border: 1px solid var(--stat-border);
-  border-radius: 10px;
+    border: 1px solid var(--stat-border);
+    border-radius: 10px;
 
-  background:
-    linear-gradient(115deg,
-      var(--stat-background) 0%,
-      #ffffff 100%);
+    background:
+        linear-gradient(115deg,
+            var(--stat-background) 0%,
+            #ffffff 100%);
 
-  box-shadow:
-    0 2px 4px rgb(42 48 39 / 8%),
-    0 5px 12px rgb(42 48 39 / 5%);
+    box-shadow:
+        0 2px 4px rgb(42 48 39 / 8%),
+        0 5px 12px rgb(42 48 39 / 5%);
 }
 
 .dashboard-stat-card--folders {
-  --stat-accent: #875015;
-  --stat-label: #754312;
-  --stat-border: #ead9c4;
-  --stat-background: #fcf7f0;
-  --stat-icon-background: #f4e5d2;
-  --stat-footer-background: #faf1e5;
+    --stat-accent: #875015;
+    --stat-label: #754312;
+    --stat-border: #ead9c4;
+    --stat-background: #fcf7f0;
+    --stat-icon-background: #f4e5d2;
+    --stat-footer-background: #faf1e5;
 }
 
 .dashboard-stat-card--members {
-  --stat-accent: #ef7500;
-  --stat-label: #98500b;
-  --stat-border: #f2d9b3;
-  --stat-background: #fffaf1;
-  --stat-icon-background: #fee8c6;
-  --stat-footer-background: #fff5e5;
+    --stat-accent: #ef7500;
+    --stat-label: #98500b;
+    --stat-border: #f2d9b3;
+    --stat-background: #fffaf1;
+    --stat-icon-background: #fee8c6;
+    --stat-footer-background: #fff5e5;
 }
 
 .dashboard-stat-card__body {
-  display: flex;
-  min-height: 106px;
-  align-items: center;
-  gap: 1.4rem;
+    display: flex;
+    min-height: 106px;
+    align-items: center;
+    gap: 1.4rem;
 
-  padding: 18px 24px 14px;
+    padding: 18px 24px 14px;
 }
 
 .dashboard-stat-card__icon {
-  display: grid;
-  width: 72px;
-  height: 72px;
+    display: grid;
+    width: 72px;
+    height: 72px;
 
-  flex: 0 0 72px;
-  place-items: center;
+    flex: 0 0 72px;
+    place-items: center;
 
-  border-radius: 50%;
+    border-radius: 50%;
 
-  background: var(--stat-icon-background);
-  color: var(--stat-accent);
+    background: var(--stat-icon-background);
+    color: var(--stat-accent);
 }
 
 .dashboard-stat-card__icon svg {
-  width: 37px;
-  height: 37px;
+    width: 37px;
+    height: 37px;
 }
 
 .dashboard-stat-card__content {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .dashboard-stat-card__label {
-  margin-bottom: 1px;
+    margin-bottom: 1px;
 
-  color: var(--stat-label);
+    color: var(--stat-label);
 
-  font-size: 0.72rem;
-  font-weight: 800;
+    font-size: 0.72rem;
+    font-weight: 800;
 
-  letter-spacing: 0.025em;
-  line-height: 1.2;
+    letter-spacing: 0.025em;
+    line-height: 1.2;
 
-  text-transform: uppercase;
+    text-transform: uppercase;
 }
 
 .dashboard-stat-card__value {
-  color: #101b17;
+    color: #101b17;
 
-  font-size: clamp(2rem, 2.4vw, 2.45rem);
-  font-weight: 700;
+    font-size: clamp(2rem, 2.4vw, 2.45rem);
+    font-weight: 700;
 
-  letter-spacing: -0.035em;
-  line-height: 1.02;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
 }
 
 .dashboard-stat-card--members .dashboard-stat-card__value {
-  color: #9a5b12;
+    color: #9a5b12;
 }
 
 .dashboard-stat-card__description {
-  margin-top: 2px;
+    margin-top: 2px;
 
-  color: #34413b;
+    color: #34413b;
 
-  font-size: 0.86rem;
-  font-weight: 500;
+    font-size: 0.86rem;
+    font-weight: 500;
 
-  line-height: 1.25;
+    line-height: 1.25;
 }
 
 .dashboard-stat-card__footer {
-  display: flex;
-  min-height: 34px;
+    display: flex;
+    min-height: 34px;
 
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
 
-  padding: 7px 16px;
+    padding: 7px 16px;
 
-  border-top: 1px solid var(--stat-border);
+    border-top: 1px solid var(--stat-border);
 
-  background: var(--stat-footer-background);
-  color: var(--stat-accent);
+    background: var(--stat-footer-background);
+    color: var(--stat-accent);
 
-  font-size: 0.76rem;
-  font-weight: 650;
+    font-size: 0.76rem;
+    font-weight: 650;
 
-  line-height: 1;
+    line-height: 1;
 }
 
 .dashboard-stat-card__trend-icon {
-  font-size: 1.15rem;
-  font-weight: 500;
+    font-size: 1.15rem;
+    font-weight: 500;
 
-  line-height: 0.8;
+    line-height: 0.8;
 }
 
 .dashboard-stat-card__neutral-icon {
-  display: inline-grid;
+    display: inline-grid;
 
-  width: 16px;
-  height: 16px;
+    width: 16px;
+    height: 16px;
 
-  place-items: center;
+    place-items: center;
 
-  border: 1.5px solid currentColor;
-  border-radius: 50%;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
 
-  font-size: 0.8rem;
-  font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 700;
 
-  line-height: 1;
+    line-height: 1;
 }
 
 /* Seções */
 
 .dashboard-attention,
-.dashboard-my-work,
-.dashboard-activity,
+.dashboard-my-work {
+    min-width: 0;
+}
+
 /* Prioridades */
-
 .dashboard-priorities-layout {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    minmax(0, 1.35fr) minmax(19rem, 0.9fr);
+    grid-template-columns:
+        minmax(0, 1.35fr) minmax(19rem, 0.9fr);
 
-  gap: var(--space-4);
+    gap: var(--space-4);
 }
 
 .dashboard-legal-alerts {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    repeat(2,
-      minmax(0, 1fr));
+    grid-template-columns:
+        repeat(2,
+            minmax(0, 1fr));
 
-  gap: var(--space-4);
+    gap: var(--space-4);
 }
 
 .dashboard-today-agenda {
-  min-width: 0;
+    min-width: 0;
 }
 
 .dashboard-attention-item-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
 }
 
 .dashboard-attention-item-title {
-  min-width: 0;
+    min-width: 0;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: var(--font-size-sm);
-  font-weight: 650;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
 
-  line-height: 1.4;
+    line-height: 1.4;
 }
 
 .dashboard-attention-item-meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: var(--font-size-sm);
+    font-size: var(--font-size-sm);
 
-  line-height: 1.4;
+    line-height: 1.4;
 }
 
 /* Agenda */
@@ -1799,44 +1664,45 @@ onMounted(
 /* Listas */
 
 .dashboard-my-work-grid {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    repeat(3,
-      minmax(0, 1fr));
+    grid-template-columns:
+        repeat(3,
+            minmax(0, 1fr));
 
-  gap: var(--space-4);
+    gap: var(--space-4);
 }
+
 .dashboard-item-badge {
-  display: inline-flex;
+    display: inline-flex;
 
-  min-height: 1.5rem;
+    min-height: 1.5rem;
 
-  flex: 0 0 auto;
-  align-items: center;
+    flex: 0 0 auto;
+    align-items: center;
 
-  padding: 0 var(--space-2);
+    padding: 0 var(--space-2);
 
-  border-radius: 999px;
+    border-radius: 999px;
 
-  background: var(--color-surface-muted);
+    background: var(--color-surface-muted);
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: var(--font-size-sm);
-  font-weight: 650;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
 }
 
 .dashboard-item-badge--high {
-  color: var(--color-danger);
+    color: var(--color-danger);
 }
 
 .dashboard-item-badge--medium {
-  color: var(--color-warning);
+    color: var(--color-warning);
 }
 
 .dashboard-item-badge--low {
-  color: var(--color-success);
+    color: var(--color-success);
 }
 
 
@@ -1844,70 +1710,70 @@ onMounted(
 
 
 .dashboard-item-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
 
-  margin-top: var(--space-1);
+    margin-top: var(--space-1);
 }
 
 /* Links */
 
 .dashboard-folder-link {
-  display: flex;
+    display: flex;
 
-  width: 100%;
+    width: 100%;
 
-  align-items: flex-start;
-  flex-direction: column;
-  gap: var(--space-1);
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-1);
 
-  padding: 0;
+    padding: 0;
 
-  border: 0;
+    border: 0;
 
-  background: transparent;
+    background: transparent;
 
-  color: var(--color-primary);
+    color: var(--color-primary);
 
-  cursor: pointer;
+    cursor: pointer;
 
-  font: inherit;
+    font: inherit;
 
-  text-align: left;
+    text-align: left;
 }
 
 .dashboard-folder-link:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .dashboard-folder-link:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 3px;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
 
-  border-radius: var(--radius-sm);
+    border-radius: var(--radius-sm);
 }
 
 .dashboard-folder-link-process {
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: var(--font-size-sm);
+    font-size: var(--font-size-sm);
 }
 
 /* Movimento do escritório */
 
 .dashboard-secondary {
-  min-width: 0;
+    min-width: 0;
 }
 
 .dashboard-office-movement {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+    grid-template-columns:
+        minmax(0, 1.15fr) minmax(18rem, 0.85fr);
 
-  gap: var(--space-4);
+    gap: var(--space-4);
 }
 
 
@@ -1928,1401 +1794,1401 @@ onMounted(
 /* Meu trabalho refinado */
 
 .dashboard-my-work-panel {
-  gap: 0;
+    gap: 0;
 
-  padding: var(--space-3);
+    padding: var(--space-3);
 
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
 
-  background:
-    color-mix(in srgb,
-      var(--color-surface) 96%,
-      var(--color-background));
+    background:
+        color-mix(in srgb,
+            var(--color-surface) 96%,
+            var(--color-background));
 
-  box-shadow:
-    0 10px 28px color-mix(in srgb,
-      var(--color-text) 5%,
-      transparent);
+    box-shadow:
+        0 10px 28px color-mix(in srgb,
+            var(--color-text) 5%,
+            transparent);
 }
 
 .dashboard-my-work-panel__header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
 
-  min-height: 2.35rem;
+    min-height: 2.35rem;
 
-  padding:
-    0 var(--space-1) var(--space-2);
+    padding:
+        0 var(--space-1) var(--space-2);
 }
 
 .dashboard-my-work-panel__header-icon {
-  display: inline-grid;
+    display: inline-grid;
 
-  width: 1.3rem;
-  height: 1.3rem;
+    width: 1.3rem;
+    height: 1.3rem;
 
-  place-items: center;
+    place-items: center;
 
-  color: #1e6f3d;
+    color: #1e6f3d;
 }
 
 .dashboard-my-work-panel__header-icon svg {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 
-  stroke-width: 1.8;
+    stroke-width: 1.8;
 }
 
 .dashboard-my-work-panel__title {
-  margin: 0;
+    margin: 0;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: 0.78rem;
-  font-weight: 800;
+    font-size: 0.78rem;
+    font-weight: 800;
 
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 
 .dashboard-my-work-grid--refined {
-  gap: var(--space-2);
+    gap: var(--space-2);
 }
 
 .dashboard-my-work-card {
-  display: flex;
-  min-width: 0;
-  min-height: 18.4rem;
-  flex-direction: column;
+    display: flex;
+    min-width: 0;
+    min-height: 18.4rem;
+    flex-direction: column;
 
-  overflow: hidden;
+    overflow: hidden;
 
-  border: 1px solid var(--color-border);
-  border-radius: calc(var(--radius-lg) - 2px);
+    border: 1px solid var(--color-border);
+    border-radius: calc(var(--radius-lg) - 2px);
 
-  background: var(--color-surface);
+    background: var(--color-surface);
 
-  box-shadow:
-    0 3px 12px color-mix(in srgb,
-      var(--color-text) 3%,
-      transparent);
+    box-shadow:
+        0 3px 12px color-mix(in srgb,
+            var(--color-text) 3%,
+            transparent);
 }
 
 .dashboard-my-work-card__header {
-  display: flex;
-  min-height: 3.25rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+    display: flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
 
-  padding:
-    var(--space-2) var(--space-3);
+    padding:
+        var(--space-2) var(--space-3);
 
-  border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-my-work-card__heading {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: var(--space-2);
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .dashboard-my-work-card__icon {
-  display: inline-grid;
+    display: inline-grid;
 
-  width: 1.35rem;
-  height: 1.35rem;
+    width: 1.35rem;
+    height: 1.35rem;
 
-  flex: 0 0 auto;
+    flex: 0 0 auto;
 
-  place-items: center;
+    place-items: center;
 }
 
 .dashboard-my-work-card__icon svg {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 
-  stroke-width: 1.8;
+    stroke-width: 1.8;
 }
 
 .dashboard-my-work-card__icon--tasks {
-  color: #1d7a43;
+    color: #1d7a43;
 }
 
 .dashboard-my-work-card__icon--deadlines {
-  color: #945314;
+    color: #945314;
 }
 
 .dashboard-my-work-card__icon--events {
-  color: #ef7407;
+    color: #ef7407;
 }
 
 .dashboard-my-work-card__title {
-  overflow: hidden;
+    overflow: hidden;
 
-  margin: 0;
+    margin: 0;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: 0.86rem;
-  font-weight: 700;
+    font-size: 0.86rem;
+    font-weight: 700;
 
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-my-work-card__count {
-  display: inline-flex;
+    display: inline-flex;
 
-  min-height: 1.55rem;
+    min-height: 1.55rem;
 
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
 
-  padding:
-    0.2rem 0.65rem;
+    padding:
+        0.2rem 0.65rem;
 
-  border-radius: 999px;
+    border-radius: 999px;
 
-  font-size: 0.68rem;
-  font-weight: 700;
+    font-size: 0.68rem;
+    font-weight: 700;
 
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 .dashboard-my-work-card__count--tasks {
-  background: #e8f5e8;
-  color: #337c35;
+    background: #e8f5e8;
+    color: #337c35;
 }
 
 .dashboard-my-work-card__count--deadlines {
-  background: #fff5df;
-  color: #aa6500;
+    background: #fff5df;
+    color: #aa6500;
 }
 
 .dashboard-my-work-card__count--events {
-  background: #ffebe2;
-  color: #d94720;
+    background: #ffebe2;
+    color: #d94720;
 }
 
 .dashboard-my-work-card__body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
 
-  padding:
-    0 var(--space-3);
+    padding:
+        0 var(--space-3);
 }
 
 .dashboard-my-work-card__empty {
-  display: grid;
-  min-height: 8rem;
-  flex: 1;
-  place-items: center;
+    display: grid;
+    min-height: 8rem;
+    flex: 1;
+    place-items: center;
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: var(--font-size-sm);
+    font-size: var(--font-size-sm);
 
-  text-align: center;
+    text-align: center;
 }
 
 .dashboard-my-work-row {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    2rem minmax(0, 1fr) auto;
+    grid-template-columns:
+        2rem minmax(0, 1fr) auto;
 
-  align-items: center;
-  gap: var(--space-2);
+    align-items: center;
+    gap: var(--space-2);
 
-  min-height: 5.25rem;
+    min-height: 5.25rem;
 
-  padding:
-    var(--space-3) 0;
+    padding:
+        var(--space-3) 0;
 
-  border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-my-work-row:last-child {
-  border-bottom: 0;
+    border-bottom: 0;
 }
 
 .dashboard-my-work-row__leading {
-  display: inline-grid;
+    display: inline-grid;
 
-  width: 2rem;
-  height: 2rem;
+    width: 2rem;
+    height: 2rem;
 
-  place-items: center;
+    place-items: center;
 
-  border-radius: 999px;
+    border-radius: 999px;
 
-  font-size: 1rem;
-  font-weight: 700;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 .dashboard-my-work-row__leading svg {
-  width: 1rem;
-  height: 1rem;
+    width: 1rem;
+    height: 1rem;
 
-  stroke-width: 1.8;
+    stroke-width: 1.8;
 }
 
 .dashboard-my-work-row__leading--task-high {
-  background: #ffe1df;
-  color: #df3735;
+    background: #ffe1df;
+    color: #df3735;
 }
 
 .dashboard-my-work-row__leading--task-medium,
 .dashboard-my-work-row__leading--task-low {
-  background: #f8efe5;
-  color: #a76a23;
+    background: #f8efe5;
+    color: #a76a23;
 }
 
 .dashboard-my-work-row__leading--deadline {
-  background: #f6f0e9;
-  color: #8d541e;
+    background: #f6f0e9;
+    color: #8d541e;
 }
 
 .dashboard-my-work-row__leading--event {
-  background: #fff3e3;
-  color: #ef7407;
+    background: #fff3e3;
+    color: #ef7407;
 }
 
 .dashboard-my-work-row__main {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.25rem;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .dashboard-my-work-row__title {
-  overflow: hidden;
+    overflow: hidden;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: 0.78rem;
-  font-weight: 700;
+    font-size: 0.78rem;
+    font-weight: 700;
 
-  line-height: 1.25;
+    line-height: 1.25;
 
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-my-work-row__context {
-  overflow: hidden;
+    overflow: hidden;
 
-  max-width: 100%;
+    max-width: 100%;
 
-  padding: 0;
+    padding: 0;
 
-  border: 0;
+    border: 0;
 
-  background: transparent;
+    background: transparent;
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font: inherit;
-  font-size: 0.7rem;
+    font: inherit;
+    font-size: 0.7rem;
 
-  line-height: 1.25;
+    line-height: 1.25;
 
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 button.dashboard-my-work-row__context {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 button.dashboard-my-work-row__context:hover {
-  color: var(--color-primary);
+    color: var(--color-primary);
 
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 button.dashboard-my-work-row__context:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 
-  border-radius: var(--radius-sm);
+    border-radius: var(--radius-sm);
 }
 
 .dashboard-my-work-row__aside {
-  display: flex;
+    display: flex;
 
-  min-width: 4.6rem;
+    min-width: 4.6rem;
 
-  align-items: flex-end;
-  flex-direction: column;
-  gap: 0.25rem;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 0.25rem;
 
-  text-align: right;
+    text-align: right;
 }
 
 .dashboard-my-work-row__priority {
-  display: inline-flex;
+    display: inline-flex;
 
-  min-height: 1.35rem;
+    min-height: 1.35rem;
 
-  align-items: center;
+    align-items: center;
 
-  padding:
-    0.12rem 0.5rem;
+    padding:
+        0.12rem 0.5rem;
 
-  border-radius: 999px;
+    border-radius: 999px;
 
-  font-size: 0.66rem;
-  font-weight: 700;
+    font-size: 0.66rem;
+    font-weight: 700;
 }
 
 .dashboard-my-work-row__priority--high {
-  background: #ffe4e0;
-  color: #db3c35;
+    background: #ffe4e0;
+    color: #db3c35;
 }
 
 .dashboard-my-work-row__priority--medium {
-  background: #fff2db;
-  color: #d6810b;
+    background: #fff2db;
+    color: #d6810b;
 }
 
 .dashboard-my-work-row__priority--low {
-  background: #e8f5e8;
-  color: #337c35;
+    background: #e8f5e8;
+    color: #337c35;
 }
 
 .dashboard-my-work-row__date {
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: 0.66rem;
+    font-size: 0.66rem;
 
-  line-height: 1.2;
+    line-height: 1.2;
 }
 
 .dashboard-my-work-row__date--primary {
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-weight: 500;
+    font-weight: 500;
 }
 
 .dashboard-my-work-card__footer {
-  display: flex;
+    display: flex;
 
-  min-height: 2.55rem;
+    min-height: 2.55rem;
 
-  align-items: center;
-  justify-content: flex-end;
+    align-items: center;
+    justify-content: flex-end;
 
-  margin-top: auto;
+    margin-top: auto;
 
-  padding:
-    var(--space-2) var(--space-3);
+    padding:
+        var(--space-2) var(--space-3);
 
-  border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border);
 }
 
 .dashboard-my-work-card__footer-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
 
-  padding: 0;
+    padding: 0;
 
-  border: 0;
+    border: 0;
 
-  background: transparent;
+    background: transparent;
 
-  font: inherit;
-  font-size: 0.68rem;
-  font-weight: 650;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 650;
 
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 button.dashboard-my-work-card__footer-link {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 .dashboard-my-work-card__footer-link--tasks {
-  color: #23763f;
+    color: #23763f;
 }
 
 .dashboard-my-work-card__footer-link--deadlines {
-  color: #ad5d13;
+    color: #ad5d13;
 }
 
 .dashboard-my-work-card__footer-link--events {
-  color: #e46900;
+    color: #e46900;
 }
 
 button.dashboard-my-work-card__footer-link:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 button.dashboard-my-work-card__footer-link:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
 
-  border-radius: var(--radius-sm);
+    border-radius: var(--radius-sm);
 }
 
 
 /* Atividade recente + Pastas recentes */
 
 .dashboard-recent-panel {
-  min-width: 0;
+    min-width: 0;
 }
 
 .dashboard-recent-panel__grid {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    minmax(0, 1fr) minmax(0, 1.08fr);
+    grid-template-columns:
+        minmax(0, 1fr) minmax(0, 1.08fr);
 
-  gap: var(--space-2);
+    gap: var(--space-2);
 }
 
 .dashboard-recent-card {
-  display: flex;
-  min-width: 0;
-  min-height: 19rem;
-  flex-direction: column;
+    display: flex;
+    min-width: 0;
+    min-height: 19rem;
+    flex-direction: column;
 
-  overflow: hidden;
+    overflow: hidden;
 
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
 
-  background: var(--color-surface);
+    background: var(--color-surface);
 
-  box-shadow:
-    0 6px 18px color-mix(in srgb,
-      var(--color-text) 4%,
-      transparent);
+    box-shadow:
+        0 6px 18px color-mix(in srgb,
+            var(--color-text) 4%,
+            transparent);
 }
 
 .dashboard-recent-card__header {
-  display: flex;
-  min-height: 3.1rem;
-  align-items: center;
+    display: flex;
+    min-height: 3.1rem;
+    align-items: center;
 
-  padding:
-    var(--space-2) var(--space-3);
+    padding:
+        var(--space-2) var(--space-3);
 
-  border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-recent-card__heading {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: var(--space-2);
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .dashboard-recent-card__header-icon {
-  display: inline-grid;
+    display: inline-grid;
 
-  width: 1.25rem;
-  height: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
 
-  flex: 0 0 auto;
+    flex: 0 0 auto;
 
-  place-items: center;
+    place-items: center;
 }
 
 .dashboard-recent-card__header-icon svg {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 
-  stroke-width: 1.8;
+    stroke-width: 1.8;
 }
 
 .dashboard-recent-card__header-icon--activity {
-  color: #23763f;
+    color: #23763f;
 }
 
 .dashboard-recent-card__header-icon--folders {
-  color: #b86b12;
+    color: #b86b12;
 }
 
 .dashboard-recent-card__title {
-  overflow: hidden;
+    overflow: hidden;
 
-  margin: 0;
+    margin: 0;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: 0.78rem;
-  font-weight: 800;
+    font-size: 0.78rem;
+    font-weight: 800;
 
-  letter-spacing: 0.015em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
+    letter-spacing: 0.015em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .dashboard-recent-card__body {
-  display: flex;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
 
-  padding:
-    0 var(--space-3);
+    padding:
+        0 var(--space-3);
 }
 
 .dashboard-recent-card__body--timeline {
-  padding-left: var(--space-2);
+    padding-left: var(--space-2);
 }
 
 .dashboard-recent-card__empty {
-  display: grid;
-  min-height: 9rem;
-  flex: 1;
+    display: grid;
+    min-height: 9rem;
+    flex: 1;
 
-  place-items: center;
+    place-items: center;
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: var(--font-size-sm);
+    font-size: var(--font-size-sm);
 
-  text-align: center;
+    text-align: center;
 }
 
 .dashboard-recent-card__footer {
-  display: flex;
-  min-height: 2.55rem;
-  align-items: center;
-  justify-content: flex-end;
+    display: flex;
+    min-height: 2.55rem;
+    align-items: center;
+    justify-content: flex-end;
 
-  margin-top: auto;
+    margin-top: auto;
 
-  padding:
-    var(--space-2) var(--space-3);
+    padding:
+        var(--space-2) var(--space-3);
 
-  border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border);
 }
 
 .dashboard-recent-card__link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
 
-  font-size: 0.68rem;
-  font-weight: 650;
+    font-size: 0.68rem;
+    font-weight: 650;
 
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 .dashboard-recent-card__link--activity,
 .dashboard-recent-card__link--folders {
-  color: #23763f;
+    color: #23763f;
 }
 
 /* Timeline de atividade */
 
 .dashboard-recent-timeline {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
 }
 
 .dashboard-recent-timeline__item {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    1.35rem 3.6rem minmax(0, 1fr);
+    grid-template-columns:
+        1.35rem 3.6rem minmax(0, 1fr);
 
-  gap: var(--space-2);
+    gap: var(--space-2);
 
-  min-height: 4.75rem;
+    min-height: 4.75rem;
 
-  padding:
-    var(--space-2) 0;
+    padding:
+        var(--space-2) 0;
 
-  border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-recent-timeline__item:last-child {
-  border-bottom: 0;
+    border-bottom: 0;
 }
 
 .dashboard-recent-timeline__rail {
-  position: relative;
+    position: relative;
 
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
 }
 
 .dashboard-recent-timeline__marker {
-  position: relative;
-  z-index: 2;
+    position: relative;
+    z-index: 2;
 
-  display: grid;
+    display: grid;
 
-  width: 0.9rem;
-  height: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
 
-  margin-top: 0.15rem;
+    margin-top: 0.15rem;
 
-  place-items: center;
+    place-items: center;
 
-  border: 2px solid #23763f;
-  border-radius: 999px;
+    border: 2px solid #23763f;
+    border-radius: 999px;
 
-  background: var(--color-surface);
+    background: var(--color-surface);
 }
 
 .dashboard-recent-timeline__marker>span {
-  width: 0.28rem;
-  height: 0.28rem;
+    width: 0.28rem;
+    height: 0.28rem;
 
-  border-radius: 999px;
+    border-radius: 999px;
 
-  background: #23763f;
+    background: #23763f;
 }
 
 .dashboard-recent-timeline__marker--first {
-  border-color: #19813f;
+    border-color: #19813f;
 
-  background: #19813f;
-  color: white;
+    background: #19813f;
+    color: white;
 }
 
 .dashboard-recent-timeline__marker--first svg {
-  width: 0.58rem;
-  height: 0.58rem;
+    width: 0.58rem;
+    height: 0.58rem;
 
-  stroke-width: 2.5;
+    stroke-width: 2.5;
 }
 
 .dashboard-recent-timeline__line {
-  position: absolute;
+    position: absolute;
 
-  top: 0.95rem;
-  bottom: -1.2rem;
-  left: 50%;
+    top: 0.95rem;
+    bottom: -1.2rem;
+    left: 50%;
 
-  width: 1px;
+    width: 1px;
 
-  transform: translateX(-50%);
+    transform: translateX(-50%);
 
-  background:
-    color-mix(in srgb,
-      #23763f 52%,
-      var(--color-border));
+    background:
+        color-mix(in srgb,
+            #23763f 52%,
+            var(--color-border));
 }
 
 .dashboard-recent-timeline__time {
-  padding-top: 0.05rem;
+    padding-top: 0.05rem;
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: 0.66rem;
+    font-size: 0.66rem;
 
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 .dashboard-recent-timeline__content {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.25rem;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .dashboard-recent-timeline__title {
-  overflow: hidden;
+    overflow: hidden;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: 0.72rem;
-  font-weight: 700;
+    font-size: 0.72rem;
+    font-weight: 700;
 
-  line-height: 1.25;
+    line-height: 1.25;
 
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-recent-timeline__detail {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: baseline;
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: baseline;
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: 0.65rem;
+    font-size: 0.65rem;
 
-  line-height: 1.35;
+    line-height: 1.35;
 }
 
 .dashboard-recent-timeline__folder {
-  overflow: hidden;
+    overflow: hidden;
 
-  max-width: 100%;
+    max-width: 100%;
 
-  padding: 0;
+    padding: 0;
 
-  border: 0;
+    border: 0;
 
-  background: transparent;
+    background: transparent;
 
-  color: inherit;
+    color: inherit;
 
-  cursor: pointer;
+    cursor: pointer;
 
-  font: inherit;
+    font: inherit;
 
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-recent-timeline__folder:hover {
-  color: var(--color-primary);
+    color: var(--color-primary);
 
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .dashboard-recent-timeline__folder:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 
-  border-radius: var(--radius-sm);
+    border-radius: var(--radius-sm);
 }
 
 /* Pastas recentes */
 
 .dashboard-recent-folders {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
 }
 
 .dashboard-recent-folder {
-  display: grid;
+    display: grid;
 
-  grid-template-columns:
-    1.5rem minmax(0, 1fr) auto;
+    grid-template-columns:
+        1.5rem minmax(0, 1fr) auto;
 
-  align-items: center;
-  gap: var(--space-2);
+    align-items: center;
+    gap: var(--space-2);
 
-  min-height: 4.75rem;
+    min-height: 4.75rem;
 
-  padding:
-    var(--space-2) 0;
+    padding:
+        var(--space-2) 0;
 
-  border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-recent-folder:last-child {
-  border-bottom: 0;
+    border-bottom: 0;
 }
 
 .dashboard-recent-folder__icon {
-  display: inline-grid;
+    display: inline-grid;
 
-  width: 1.35rem;
-  height: 1.35rem;
+    width: 1.35rem;
+    height: 1.35rem;
 
-  place-items: center;
+    place-items: center;
 
-  color: #f3a21a;
+    color: #f3a21a;
 }
 
 .dashboard-recent-folder__icon svg {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 
-  stroke-width: 1.8;
+    stroke-width: 1.8;
 }
 
 .dashboard-recent-folder__main {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.25rem;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.25rem;
 
-  padding: 0;
+    padding: 0;
 
-  border: 0;
+    border: 0;
 
-  background: transparent;
+    background: transparent;
 
-  cursor: pointer;
+    cursor: pointer;
 
-  font: inherit;
+    font: inherit;
 
-  text-align: left;
+    text-align: left;
 }
 
 .dashboard-recent-folder__name {
-  overflow: hidden;
+    overflow: hidden;
 
-  color: var(--color-text);
+    color: var(--color-text);
 
-  font-size: 0.72rem;
-  font-weight: 700;
+    font-size: 0.72rem;
+    font-weight: 700;
 
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-recent-folder__meta {
-  overflow: hidden;
+    overflow: hidden;
 
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: 0.65rem;
+    font-size: 0.65rem;
 
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-recent-folder__main:hover .dashboard-recent-folder__name {
-  color: var(--color-primary);
+    color: var(--color-primary);
 
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .dashboard-recent-folder__main:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 3px;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
 
-  border-radius: var(--radius-sm);
+    border-radius: var(--radius-sm);
 }
 
 .dashboard-recent-folder__date {
-  color: var(--color-text-muted);
+    color: var(--color-text-muted);
 
-  font-size: 0.62rem;
+    font-size: 0.62rem;
 
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 @media (max-width: 980px) {
-  .dashboard-recent-panel__grid {
-    grid-template-columns: 1fr;
-  }
+    .dashboard-recent-panel__grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 620px) {
-  .dashboard-recent-folder {
-    grid-template-columns:
-      1.5rem minmax(0, 1fr);
-  }
+    .dashboard-recent-folder {
+        grid-template-columns:
+            1.5rem minmax(0, 1fr);
+    }
 
-  .dashboard-recent-folder__date {
-    grid-column: 2;
-  }
+    .dashboard-recent-folder__date {
+        grid-column: 2;
+    }
 
-  .dashboard-recent-timeline__item {
-    grid-template-columns:
-      1.2rem 3rem minmax(0, 1fr);
-  }
+    .dashboard-recent-timeline__item {
+        grid-template-columns:
+            1.2rem 3rem minmax(0, 1fr);
+    }
 }
 
 /* Responsividade */
 
 @media (max-width: 1180px) {
-  .dashboard-priorities-layout {
-    grid-template-columns: 1fr;
-  }
+    .dashboard-priorities-layout {
+        grid-template-columns: 1fr;
+    }
 
-  .dashboard-office-movement {
-    grid-template-columns: 1fr;
-  }
+    .dashboard-office-movement {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 1100px) {
 
-  .dashboard-my-work-grid {
-    grid-template-columns: 1fr;
-  }
+    .dashboard-my-work-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 1050px) {
-  .dashboard-stat-card__body {
-    gap: 1rem;
-    padding-inline: 18px;
-  }
+    .dashboard-stat-card__body {
+        gap: 1rem;
+        padding-inline: 18px;
+    }
 
-  .dashboard-stat-card__icon {
-    width: 62px;
-    height: 62px;
-    flex-basis: 62px;
-  }
+    .dashboard-stat-card__icon {
+        width: 62px;
+        height: 62px;
+        flex-basis: 62px;
+    }
 
-  .dashboard-stat-card__icon svg {
-    width: 32px;
-    height: 32px;
-  }
+    .dashboard-stat-card__icon svg {
+        width: 32px;
+        height: 32px;
+    }
 }
 
 @media (max-width: 900px) {
 
-  .dashboard-summary {
-    grid-template-columns: 1fr;
-  }
+    .dashboard-summary {
+        grid-template-columns: 1fr;
+    }
 
-  .dashboard-legal-alerts {
-    grid-template-columns: 1fr;
-  }
+    .dashboard-legal-alerts {
+        grid-template-columns: 1fr;
+    }
 }
 
 
 @media (max-width: 760px) {
-  .dashboard-my-work-panel {
-    padding: var(--space-2);
-  }
+    .dashboard-my-work-panel {
+        padding: var(--space-2);
+    }
 
-  .dashboard-my-work-card {
-    min-height: auto;
-  }
+    .dashboard-my-work-card {
+        min-height: auto;
+    }
 
-  .dashboard-my-work-row {
-    grid-template-columns:
-      2rem minmax(0, 1fr);
-  }
+    .dashboard-my-work-row {
+        grid-template-columns:
+            2rem minmax(0, 1fr);
+    }
 
-  .dashboard-my-work-row__aside {
-    grid-column: 2;
+    .dashboard-my-work-row__aside {
+        grid-column: 2;
 
-    min-width: 0;
+        min-width: 0;
 
-    align-items: flex-start;
-    flex-direction: row;
-    flex-wrap: wrap;
+        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
 
-    text-align: left;
-  }
+        text-align: left;
+    }
 
-  .dashboard-my-work-card__footer {
-    justify-content: flex-start;
-  }
+    .dashboard-my-work-card__footer {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 640px) {
-  .dashboard-header {
-    flex-direction: column;
-  }
+    .dashboard-header {
+        flex-direction: column;
+    }
 
-  .dashboard-actions {
-    width: 100%;
+    .dashboard-actions {
+        width: 100%;
 
-    justify-content: flex-start;
-  }
+        justify-content: flex-start;
+    }
 
-  .dashboard-attention-item-heading {
-    flex-direction: column;
-  }
+    .dashboard-attention-item-heading {
+        flex-direction: column;
+    }
 
-  .dashboard-item-actions {
-    justify-content: flex-start;
-  }
+    .dashboard-item-actions {
+        justify-content: flex-start;
+    }
 
 
 }
 
 /* Prioridades do dia + agenda — composição de referência */
 .dashboard-visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
 }
 
 .dashboard-focus-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: 0;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  border-radius: 12px;
-  background: var(--color-surface);
-  box-shadow: 0 5px 16px rgb(39 32 23 / 8%);
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: 0 5px 16px rgb(39 32 23 / 8%);
 }
 
 .dashboard-focus-panel__priorities,
 .dashboard-focus-panel__agenda {
-  min-width: 0;
+    min-width: 0;
 }
 
 .dashboard-focus-panel__priorities {
-  border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
 }
 
 .dashboard-focus-panel__header {
-  display: flex;
-  min-height: 52px;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 0 20px;
-  border-bottom: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-surface-muted));
+    display: flex;
+    min-height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-surface) 94%, var(--color-surface-muted));
 }
 
 .dashboard-focus-panel__heading {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 12px;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
 }
 
 .dashboard-focus-panel__header-icon {
-  display: grid;
-  width: 21px;
-  height: 21px;
-  flex: 0 0 auto;
-  place-items: center;
+    display: grid;
+    width: 21px;
+    height: 21px;
+    flex: 0 0 auto;
+    place-items: center;
 }
 
 .dashboard-focus-panel__header-icon svg {
-  width: 21px;
-  height: 21px;
-  stroke-width: 1.7;
+    width: 21px;
+    height: 21px;
+    stroke-width: 1.7;
 }
 
 .dashboard-focus-panel__header-icon--danger {
-  color: #d33a32;
+    color: #d33a32;
 }
 
 .dashboard-focus-panel__header-icon--warning {
-  color: #ee6900;
+    color: #ee6900;
 }
 
 .dashboard-focus-panel__title {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 0.84rem;
-  font-weight: 800;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
+    margin: 0;
+    color: var(--color-text);
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
 }
 
 .dashboard-priority-list {
-  padding: 0 18px;
+    padding: 0 18px;
 }
 
 .dashboard-priority-block {
-  border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-priority-block:last-child {
-  border-bottom: 0;
+    border-bottom: 0;
 }
 
 .dashboard-priority-row {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 38px minmax(0, 1fr) 18px;
-  align-items: center;
-  gap: 12px;
-  min-height: 61px;
-  padding: 8px 4px 8px 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
+    display: grid;
+    width: 100%;
+    grid-template-columns: 38px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 12px;
+    min-height: 61px;
+    padding: 8px 4px 8px 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
 }
 
 .dashboard-priority-row:hover {
-  background: color-mix(in srgb, var(--color-surface-muted) 42%, transparent);
+    background: color-mix(in srgb, var(--color-surface-muted) 42%, transparent);
 }
 
 .dashboard-priority-row:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
-  border-radius: var(--radius-md);
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    border-radius: var(--radius-md);
 }
 
 .dashboard-priority-row__icon {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  font-size: 1.15rem;
-  font-weight: 800;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 800;
 }
 
 .dashboard-priority-row__icon svg {
-  width: 19px;
-  height: 19px;
-  stroke-width: 1.8;
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.8;
 }
 
 .dashboard-priority-row__icon--danger {
-  background: #d52e2e;
+    background: #d52e2e;
 }
 
 .dashboard-priority-row__content {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .dashboard-priority-row__title {
-  color: var(--color-text);
-  font-size: 0.91rem;
-  font-weight: 750;
-  line-height: 1.2;
+    color: var(--color-text);
+    font-size: 0.91rem;
+    font-weight: 750;
+    line-height: 1.2;
 }
 
 .dashboard-priority-row__description {
-  overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: 0.77rem;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: 0.77rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-priority-row__chevron {
-  color: var(--color-text-muted);
-  font-size: 1.45rem;
-  line-height: 1;
-  text-align: center;
-  transition: transform 160ms ease;
+    color: var(--color-text-muted);
+    font-size: 1.45rem;
+    line-height: 1;
+    text-align: center;
+    transition: transform 160ms ease;
 }
 
 .dashboard-priority-row[aria-expanded='true'] .dashboard-priority-row__chevron {
-  transform: rotate(90deg);
+    transform: rotate(90deg);
 }
 
 .dashboard-priority-details {
-  padding: 0 8px 12px 50px;
+    padding: 0 8px 12px 50px;
 }
 
 .dashboard-priority-details__empty {
-  padding: 6px 0 4px;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+    padding: 6px 0 4px;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
 }
 
 .dashboard-priority-details__item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: 10px 0;
-  border-top: 1px dashed var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 10px 0;
+    border-top: 1px dashed var(--color-border);
 }
 
 .dashboard-agenda-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-primary);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.74rem;
-  font-weight: 750;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-primary);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.74rem;
+    font-weight: 750;
 }
 
 .dashboard-agenda-link:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .dashboard-timeline {
-  position: relative;
-  padding: 5px 18px 6px 18px;
+    position: relative;
+    padding: 5px 18px 6px 18px;
 }
 
 .dashboard-timeline__empty {
-  display: flex;
-  min-height: 176px;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+    display: flex;
+    min-height: 176px;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
 }
 
 .dashboard-timeline__item {
-  position: relative;
-  display: grid;
-  grid-template-columns: 52px 14px minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 10px;
-  min-height: 57px;
-  padding: 10px 0;
+    position: relative;
+    display: grid;
+    grid-template-columns: 52px 14px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    min-height: 57px;
+    padding: 10px 0;
 }
 
 .dashboard-timeline__time {
-  padding-top: 1px;
-  color: var(--color-text);
-  font-size: 0.84rem;
-  font-weight: 700;
-  text-align: right;
+    padding-top: 1px;
+    color: var(--color-text);
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-align: right;
 }
 
 .dashboard-timeline__marker {
-  position: relative;
-  width: 12px;
-  height: 12px;
-  margin-top: 2px;
-  border: 3px solid #ef7407;
-  border-radius: 50%;
-  background: var(--color-surface);
+    position: relative;
+    width: 12px;
+    height: 12px;
+    margin-top: 2px;
+    border: 3px solid #ef7407;
+    border-radius: 50%;
+    background: var(--color-surface);
 }
 
 .dashboard-timeline__marker::after {
-  position: absolute;
-  top: 10px;
-  left: 2px;
-  width: 1px;
-  height: 48px;
-  background: color-mix(in srgb, #ef7407 30%, var(--color-border));
-  content: '';
+    position: absolute;
+    top: 10px;
+    left: 2px;
+    width: 1px;
+    height: 48px;
+    background: color-mix(in srgb, #ef7407 30%, var(--color-border));
+    content: '';
 }
 
 .dashboard-timeline__marker--task {
-  border-color: var(--color-primary);
+    border-color: var(--color-primary);
 }
 
 .dashboard-timeline__marker--deadline {
-  border-color: var(--color-danger);
+    border-color: var(--color-danger);
 }
 
 .dashboard-timeline__marker--event {
-  border-color: #ef7407;
+    border-color: #ef7407;
 }
 
 .dashboard-timeline__item:last-child .dashboard-timeline__marker::after {
-  display: none;
+    display: none;
 }
 
 .dashboard-timeline__content {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 3px;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
 }
 
 .dashboard-timeline__title {
-  overflow: hidden;
-  color: var(--color-text);
-  font-size: 0.89rem;
-  font-weight: 750;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    overflow: hidden;
+    color: var(--color-text);
+    font-size: 0.89rem;
+    font-weight: 750;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-timeline__detail {
-  overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: 0.76rem;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: 0.76rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-timeline__badge {
-  display: inline-flex;
-  min-width: 74px;
-  min-height: 26px;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 12px;
-  border-radius: 7px;
-  background: #fff3e5;
-  color: #a65a12;
-  font-size: 0.72rem;
-  font-weight: 650;
-  white-space: nowrap;
+    display: inline-flex;
+    min-width: 74px;
+    min-height: 26px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 7px;
+    background: #fff3e5;
+    color: #a65a12;
+    font-size: 0.72rem;
+    font-weight: 650;
+    white-space: nowrap;
 }
 
 .dashboard-timeline__badge--task {
-  background:
-    color-mix(in srgb,
-      var(--color-primary) 10%,
-      var(--color-surface));
+    background:
+        color-mix(in srgb,
+            var(--color-primary) 10%,
+            var(--color-surface));
 
-  color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .dashboard-timeline__badge--deadline {
-  background:
-    color-mix(in srgb,
-      var(--color-danger) 9%,
-      var(--color-surface));
+    background:
+        color-mix(in srgb,
+            var(--color-danger) 9%,
+            var(--color-surface));
 
-  color: var(--color-danger);
+    color: var(--color-danger);
 }
 
 .dashboard-timeline__badge--event {
-  background: #fff3e5;
-  color: #a65a12;
+    background: #fff3e5;
+    color: #a65a12;
 }
 
 @media (max-width: 1180px) {
-  .dashboard-focus-panel {
-    grid-template-columns: 1fr;
-  }
+    .dashboard-focus-panel {
+        grid-template-columns: 1fr;
+    }
 
-  .dashboard-focus-panel__priorities {
-    border-right: 0;
-    border-bottom: 1px solid var(--color-border);
-  }
+    .dashboard-focus-panel__priorities {
+        border-right: 0;
+        border-bottom: 1px solid var(--color-border);
+    }
 }
 
 @media (max-width: 640px) {
-  .dashboard-focus-panel__header {
-    min-height: auto;
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 14px 16px;
-  }
+    .dashboard-focus-panel__header {
+        min-height: auto;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 16px;
+    }
 
-  .dashboard-priority-list {
-    padding: 0 14px;
-  }
+    .dashboard-priority-list {
+        padding: 0 14px;
+    }
 
-  .dashboard-priority-row {
-    grid-template-columns: 36px minmax(0, 1fr) 16px;
-  }
+    .dashboard-priority-row {
+        grid-template-columns: 36px minmax(0, 1fr) 16px;
+    }
 
-  .dashboard-priority-details {
-    padding-left: 48px;
-  }
+    .dashboard-priority-details {
+        padding-left: 48px;
+    }
 
-  .dashboard-timeline {
-    padding-right: 14px;
-    padding-left: 14px;
-  }
+    .dashboard-timeline {
+        padding-right: 14px;
+        padding-left: 14px;
+    }
 
-  .dashboard-timeline__item {
-    grid-template-columns: 44px 12px minmax(0, 1fr);
-  }
+    .dashboard-timeline__item {
+        grid-template-columns: 44px 12px minmax(0, 1fr);
+    }
 
-  .dashboard-timeline__badge {
-    grid-column: 3;
-    justify-self: start;
-    min-width: auto;
-  }
+    .dashboard-timeline__badge {
+        grid-column: 3;
+        justify-self: start;
+        min-width: auto;
+    }
 }
 </style>

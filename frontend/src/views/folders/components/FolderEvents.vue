@@ -154,22 +154,22 @@
 
                         <div class="folder-events__badges">
                             <span class="folder-events__badge" :class="`folder-events__badge--${event.type}`">
-                                {{ typeLabel(event.type) }}
+                                {{ folderEventTypeLabel(event.type) }}
                             </span>
 
                             <span class="folder-events__badge" :class="`folder-events__badge--${event.status}`">
-                                {{ statusLabel(event.status) }}
+                                {{ folderEventStatusLabel(event.status) }}
                             </span>
                         </div>
                     </div>
 
                     <div class="folder-events__schedule">
                         <time class="folder-events__date" :datetime="event.starts_at">
-                            {{ displayDateTime(event.starts_at) }}
+                            {{ formatShortDateTime(event.starts_at) }}
                         </time>
 
                         <span v-if="event.ends_at" class="folder-events__end-date">
-                            até {{ displayDateTime(event.ends_at) }}
+                            até {{ formatShortDateTime(event.ends_at) }}
                         </span>
                     </div>
                 </div>
@@ -191,7 +191,7 @@
 
                     <span v-if="event.completed_at">
                         Concluído em:
-                        {{ displayDateTime(event.completed_at) }}
+                        {{ formatShortDateTime(event.completed_at) }}
                     </span>
                 </div>
 
@@ -229,6 +229,15 @@ import {
     AppButton,
     AppConfirmDialog,
 } from '@/components/ui'
+
+import {
+    formatShortDateTime,
+} from '@/utils/date'
+
+import {
+    folderEventTypeLabel,
+    folderEventStatusLabel,
+} from '@/constants/folder'
 
 import {
     useAuthStore,
@@ -351,74 +360,6 @@ function cancelCreate() {
 
     isCreating.value =
         false
-}
-
-function typeLabel(type) {
-    const labels = {
-        hearing:
-            'Audiência',
-
-        meeting:
-            'Reunião',
-
-        expert_exam:
-            'Perícia',
-
-        diligence:
-            'Diligência',
-
-        other:
-            'Outro',
-    }
-
-    return labels[type] ??
-        type ??
-        '—'
-}
-
-function statusLabel(status) {
-    const labels = {
-        scheduled:
-            'Agendado',
-
-        completed:
-            'Concluído',
-
-        cancelled:
-            'Cancelado',
-    }
-
-    return labels[status] ??
-        status ??
-        '—'
-}
-
-function displayDateTime(value) {
-    if (!value) {
-        return '—'
-    }
-
-    const date =
-        new Date(value)
-
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
-        return value
-    }
-
-    return new Intl.DateTimeFormat(
-        'pt-BR',
-        {
-            dateStyle:
-                'short',
-
-            timeStyle:
-                'short',
-        },
-    ).format(date)
 }
 
 function localDateTimeToUtc(value) {

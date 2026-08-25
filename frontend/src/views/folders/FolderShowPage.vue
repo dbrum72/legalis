@@ -138,7 +138,7 @@
 
                                                 <time v-if="deadline.due_at" class="folder-show-page__attention-date"
                                                     :datetime="deadline.due_at">
-                                                    {{ displayDate(deadline.due_at) }}
+                                                    {{ formatShortDate(deadline.due_at) }}
                                                 </time>
                                             </article>
                                         </div>
@@ -181,13 +181,13 @@
                                                     </strong>
 
                                                     <span class="folder-show-page__attention-priority">
-                                                        {{ priorityLabel(task.priority) }}
+                                                        {{ folderPriorityLabel(task.priority) }}
                                                     </span>
                                                 </div>
 
                                                 <time v-if="task.due_at" class="folder-show-page__attention-date"
                                                     :datetime="task.due_at">
-                                                    {{ displayDate(task.due_at) }}
+                                                    {{ formatShortDate(task.due_at) }}
                                                 </time>
 
                                                 <span v-else class="folder-show-page__attention-date">
@@ -213,7 +213,7 @@
                                         </span>
 
                                         <span v-if="summary.next_event" class="folder-show-page__highlight-type">
-                                            {{ eventTypeLabel(summary.next_event.type) }}
+                                            {{ folderEventTypeLabel(summary.next_event.type) }}
                                         </span>
                                     </div>
 
@@ -225,7 +225,7 @@
                                         <div class="folder-show-page__highlight-meta">
                                             <span v-if="summary.next_event.starts_at">
                                                 {{
-                                                    displayDateTime(
+                                                    formatShortDateTime(
                                                         summary.next_event.starts_at,
                                                     )
                                                 }}
@@ -259,7 +259,7 @@
                                         <div class="folder-show-page__highlight-meta">
                                             <span v-if="summary.latest_movement.occurred_at">
                                                 {{
-                                                    displayDateTime(
+                                                    formatShortDateTime(
                                                         summary.latest_movement.occurred_at,
                                                     )
                                                 }}
@@ -415,6 +415,16 @@ import {
     AppTable,
     AppTabs,
 } from '@/components/ui'
+
+import {
+    formatShortDate,
+    formatShortDateTime,
+} from '@/utils/date'
+
+import {
+    folderEventTypeLabel,
+    folderPriorityLabel,
+} from '@/constants/folder'
 
 import FolderDeadlines from '@/views/folders/components/FolderDeadlines.vue'
 import FolderDocuments from '@/views/folders/components/FolderDocuments.vue'
@@ -573,57 +583,6 @@ function displayValue(value) {
     return value
 }
 
-function displayDateTime(value) {
-    if (!value) {
-        return '—'
-    }
-
-    const date =
-        new Date(value)
-
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
-        return value
-    }
-
-    return new Intl.DateTimeFormat(
-        'pt-BR',
-        {
-            dateStyle:
-                'short',
-
-            timeStyle:
-                'short',
-        },
-    ).format(date)
-}
-
-function eventTypeLabel(type) {
-    const labels = {
-        hearing:
-            'Audiência',
-
-        meeting:
-            'Reunião',
-
-        expert_exam:
-            'Perícia',
-
-        diligence:
-            'Diligência',
-
-        other:
-            'Outro',
-    }
-
-    return labels[type] ??
-        type ??
-        '—'
-}
-
 function urgencyLabel(urgency) {
     const labels = {
         overdue:
@@ -641,47 +600,6 @@ function urgencyLabel(urgency) {
 
     return labels[urgency] ??
         '—'
-}
-
-function priorityLabel(priority) {
-    const labels = {
-        high:
-            'Alta',
-
-        medium:
-            'Média',
-
-        low:
-            'Baixa',
-    }
-
-    return labels[priority] ??
-        '—'
-}
-
-function displayDate(value) {
-    if (!value) {
-        return ''
-    }
-
-    const date =
-        new Date(value)
-
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
-        return value
-    }
-
-    return new Intl.DateTimeFormat(
-        'pt-BR',
-        {
-            dateStyle:
-                'short',
-        },
-    ).format(date)
 }
 
 function goBack() {

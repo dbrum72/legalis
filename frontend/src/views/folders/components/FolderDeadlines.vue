@@ -94,12 +94,12 @@
                         </h3>
 
                         <span class="folder-deadlines__status" :class="statusClass(deadline.status)">
-                            {{ statusLabel(deadline.status) }}
+                            {{ folderDeadlineStatusLabel(deadline.status) }}
                         </span>
                     </div>
 
                     <time class="folder-deadlines__due-date" :datetime="deadline.due_at">
-                        {{ displayDate(deadline.due_at) }}
+                        {{ formatShortDateTime(deadline.due_at) }}
                     </time>
                 </div>
 
@@ -118,7 +118,7 @@
                         deadline.completed_at
                     ">
                         Concluído em:
-                        {{ displayDate(deadline.completed_at) }}
+                        {{ formatShortDateTime(deadline.completed_at) }}
                     </span>
                 </div>
 
@@ -161,6 +161,14 @@ import {
     AppButton,
     AppConfirmDialog,
 } from '@/components/ui'
+
+import {
+    formatShortDateTime,
+} from '@/utils/date'
+
+import {
+    folderDeadlineStatusLabel,
+} from '@/constants/folder'
 
 import {
     useAuthStore,
@@ -241,23 +249,6 @@ const deleteMessage =
         return `Deseja realmente excluir o prazo "${deadlineToDelete.value.title}"?`
     })
 
-function statusLabel(status) {
-    const labels = {
-        pending:
-            'Pendente',
-
-        completed:
-            'Concluído',
-
-        cancelled:
-            'Cancelado',
-    }
-
-    return labels[status] ??
-        status ??
-        '—'
-}
-
 function statusClass(status) {
     return {
         'folder-deadlines__status--pending':
@@ -269,31 +260,6 @@ function statusClass(status) {
         'folder-deadlines__status--cancelled':
             status === 'cancelled',
     }
-}
-
-function displayDate(value) {
-    if (!value) {
-        return '—'
-    }
-
-    const date =
-        new Date(value)
-
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
-        return value
-    }
-
-    return new Intl.DateTimeFormat(
-        'pt-BR',
-        {
-            dateStyle: 'short',
-            timeStyle: 'short',
-        },
-    ).format(date)
 }
 
 function openCreateForm() {

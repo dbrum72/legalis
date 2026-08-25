@@ -93,7 +93,7 @@
                             </h3>
 
                             <p class="folder-movements__meta">
-                                {{ displayDate(movement.occurred_at) }}
+                                {{ formatShortDate(movement.occurred_at) }}
                                 ·
                                 {{ movement.user?.name ?? '—' }}
                             </p>
@@ -130,6 +130,10 @@ import {
     AppButton,
     AppConfirmDialog,
 } from '@/components/ui'
+
+import {
+    formatShortDate,
+} from '@/utils/date'
 
 import {
     useAuthStore,
@@ -202,30 +206,6 @@ const deleteMessage =
 
         return `Deseja realmente excluir a movimentação "${movementToDelete.value.title}"?`
     })
-
-function displayDate(value) {
-    if (!value) {
-        return '—'
-    }
-
-    const date =
-        new Date(value)
-
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
-        return value
-    }
-
-    return new Intl.DateTimeFormat(
-        'pt-BR',
-        {
-            dateStyle: 'short',
-        },
-    ).format(date)
-}
 
 function openCreateForm() {
     createError.value =

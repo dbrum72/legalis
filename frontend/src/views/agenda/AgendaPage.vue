@@ -202,7 +202,13 @@
                                         <span class="agenda-calendar__item-dot" aria-hidden="true"></span>
 
                                         <span class="agenda-calendar__item-type">
-                                            {{ itemTypeLabel(item.type) }}
+                                            {{ folderItemTypeLabel(
+                                                item.type,
+                                                {
+                                                    fallback: 'Item',
+                                                    preserveUnknown: false,
+                                                },
+                                            ) }}
                                         </span>
 
                                         <span v-if="item.type === 'event'" class="agenda-calendar__item-time">
@@ -288,7 +294,13 @@
                             <div class="agenda-selected-item__type">
                                 <span class="agenda-selected-item__type-dot"></span>
 
-                                {{ itemTypeLabel(item.type) }}
+                                {{ folderItemTypeLabel(
+                                    item.type,
+                                    {
+                                        fallback: 'Item',
+                                        preserveUnknown: false,
+                                    },
+                                ) }}
                             </div>
 
                             <div class="agenda-selected-item__card">
@@ -312,7 +324,7 @@
                                         <dd>
                                             <span class="agenda-selected-item__priority"
                                                 :class="`agenda-selected-item__priority--${item.priority}`">
-                                                {{ priorityLabel(item.priority) }}
+                                                {{ folderPriorityLabel(item.priority) }}
                                             </span>
                                         </dd>
                                     </div>
@@ -470,7 +482,13 @@
                                         <span class="agenda-week-item__dot"></span>
 
                                         <span class="agenda-week-item__type">
-                                            {{ itemTypeLabel(item.type) }}
+                                            {{ folderItemTypeLabel(
+                                                item.type,
+                                            {
+                                            fallback: 'Item',
+                                            preserveUnknown: false,
+                                            },
+                                            ) }}
                                         </span>
                                     </div>
 
@@ -554,7 +572,13 @@
                                 <div class="agenda-list-item__content">
                                     <div class="agenda-list-item__heading">
                                         <span class="agenda-list-item__type">
-                                            {{ itemTypeLabel(item.type) }}
+                                            {{ folderItemTypeLabel(
+                                                item.type,
+                                                {
+                                                    fallback: 'Item',
+                                                    preserveUnknown: false,
+                                                },
+                                            ) }}
                                         </span>
 
                                         <strong class="agenda-list-item__title">
@@ -578,7 +602,7 @@
 
                                     <div v-if="item.type === 'task' && item.priority" class="agenda-list-item__meta">
                                         Prioridade:
-                                        {{ priorityLabel(item.priority) }}
+                                        {{ folderPriorityLabel(item.priority) }}
                                     </div>
                                 </div>
                             </article>
@@ -600,6 +624,19 @@ import {
 import { useRouter } from 'vue-router'
 
 import PageContainer from '@/components/layout/PageContainer/index.vue'
+
+import {
+    addDays,
+    formatDateKey,
+    formatShortTime,
+    isSameDate,
+    parseDateKey,
+} from '@/utils/date'
+
+import {
+    folderPriorityLabel,
+    folderItemTypeLabel,
+} from '@/constants/folder'
 
 import { useAgendaStore } from '@/stores/agenda.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -707,7 +744,7 @@ const currentWeekStart =
 
 const selectedDate =
     ref(
-        formatDate(
+        formatDateKey(
             new Date(
                 todayReference.year,
                 todayReference.month,
@@ -980,7 +1017,7 @@ const calendarDays =
 
                 return {
                     date:
-                        formatDate(
+                        formatDateKey(
                             date,
                         ),
 
@@ -1031,7 +1068,7 @@ const weekDays =
 
                 return {
                     date:
-                        formatDate(
+                        formatDateKey(
                             date,
                         ),
 
@@ -1181,7 +1218,7 @@ async function loadCurrentMonth() {
         currentMonth.value.getMonth()
 
     const start =
-        formatDate(
+        formatDateKey(
             new Date(
                 year,
                 month,
@@ -1190,7 +1227,7 @@ async function loadCurrentMonth() {
         )
 
     const end =
-        formatDate(
+        formatDateKey(
             new Date(
                 year,
                 month + 1,
@@ -1219,12 +1256,12 @@ async function loadCurrentWeek() {
     errorMessage.value = ''
 
     const start =
-        formatDate(
+        formatDateKey(
             currentWeekStart.value,
         )
 
     const end =
-        formatDate(
+        formatDateKey(
             addDays(
                 currentWeekStart.value,
                 6,
@@ -1298,7 +1335,7 @@ async function goToNextMonth() {
 
 async function goToToday() {
     selectedDate.value =
-        formatDate(
+        formatDateKey(
             new Date(
                 todayReference.year,
                 todayReference.month,
@@ -1335,7 +1372,7 @@ async function goToToday() {
 
 function selectFirstDayOfCurrentMonth() {
     selectedDate.value =
-        formatDate(
+        formatDateKey(
             new Date(
                 currentMonth.value.getFullYear(),
                 currentMonth.value.getMonth(),
@@ -1607,40 +1644,6 @@ function compareAgendaItems(
     return firstDate - secondDate
 }
 
-function itemTypeLabel(
-    type,
-) {
-    const labels = {
-        task:
-            'Tarefa',
-
-        deadline:
-            'Prazo',
-
-        event:
-            'Compromisso',
-    }
-
-    return labels[type] ?? 'Item'
-}
-
-function priorityLabel(
-    priority,
-) {
-    const labels = {
-        low:
-            'Baixa',
-
-        medium:
-            'Média',
-
-        high:
-            'Alta',
-    }
-
-    return labels[priority] ?? priority
-}
-
 /*
 |--------------------------------------------------------------------------
 | Datas
@@ -1669,71 +1672,6 @@ function startOfWeek(
     )
 
     return result
-}
-
-function addDays(
-    date,
-    days,
-) {
-    return new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate() + days,
-    )
-}
-
-function formatDate(
-    date,
-) {
-    const year =
-        date.getFullYear()
-
-    const month =
-        String(
-            date.getMonth() + 1,
-        )
-            .padStart(
-                2,
-                '0',
-            )
-
-    const day =
-        String(
-            date.getDate(),
-        )
-            .padStart(
-                2,
-                '0',
-            )
-
-    return `${year}-${month}-${day}`
-}
-
-function parseDateKey(
-    date,
-) {
-    const [
-        year,
-        month,
-        day,
-    ] =
-        String(date)
-            .split('-')
-            .map(Number)
-
-    if (
-        !year
-        || !month
-        || !day
-    ) {
-        return null
-    }
-
-    return new Date(
-        year,
-        month - 1,
-        day,
-    )
 }
 
 function formatDateLabel(
@@ -1800,43 +1738,11 @@ function formatItemTime(
         return ''
     }
 
-    const parsed =
-        new Date(
-            item.starts_at,
-        )
-
-    if (
-        Number.isNaN(
-            parsed.getTime(),
-        )
-    ) {
-        return ''
-    }
-
-    return new Intl.DateTimeFormat(
-        'pt-BR',
-        {
-            hour:
-                '2-digit',
-
-            minute:
-                '2-digit',
-        },
-    ).format(
-        parsed,
+    return formatShortTime(
+        item.starts_at,
     )
 }
 
-function isSameDate(
-    first,
-    second,
-) {
-    return (
-        first.getFullYear() === second.getFullYear()
-        && first.getMonth() === second.getMonth()
-        && first.getDate() === second.getDate()
-    )
-}
 </script>
 
 <style scoped>

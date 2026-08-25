@@ -124,11 +124,11 @@
 
                         <div class="folder-tasks__badges">
                             <span class="folder-tasks__badge" :class="`folder-tasks__badge--priority-${task.priority}`">
-                                {{ priorityLabel(task.priority) }}
+                                {{ folderPriorityLabel(task.priority) }}
                             </span>
 
                             <span class="folder-tasks__badge" :class="`folder-tasks__badge--${task.status}`">
-                                {{ statusLabel(task.status) }}
+                                {{ folderTaskStatusLabel(task.status) }}
                             </span>
                         </div>
                     </div>
@@ -146,12 +146,12 @@
 
                     <span v-if="task.due_at">
                         Vencimento:
-                        {{ displayDateTime(task.due_at) }}
+                        {{ formatShortDateTime(task.due_at) }}
                     </span>
 
                     <span v-if="task.completed_at">
                         Concluído em:
-                        {{ displayDateTime(task.completed_at) }}
+                        {{ formatShortDateTime(task.completed_at) }}
                     </span>
                 </div>
 
@@ -189,6 +189,15 @@ import {
     AppButton,
     AppConfirmDialog,
 } from '@/components/ui'
+
+import {
+    formatShortDateTime,
+} from '@/utils/date'
+
+import {
+    folderPriorityLabel,
+    folderTaskStatusLabel,
+} from '@/constants/folder'
 
 import {
     useAuthStore,
@@ -303,65 +312,6 @@ function cancelCreate() {
 
     isCreating.value =
         false
-}
-
-function priorityLabel(priority) {
-    const labels = {
-        low:
-            'Baixa',
-
-        medium:
-            'Média',
-
-        high:
-            'Alta',
-    }
-
-    return labels[priority] ??
-        priority ??
-        '—'
-}
-
-function statusLabel(status) {
-    const labels = {
-        pending:
-            'Pendente',
-
-        completed:
-            'Concluído',
-    }
-
-    return labels[status] ??
-        status ??
-        '—'
-}
-
-function displayDateTime(value) {
-    if (!value) {
-        return '—'
-    }
-
-    const date =
-        new Date(value)
-
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
-        return value
-    }
-
-    return new Intl.DateTimeFormat(
-        'pt-BR',
-        {
-            dateStyle:
-                'short',
-
-            timeStyle:
-                'short',
-        },
-    ).format(date)
 }
 
 async function loadTasks() {
