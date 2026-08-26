@@ -10,6 +10,7 @@ use App\Services\OrganizationInvitations\AcceptOrganizationInvitation;
 use App\Services\OrganizationInvitations\IssueOrganizationInvitation;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class OrganizationInvitationController extends Controller
 {
@@ -93,14 +94,17 @@ class OrganizationInvitationController extends Controller
         string $token,
         AcceptOrganizationInvitation $acceptor,
     ): JsonResponse {
-        $invitation =
-            $this->resolveInvitation(
-                $token
-            );
+        $invitation = $this->resolveInvitation($token);
 
-        $this->ensureAcceptable(
-            $invitation
-        );
+        $this->ensureAcceptable($invitation);
+
+        $registrationRequired =
+            !User::query()
+                ->where(
+                    'email',
+                    $invitation->email
+                )
+                ->exists();
 
         $user =
             $acceptor->execute(
@@ -109,38 +113,41 @@ class OrganizationInvitationController extends Controller
                 data: $request->validated(),
             );
 
-        return response()->json([
+        $organization = [
+            'id' =>$invitation->organization->id,
+            'name' => $invitation->organization->name,
+            'slug' => $invitation->organization->slug,
+        ];
+
+        $response = [
             'user' => [
-                'id' =>
-                $user->id,
-
-                'name' =>
-                $user->name,
-
-                'email' =>
-                $user->email,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
             ],
+            'organization' => $organization,
+            'role' => $invitation->role,
+        ];
 
-            'organization' => [
-                'id' =>
-                $invitation
-                    ->organization
-                    ->id,
+        if ($registrationRequired) {
+            $guard =
+                Auth::guard(
+                    'api'
+                );
 
-                'name' =>
-                $invitation
-                    ->organization
-                    ->name,
+            $authToken = $guard->login($user);
 
-                'slug' =>
-                $invitation
-                    ->organization
-                    ->slug,
-            ],
+            $response = [
+                'token' => $authToken,
+                'access_token' => $authToken,
+                'token_type' => 'bearer',
+                'expires_in' => $guard->factory()->getTTL() * 60,
+                'organizations' => [$organization],
+                ...$response,
+            ];
+        }
 
-            'role' =>
-            $invitation->role,
-        ]);
+        return response()->json($response);
     }
 
     private function resolveInvitation(

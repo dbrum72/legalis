@@ -638,4 +638,87 @@ class OrganizationInvitationAcceptanceTest extends TestCase
             $invitation,
         ];
     }
+
+    public function test_aceite_de_usuario_novo_retorna_token_de_autenticacao(): void
+    {
+        [$token] =
+            $this->createInvitation(
+                'autenticado@example.com'
+            );
+
+        $response =
+            $this->postJson(
+                "/api/organization-invitations/accept/{$token}",
+                [
+                    'name' =>
+                    'Usuário Autenticado',
+
+                    'password' =>
+                    'password123',
+
+                    'password_confirmation' =>
+                    'password123',
+                ]
+            );
+
+        $response
+            ->assertOk()
+            ->assertJsonStructure([
+                'access_token',
+                'token_type',
+                'expires_in',
+            ])
+            ->assertJsonPath(
+                'token_type',
+                'bearer'
+            );
+
+        $accessToken =
+            $response->json(
+                'access_token'
+            );
+
+        $this->assertIsString(
+            $accessToken
+        );
+
+        $this->assertNotSame(
+            '',
+            $accessToken
+        );
+    }
+
+    public function test_aceite_de_usuario_existente_nao_retorna_token_de_autenticacao(): void
+{
+    $user =
+        User::factory()->create([
+            'email' =>
+            'existente-sem-login@example.com',
+        ]);
+
+    [$token] =
+        $this->createInvitation(
+            $user->email
+        );
+
+    $response =
+        $this->postJson(
+            "/api/organization-invitations/accept/{$token}"
+        );
+
+    $response
+        ->assertOk()
+        ->assertJsonMissing([
+            'access_token',
+        ])
+        ->assertJsonMissing([
+            'token',
+        ])
+        ->assertJsonMissing([
+            'token_type',
+        ])
+        ->assertJsonMissing([
+            'expires_in',
+        ]);
+}
 }

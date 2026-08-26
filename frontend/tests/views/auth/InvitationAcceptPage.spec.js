@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { flushPromises, mount } from '@vue/test-utils'
 
+import { createPinia, setActivePinia } from 'pinia'
+
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 vi.mock('@/api/organization-invitations.js', () => ({
@@ -10,14 +12,24 @@ vi.mock('@/api/organization-invitations.js', () => ({
     acceptOrganizationInvitation: vi.fn(),
 }))
 
+vi.mock('@/api/auth-token.js', () => ({
+    getAccessToken: vi.fn(() => null),
+
+    setAccessToken: vi.fn(),
+
+    removeAccessToken: vi.fn(),
+}))
+
 import {
     acceptOrganizationInvitation,
     getInvitationAcceptance,
 } from '@/api/organization-invitations.js'
 
+import { useAuthStore } from '@/stores/auth.js'
+
 import InvitationAcceptPage from '@/views/auth/InvitationAcceptPage.vue'
 
-function createTestRouter(token = 'token-de-teste') {
+function createTestRouter() {
     return createRouter({
         history: createMemoryHistory(),
 
@@ -39,11 +51,25 @@ function createTestRouter(token = 'token-de-teste') {
                     template: '<div>Login</div>',
                 },
             },
+
+            {
+                path: '/dashboard',
+
+                name: 'dashboard',
+
+                component: {
+                    template: '<div>Dashboard</div>',
+                },
+            },
         ],
     })
 }
 
 async function mountPage(token = 'token-de-teste') {
+    const pinia = createPinia()
+
+    setActivePinia(pinia)
+
     const router = createTestRouter()
 
     await router.push(`/invitations/accept/${token}`)
@@ -52,7 +78,7 @@ async function mountPage(token = 'token-de-teste') {
 
     const wrapper = mount(InvitationAcceptPage, {
         global: {
-            plugins: [router],
+            plugins: [pinia, router],
 
             stubs: {
                 AppLogo: {
@@ -70,11 +96,30 @@ async function mountPage(token = 'token-de-teste') {
         },
     })
 
+    const authStore = useAuthStore(pinia)
+
+    const applyAuthPayloadSpy = vi.spyOn(authStore, 'applyAuthPayload')
+
+    const initializeContextSpy = vi.spyOn(authStore, 'initializeContext').mockResolvedValue(null)
+
     await flushPromises()
 
     return {
         wrapper,
         router,
+        authStore,
+        applyAuthPayloadSpy,
+        initializeContextSpy,
+    }
+}
+
+function organization() {
+    return {
+        id: 10,
+
+        name: 'Escritório Legalis',
+
+        slug: 'escritorio-legalis',
     }
 }
 
@@ -88,13 +133,7 @@ function newUserInvitation() {
 
         registration_required: true,
 
-        organization: {
-            id: 10,
-
-            name: 'Escritório Legalis',
-
-            slug: 'escritorio-legalis',
-        },
+        organization: organization(),
     }
 }
 
@@ -105,6 +144,46 @@ function existingUserInvitation() {
         email: 'existente@example.com',
 
         registration_required: false,
+    }
+}
+
+function newUserAcceptance() {
+    return {
+        access_token: 'jwt-do-novo-usuario',
+
+        token_type: 'bearer',
+
+        expires_in: 3600,
+
+        user: {
+            id: 20,
+
+            name: 'Novo Usuário',
+
+            email: 'novo@example.com',
+        },
+
+        organizations: [organization()],
+
+        organization: organization(),
+
+        role: 'advogado-junior',
+    }
+}
+
+function existingUserAcceptance() {
+    return {
+        user: {
+            id: 21,
+
+            name: 'Usuário Existente',
+
+            email: 'existente@example.com',
+        },
+
+        organization: organization(),
+
+        role: 'advogado-junior',
     }
 }
 
@@ -158,11 +237,7 @@ describe('InvitationAcceptPage', () => {
     it('envia nome senha e confirmação para usuário novo', async () => {
         getInvitationAcceptance.mockResolvedValue(newUserInvitation())
 
-        acceptOrganizationInvitation.mockResolvedValue({
-            organization: {
-                name: 'Escritório Legalis',
-            },
-        })
+        acceptOrganizationInvitation.mockResolvedValue(newUserAcceptance())
 
         const { wrapper } = await mountPage('token-novo')
 
@@ -188,11 +263,7 @@ describe('InvitationAcceptPage', () => {
     it('envia payload vazio para usuário existente', async () => {
         getInvitationAcceptance.mockResolvedValue(existingUserInvitation())
 
-        acceptOrganizationInvitation.mockResolvedValue({
-            organization: {
-                name: 'Escritório Legalis',
-            },
-        })
+        acceptOrganizationInvitation.mockResolvedValue(existingUserAcceptance())
 
         const { wrapper } = await mountPage('token-existente')
 
@@ -203,22 +274,12 @@ describe('InvitationAcceptPage', () => {
         expect(acceptOrganizationInvitation).toHaveBeenCalledWith('token-existente', {})
     })
 
-    it('exibe sucesso após aceite', async () => {
-        getInvitationAcceptance.mockResolvedValue(newUserInvitation())
+    it('exibe sucesso após aceite de usuário existente', async () => {
+        getInvitationAcceptance.mockResolvedValue(existingUserInvitation())
 
-        acceptOrganizationInvitation.mockResolvedValue({
-            organization: {
-                name: 'Escritório Legalis',
-            },
-        })
+        acceptOrganizationInvitation.mockResolvedValue(existingUserAcceptance())
 
         const { wrapper } = await mountPage()
-
-        await wrapper.get('#invitation-name').setValue('Novo Usuário')
-
-        await wrapper.get('#invitation-password').setValue('password123')
-
-        await wrapper.get('#invitation-password-confirmation').setValue('password123')
 
         await wrapper.get('form').trigger('submit')
 
@@ -231,20 +292,56 @@ describe('InvitationAcceptPage', () => {
         expect(wrapper.text()).toContain('Escritório Legalis')
     })
 
-    it('redireciona para login após sucesso', async () => {
-        getInvitationAcceptance.mockResolvedValue(existingUserInvitation())
+    it('autentica novo usuário e redireciona automaticamente ao dashboard', async () => {
+        getInvitationAcceptance.mockResolvedValue(newUserInvitation())
 
-        acceptOrganizationInvitation.mockResolvedValue({
-            organization: {
-                name: 'Escritório Legalis',
-            },
-        })
+        const acceptance = newUserAcceptance()
 
-        const { wrapper, router } = await mountPage()
+        acceptOrganizationInvitation.mockResolvedValue(acceptance)
+
+        const { wrapper, router, authStore, applyAuthPayloadSpy, initializeContextSpy } =
+            await mountPage('token-novo')
+
+        await wrapper.get('#invitation-name').setValue('Novo Usuário')
+
+        await wrapper.get('#invitation-password').setValue('password123')
+
+        await wrapper.get('#invitation-password-confirmation').setValue('password123')
 
         await wrapper.get('form').trigger('submit')
 
         await flushPromises()
+
+        expect(applyAuthPayloadSpy).toHaveBeenCalledWith(acceptance)
+
+        expect(authStore.token).toBe('jwt-do-novo-usuario')
+
+        expect(authStore.user).toEqual(acceptance.user)
+
+        expect(authStore.organizations).toEqual(acceptance.organizations)
+
+        expect(initializeContextSpy).toHaveBeenCalledOnce()
+
+        expect(router.currentRoute.value.name).toBe('dashboard')
+    })
+
+    it('mantém usuário existente sem autenticação e o encaminha ao login', async () => {
+        getInvitationAcceptance.mockResolvedValue(existingUserInvitation())
+
+        acceptOrganizationInvitation.mockResolvedValue(existingUserAcceptance())
+
+        const { wrapper, router, authStore, applyAuthPayloadSpy, initializeContextSpy } =
+            await mountPage('token-existente')
+
+        await wrapper.get('form').trigger('submit')
+
+        await flushPromises()
+
+        expect(applyAuthPayloadSpy).not.toHaveBeenCalled()
+
+        expect(initializeContextSpy).not.toHaveBeenCalled()
+
+        expect(authStore.isAuthenticated).toBe(false)
 
         const loginButton = wrapper
             .findAll('button')

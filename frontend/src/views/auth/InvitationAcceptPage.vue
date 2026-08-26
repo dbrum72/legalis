@@ -196,8 +196,12 @@ import {
     getInvitationAcceptance,
 } from '@/api/organization-invitations.js'
 
+import { useAuthStore } from '@/stores/auth.js'
+
 const route = useRoute()
 const router = useRouter()
+
+const authStore = useAuthStore()
 
 const invitation = ref(null)
 
@@ -303,6 +307,28 @@ async function loadInvitation() {
     }
 }
 
+async function authenticateNewUser(
+    result,
+) {
+    try {
+        authStore.applyAuthPayload(
+            result,
+        )
+
+        await authStore.initializeContext()
+
+        await router.replace({
+            name: 'dashboard',
+        })
+
+        return true
+    } catch {
+        authStore.clearAuth()
+
+        return false
+    }
+}
+
 async function handleAccept() {
     if (
         submitting.value ||
@@ -316,8 +342,11 @@ async function handleAccept() {
     submitError.value = ''
     validationErrors.value = {}
 
-    const payload =
+    const registrationRequired =
         invitation.value.registration_required
+
+    const payload =
+        registrationRequired
             ? {
                 name:
                     form.name.trim(),
@@ -344,6 +373,18 @@ async function handleAccept() {
             ?? invitation.value.organization.name
 
         accepted.value = true
+
+        const shouldAuthenticateAutomatically =
+            registrationRequired
+            && Boolean(
+                result?.access_token,
+            )
+
+        if (shouldAuthenticateAutomatically) {
+            await authenticateNewUser(
+                result,
+            )
+        }
     } catch (error) {
         const status =
             error?.response?.status
