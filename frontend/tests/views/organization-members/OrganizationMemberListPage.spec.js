@@ -36,6 +36,9 @@ vi.mock('@/api/organization-roles.js', () => ({
 
 vi.mock('@/api/organization-invitations.js', () => ({
     createOrganizationInvitation: vi.fn(),
+    listOrganizationInvitations: vi.fn(),
+    resendOrganizationInvitation: vi.fn(),
+    revokeOrganizationInvitation: vi.fn(),
     getInvitationAcceptance: vi.fn(),
     acceptOrganizationInvitation: vi.fn(),
 }))
@@ -83,12 +86,79 @@ function defaultRoles() {
     ]
 }
 
+function defaultInvitations() {
+    return [
+        {
+            id: 10,
+            email: 'pendente@legalis.local',
+            role: 'advogado-junior',
+            status: 'pending',
+            expires_at: '2026-09-04T12:00:00.000000Z',
+            accepted_at: null,
+            revoked_at: null,
+            created_at: '2026-08-28T12:00:00.000000Z',
+            inviter: {
+                id: 1,
+                name: 'Administrador',
+                email: 'admin@legalis.local',
+            },
+        },
+        {
+            id: 11,
+            email: 'expirado@legalis.local',
+            role: 'advogado-pleno',
+            status: 'expired',
+            expires_at: '2026-08-20T12:00:00.000000Z',
+            accepted_at: null,
+            revoked_at: null,
+            created_at: '2026-08-13T12:00:00.000000Z',
+            inviter: {
+                id: 1,
+                name: 'Administrador',
+                email: 'admin@legalis.local',
+            },
+        },
+        {
+            id: 12,
+            email: 'aceito@legalis.local',
+            role: 'secretaria',
+            status: 'accepted',
+            expires_at: '2026-09-01T12:00:00.000000Z',
+            accepted_at: '2026-08-27T12:00:00.000000Z',
+            revoked_at: null,
+            created_at: '2026-08-25T12:00:00.000000Z',
+            inviter: {
+                id: 1,
+                name: 'Administrador',
+                email: 'admin@legalis.local',
+            },
+        },
+        {
+            id: 13,
+            email: 'revogado@legalis.local',
+            role: 'advogado-junior',
+            status: 'revoked',
+            expires_at: '2026-09-01T12:00:00.000000Z',
+            accepted_at: null,
+            revoked_at: '2026-08-27T12:00:00.000000Z',
+            created_at: '2026-08-25T12:00:00.000000Z',
+            inviter: {
+                id: 1,
+                name: 'Administrador',
+                email: 'admin@legalis.local',
+            },
+        },
+    ]
+}
+
 async function mountPage({
     permissions = [],
     members = defaultMembers(),
     roles = defaultRoles(),
+    invitations = defaultInvitations(),
     membersError = null,
     rolesError = null,
+    invitationsError = null,
 } = {}) {
     const pinia = createPinia()
 
@@ -122,6 +192,16 @@ async function mountPage({
         rolesStore.roles = roles
 
         return roles
+    })
+
+    vi.spyOn(invitationsStore, 'fetchInvitations').mockImplementation(async () => {
+        if (invitationsError) {
+            throw invitationsError
+        }
+
+        invitationsStore.invitations = invitations
+
+        return invitations
     })
 
     const wrapper = mount(OrganizationMemberListPage, {
@@ -707,5 +787,236 @@ describe('OrganizationMemberListPage', () => {
         await flushPromises()
 
         expect(document.querySelector('.app-confirm-dialog')).not.toBeNull()
+    })
+
+    it('carrega convites ao montar quando usuário pode convidar', async () => {
+        const { invitationsStore } = await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        expect(invitationsStore.fetchInvitations).toHaveBeenCalledOnce()
+    })
+
+    it('não carrega convites quando usuário não pode convidar', async () => {
+        const { invitationsStore } = await mountPage({
+            permissions: ['organization-members.view'],
+        })
+
+        expect(invitationsStore.fetchInvitations).not.toHaveBeenCalled()
+    })
+
+    it('renderiza convites e seus estados administrativos', async () => {
+        await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        expect(document.body.textContent).toContain('Convites')
+
+        expect(document.body.textContent).toContain('pendente@legalis.local')
+        expect(document.body.textContent).toContain('expirado@legalis.local')
+        expect(document.body.textContent).toContain('aceito@legalis.local')
+        expect(document.body.textContent).toContain('revogado@legalis.local')
+
+        expect(document.body.textContent).toContain('Pendente')
+        expect(document.body.textContent).toContain('Expirado')
+        expect(document.body.textContent).toContain('Aceito')
+        expect(document.body.textContent).toContain('Revogado')
+    })
+
+    it('não renderiza administração de convites sem permissão', async () => {
+        await mountPage({
+            permissions: ['organization-members.view'],
+        })
+
+        expect(document.querySelector('#organization-invitations-title')).toBeNull()
+    })
+
+    it('renderiza estado vazio quando não existem convites', async () => {
+        await mountPage({
+            permissions: ['organization-members.invite'],
+            invitations: [],
+        })
+
+        expect(document.body.textContent).toContain('Nenhum convite encontrado.')
+    })
+
+    it('exibe erro quando carregamento dos convites falha', async () => {
+        await mountPage({
+            permissions: ['organization-members.invite'],
+            invitationsError: new Error('Falha ao carregar convites'),
+        })
+
+        expect(document.body.textContent).toContain('Não foi possível carregar os convites.')
+    })
+
+    it('mostra ações somente para convite pendente válido', async () => {
+        await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        expect(findButtons('Reenviar')).toHaveLength(1)
+        expect(findButtons('Revogar')).toHaveLength(1)
+    })
+
+    it('reenvia convite pendente', async () => {
+        const { invitationsStore } = await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        const resendSpy = vi.spyOn(invitationsStore, 'resend').mockResolvedValue()
+
+        findButton('Reenviar').click()
+
+        await flushPromises()
+
+        expect(resendSpy).toHaveBeenCalledOnce()
+        expect(resendSpy).toHaveBeenCalledWith(10)
+    })
+
+    it('exibe erro quando reenvio falha', async () => {
+        const { invitationsStore } = await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        vi.spyOn(invitationsStore, 'resend').mockRejectedValue(
+            new Error('Falha ao reenviar convite'),
+        )
+
+        findButton('Reenviar').click()
+
+        await flushPromises()
+
+        expect(document.body.textContent).toContain(
+            'Não foi possível reenviar o convite. Tente novamente.',
+        )
+    })
+
+    it('abre confirmação para revogar convite pendente', async () => {
+        const { wrapper } = await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        findButton('Revogar').click()
+
+        await wrapper.vm.$nextTick()
+
+        const dialog = document.querySelector('.app-confirm-dialog')
+
+        expect(dialog).not.toBeNull()
+
+        expect(document.body.textContent).toContain('Revogar convite')
+
+        expect(document.body.textContent).toContain(
+            'Deseja realmente revogar o convite enviado para "pendente@legalis.local"?',
+        )
+    })
+
+    it('revoga convite pendente', async () => {
+        const { wrapper, invitationsStore } = await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        const revokeSpy = vi.spyOn(invitationsStore, 'revoke').mockResolvedValue()
+
+        findButton('Revogar').click()
+
+        await wrapper.vm.$nextTick()
+
+        const dialog = document.querySelector('.app-confirm-dialog')
+
+        expect(dialog).not.toBeNull()
+
+        findButton('Revogar', dialog).click()
+
+        await flushPromises()
+
+        expect(revokeSpy).toHaveBeenCalledOnce()
+        expect(revokeSpy).toHaveBeenCalledWith(10)
+
+        expect(document.querySelector('.app-confirm-dialog')).toBeNull()
+    })
+
+    it('cancela revogação de convite', async () => {
+        const { wrapper, invitationsStore } = await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        const revokeSpy = vi.spyOn(invitationsStore, 'revoke')
+
+        findButton('Revogar').click()
+
+        await wrapper.vm.$nextTick()
+
+        const dialog = document.querySelector('.app-confirm-dialog')
+
+        expect(dialog).not.toBeNull()
+
+        findButton('Cancelar', dialog).click()
+
+        await wrapper.vm.$nextTick()
+
+        expect(revokeSpy).not.toHaveBeenCalled()
+        expect(document.querySelector('.app-confirm-dialog')).toBeNull()
+    })
+
+    it('mantém confirmação aberta quando revogação falha', async () => {
+        const { wrapper, invitationsStore } = await mountPage({
+            permissions: ['organization-members.invite'],
+        })
+
+        vi.spyOn(invitationsStore, 'revoke').mockRejectedValue(
+            new Error('Falha ao revogar convite'),
+        )
+
+        findButton('Revogar').click()
+
+        await wrapper.vm.$nextTick()
+
+        const dialog = document.querySelector('.app-confirm-dialog')
+
+        expect(dialog).not.toBeNull()
+
+        findButton('Revogar', dialog).click()
+
+        await flushPromises()
+
+        expect(document.querySelector('.app-confirm-dialog')).not.toBeNull()
+
+        expect(document.body.textContent).toContain(
+            'Não foi possível revogar o convite. Tente novamente.',
+        )
+    })
+
+    it('renderiza imediatamente convite criado pela store', async () => {
+        const { wrapper, invitationsStore } = await mountPage({
+            permissions: ['organization-members.invite'],
+            invitations: [],
+        })
+
+        vi.spyOn(invitationsStore, 'create').mockImplementation(async () => {
+            const createdInvitation = {
+                ...defaultInvitations()[0],
+                id: 20,
+                email: 'criado@legalis.local',
+            }
+
+            invitationsStore.invitations.unshift(createdInvitation)
+
+            return createdInvitation
+        })
+
+        findButton('Convidar membro').click()
+
+        await wrapper.vm.$nextTick()
+
+        await fillInvitationForm(wrapper, {
+            email: 'criado@legalis.local',
+        })
+
+        findButton('Enviar convite').click()
+
+        await flushPromises()
+
+        expect(document.body.textContent).toContain('criado@legalis.local')
     })
 })

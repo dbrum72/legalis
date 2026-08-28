@@ -8,12 +8,41 @@ use App\Models\OrganizationInvitation;
 use App\Models\User;
 use App\Services\OrganizationInvitations\AcceptOrganizationInvitation;
 use App\Services\OrganizationInvitations\IssueOrganizationInvitation;
+use App\Services\OrganizationInvitations\ResendOrganizationInvitation;
+use App\Services\OrganizationInvitations\RevokeOrganizationInvitation;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class OrganizationInvitationController extends Controller
 {
+    public function index(
+        CurrentOrganization $currentOrganization,
+    ): JsonResponse {
+        $invitations =
+            $currentOrganization
+            ->get()
+            ->invitations()
+            ->with([
+                'inviter:id,name,email',
+            ])
+            ->latest()
+            ->get()
+            ->map(
+                fn(
+                    OrganizationInvitation $invitation
+                ): array =>
+                $this->administrativePayload(
+                    $invitation
+                )
+            )
+            ->values();
+
+        return response()->json(
+            $invitations
+        );
+    }
+
     public function store(
         OrganizationInvitationStoreRequest $request,
         CurrentOrganization $currentOrganization,
@@ -37,6 +66,52 @@ class OrganizationInvitationController extends Controller
         return response()->json(
             $invitation,
             201
+        );
+    }
+
+    public function resend(
+        int $organizationInvitation,
+        CurrentOrganization $currentOrganization,
+        ResendOrganizationInvitation $resender,
+    ): JsonResponse {
+        $invitation =
+            $this->resolveAdministrativeInvitation(
+                $currentOrganization,
+                $organizationInvitation,
+            );
+
+        $invitation =
+            $resender->execute(
+                $invitation
+            );
+
+        return response()->json(
+            $this->administrativePayload(
+                $invitation
+            )
+        );
+    }
+
+    public function revoke(
+        int $organizationInvitation,
+        CurrentOrganization $currentOrganization,
+        RevokeOrganizationInvitation $revoker,
+    ): JsonResponse {
+        $invitation =
+            $this->resolveAdministrativeInvitation(
+                $currentOrganization,
+                $organizationInvitation,
+            );
+
+        $invitation =
+            $revoker->execute(
+                $invitation
+            );
+
+        return response()->json(
+            $this->administrativePayload(
+                $invitation
+            )
         );
     }
 
@@ -114,7 +189,7 @@ class OrganizationInvitationController extends Controller
             );
 
         $organization = [
-            'id' =>$invitation->organization->id,
+            'id' => $invitation->organization->id,
             'name' => $invitation->organization->name,
             'slug' => $invitation->organization->slug,
         ];
@@ -164,6 +239,85 @@ class OrganizationInvitationController extends Controller
                 )
             )
             ->firstOrFail();
+    }
+
+    private function resolveAdministrativeInvitation(
+        CurrentOrganization $currentOrganization,
+        int $invitationId,
+    ): OrganizationInvitation {
+        return $currentOrganization
+            ->get()
+            ->invitations()
+            ->with([
+                'organization',
+                'inviter:id,name,email',
+            ])
+            ->whereKey(
+                $invitationId
+            )
+            ->firstOrFail();
+    }
+
+    private function administrativePayload(
+        OrganizationInvitation $invitation,
+    ): array {
+        $invitation->loadMissing([
+            'inviter:id,name,email',
+        ]);
+
+        return [
+            'id' =>
+            $invitation->getKey(),
+
+            'email' =>
+            $invitation->email,
+
+            'role' =>
+            $invitation->role,
+
+            'status' =>
+            $invitation->administrativeStatus(),
+
+            'expires_at' =>
+            $invitation
+                ->expires_at
+                ?->toISOString(),
+
+            'accepted_at' =>
+            $invitation
+                ->accepted_at
+                ?->toISOString(),
+
+            'revoked_at' =>
+            $invitation
+                ->revoked_at
+                ?->toISOString(),
+
+            'created_at' =>
+            $invitation
+                ->created_at
+                ?->toISOString(),
+
+            'inviter' =>
+            $invitation->inviter
+                ? [
+                    'id' =>
+                    $invitation
+                        ->inviter
+                        ->getKey(),
+
+                    'name' =>
+                    $invitation
+                        ->inviter
+                        ->name,
+
+                    'email' =>
+                    $invitation
+                        ->inviter
+                        ->email,
+                ]
+                : null,
+        ];
     }
 
     private function ensureAcceptable(

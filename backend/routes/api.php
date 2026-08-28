@@ -154,6 +154,16 @@ Route::middleware([
         |--------------------------------------------------------------------------
         */
 
+        Route::get(
+            '/organization-invitations',
+            [
+                OrganizationInvitationController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:organization-members.invite'
+        );
+
         Route::post(
             '/organization-invitations',
             [
@@ -163,6 +173,34 @@ Route::middleware([
         )->middleware(
             'can:organization-members.invite'
         );
+
+        Route::post(
+            '/organization-invitations/{organizationInvitation}/resend',
+            [
+                OrganizationInvitationController::class,
+                'resend',
+            ]
+        )
+            ->whereNumber(
+                'organizationInvitation'
+            )
+            ->middleware(
+                'can:organization-members.invite'
+            );
+
+        Route::patch(
+            '/organization-invitations/{organizationInvitation}/revoke',
+            [
+                OrganizationInvitationController::class,
+                'revoke',
+            ]
+        )
+            ->whereNumber(
+                'organizationInvitation'
+            )
+            ->middleware(
+                'can:organization-members.invite'
+            );
 
         Route::get(
             '/organization-members',

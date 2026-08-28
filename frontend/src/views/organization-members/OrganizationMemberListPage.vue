@@ -40,11 +40,11 @@
                         </AppButton>
 
                         <AppButton v-if="canUpdateStatus" type="button" size="sm" :variant="row.status === 'active'
-                                ? 'ghost'
-                                : 'outline'
+                            ? 'ghost'
+                            : 'outline'
                             " :aria-label="row.status === 'active'
-                                    ? `Desativar ${row.name}`
-                                    : `Reativar ${row.name}`
+                                ? `Desativar ${row.name}`
+                                : `Reativar ${row.name}`
                                 " @click="requestStatusChange(row)">
                             {{
                                 row.status === 'active'
@@ -55,6 +55,75 @@
                     </div>
                 </template>
             </AppTable>
+
+            <section v-if="canInvite" class="organization-members__invitations"
+                aria-labelledby="organization-invitations-title">
+                <header class="organization-members__section-header">
+                    <div>
+                        <h2 id="organization-invitations-title" class="organization-members__section-title">
+                            Convites
+                        </h2>
+
+                        <p class="organization-members__section-description">
+                            Acompanhe os convites enviados e gerencie os acessos pendentes.
+                        </p>
+                    </div>
+                </header>
+
+                <div v-if="invitationLoadError" class="organization-members__error" role="alert">
+                    {{ invitationLoadError }}
+                </div>
+
+                <div v-if="invitationActionError" class="organization-members__error" role="alert">
+                    {{ invitationActionError }}
+                </div>
+
+                <div v-if="invitationsStore.fetching" class="organization-members__state" role="status">
+                    Carregando convites...
+                </div>
+
+                <AppTable v-else :columns="invitationColumns" :rows="invitationsStore.invitations"
+                    empty-text="Nenhum convite encontrado.">
+                    <template #cell-role="{ value }">
+                        {{ roleLabel(value) }}
+                    </template>
+
+                    <template #cell-status="{ value }">
+                        <span class="organization-members__status" :class="invitationStatusClass(value)">
+                            {{ invitationStatusLabel(value) }}
+                        </span>
+                    </template>
+
+                    <template #cell-expires_at="{ value }">
+                        {{ formatDate(value) }}
+                    </template>
+
+                    <template #cell-inviter="{ value }">
+                        {{ value?.name || '—' }}
+                    </template>
+
+                    <template #cell-actions="{ row }">
+                        <div v-if="row.status === 'pending'" class="organization-members__actions">
+                            <AppButton type="button" size="sm" variant="outline"
+                                :loading="invitationsStore.resendingId === row.id"
+                                :disabled="invitationActionInProgress"
+                                :aria-label="`Reenviar convite para ${row.email}`" @click="resendInvitation(row)">
+                                Reenviar
+                            </AppButton>
+
+                            <AppButton type="button" size="sm" variant="ghost" :disabled="invitationActionInProgress"
+                                :aria-label="`Revogar convite de ${row.email}`"
+                                @click="requestInvitationRevocation(row)">
+                                Revogar
+                            </AppButton>
+                        </div>
+
+                        <span v-else class="organization-members__empty-action" aria-hidden="true">
+                            —
+                        </span>
+                    </template>
+                </AppTable>
+            </section>
 
             <AppDialog :open="invitationDialogOpen" title="Convidar membro" size="sm"
                 :close-on-backdrop="!invitationsStore.creating" :close-on-escape="!invitationsStore.creating"
@@ -121,6 +190,11 @@
             <AppConfirmDialog :open="Boolean(memberStatusTarget)" :title="statusDialogTitle"
                 :message="statusDialogMessage" :confirm-label="statusDialogConfirmLabel" cancel-label="Cancelar"
                 :loading="updatingStatus" @confirm="confirmStatusChange" @cancel="cancelStatusChange" />
+
+            <AppConfirmDialog :open="Boolean(invitationRevokeTarget)" title="Revogar convite"
+                :message="invitationRevokeDialogMessage" confirm-label="Revogar" cancel-label="Cancelar"
+                :loading="invitationRevoking" @confirm="confirmInvitationRevocation"
+                @cancel="cancelInvitationRevocation" />
         </div>
     </PageContainer>
 </template>
@@ -159,6 +233,9 @@ const rolesStore = useOrganizationRolesStore()
 
 const loadError = ref('')
 
+const invitationLoadError = ref('')
+const invitationActionError = ref('')
+
 const invitationDialogOpen = ref(false)
 const invitationError = ref('')
 
@@ -182,6 +259,8 @@ const memberStatusTarget = ref(null)
 const updatingStatus = ref(false)
 const statusError = ref('')
 
+const invitationRevokeTarget = ref(null)
+
 const columns = [
     {
         key: 'name',
@@ -198,6 +277,34 @@ const columns = [
     {
         key: 'status',
         label: 'Status',
+    },
+    {
+        key: 'actions',
+        label: 'Ações',
+        align: 'end',
+    },
+]
+
+const invitationColumns = [
+    {
+        key: 'email',
+        label: 'E-mail',
+    },
+    {
+        key: 'role',
+        label: 'Função',
+    },
+    {
+        key: 'status',
+        label: 'Status',
+    },
+    {
+        key: 'expires_at',
+        label: 'Expira em',
+    },
+    {
+        key: 'inviter',
+        label: 'Enviado por',
     },
     {
         key: 'actions',
@@ -224,6 +331,16 @@ const canUpdateStatus = computed(() =>
     ),
 )
 
+const invitationActionInProgress = computed(() =>
+    invitationsStore.resendingId !== null
+    || invitationsStore.revokingId !== null,
+)
+
+const invitationRevoking = computed(() =>
+    invitationRevokeTarget.value !== null
+    && invitationsStore.revokingId === invitationRevokeTarget.value.id,
+)
+
 const statusDialogTitle = computed(() =>
     memberStatusTarget.value?.status === 'active'
         ? 'Desativar membro'
@@ -248,6 +365,17 @@ const statusDialogMessage = computed(() => {
     }
 
     return `Deseja reativar o acesso de "${member.name}" ao escritório?`
+})
+
+const invitationRevokeDialogMessage = computed(() => {
+    const invitation =
+        invitationRevokeTarget.value
+
+    if (!invitation) {
+        return ''
+    }
+
+    return `Deseja realmente revogar o convite enviado para "${invitation.email}"?`
 })
 
 function roleLabel(roleName) {
@@ -287,6 +415,59 @@ function statusClass(status) {
         'organization-members__status--inactive':
             status === 'inactive',
     }
+}
+
+function invitationStatusLabel(status) {
+    const labels = {
+        pending: 'Pendente',
+        expired: 'Expirado',
+        accepted: 'Aceito',
+        revoked: 'Revogado',
+    }
+
+    return labels[status] ?? status ?? '—'
+}
+
+function invitationStatusClass(status) {
+    return {
+        'organization-members__status--pending':
+            status === 'pending',
+
+        'organization-members__status--expired':
+            status === 'expired',
+
+        'organization-members__status--accepted':
+            status === 'accepted',
+
+        'organization-members__status--revoked':
+            status === 'revoked',
+    }
+}
+
+function formatDate(value) {
+    if (!value) {
+        return '—'
+    }
+
+    const date =
+        new Date(value)
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return '—'
+    }
+
+    return new Intl.DateTimeFormat(
+        'pt-BR',
+        {
+            dateStyle: 'short',
+        },
+    ).format(
+        date
+    )
 }
 
 function clearInvitationErrors() {
@@ -362,6 +543,74 @@ async function submitInvitation() {
 
         invitationError.value =
             'Não foi possível enviar o convite. Tente novamente.'
+    }
+}
+
+async function resendInvitation(invitation) {
+    if (
+        invitation.status !== 'pending'
+        || invitationActionInProgress.value
+    ) {
+        return
+    }
+
+    invitationActionError.value = ''
+
+    try {
+        await invitationsStore.resend(
+            invitation.id
+        )
+    } catch {
+        invitationActionError.value =
+            'Não foi possível reenviar o convite. Tente novamente.'
+    }
+}
+
+function requestInvitationRevocation(invitation) {
+    if (
+        invitation.status !== 'pending'
+        || invitationActionInProgress.value
+    ) {
+        return
+    }
+
+    invitationActionError.value = ''
+
+    invitationRevokeTarget.value =
+        invitation
+}
+
+function cancelInvitationRevocation() {
+    if (invitationRevoking.value) {
+        return
+    }
+
+    invitationRevokeTarget.value = null
+    invitationActionError.value = ''
+}
+
+async function confirmInvitationRevocation() {
+    const invitation =
+        invitationRevokeTarget.value
+
+    if (
+        !invitation
+        || invitationRevoking.value
+    ) {
+        return
+    }
+
+    invitationActionError.value = ''
+
+    try {
+        await invitationsStore.revoke(
+            invitation.id
+        )
+
+        invitationRevokeTarget.value = null
+    } catch {
+        invitationActionError.value =
+            'Não foi possível revogar o convite. Tente novamente.'
     }
 }
 
@@ -491,7 +740,7 @@ async function confirmStatusChange() {
     }
 }
 
-onMounted(async () => {
+async function loadMembersAndRoles() {
     loadError.value = ''
 
     try {
@@ -503,6 +752,28 @@ onMounted(async () => {
         loadError.value =
             'Não foi possível carregar os dados da equipe.'
     }
+}
+
+async function loadInvitations() {
+    if (!canInvite.value) {
+        return
+    }
+
+    invitationLoadError.value = ''
+
+    try {
+        await invitationsStore.fetchInvitations()
+    } catch {
+        invitationLoadError.value =
+            'Não foi possível carregar os convites.'
+    }
+}
+
+onMounted(async () => {
+    await Promise.all([
+        loadMembersAndRoles(),
+        loadInvitations(),
+    ])
 })
 </script>
 
@@ -535,6 +806,41 @@ onMounted(async () => {
         var(--space-2) 0 0;
 
     color: var(--color-text-muted);
+}
+
+.organization-members__invitations {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    padding-top: var(--space-6);
+
+    border-top: 1px solid var(--color-border);
+}
+
+.organization-members__section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.organization-members__section-title {
+    margin: 0;
+
+    color: var(--color-text);
+
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+}
+
+.organization-members__section-description {
+    margin:
+        var(--space-2) 0 0;
+
+    color: var(--color-text-muted);
+
+    font-size: var(--font-size-sm);
 }
 
 .organization-members__dialog-description strong {
@@ -597,6 +903,44 @@ onMounted(async () => {
 
 .organization-members__status--inactive {
     background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+}
+
+.organization-members__status--pending {
+    background: var(--color-surface-accent);
+    color: var(--color-brand);
+}
+
+.organization-members__status--expired {
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+}
+
+.organization-members__status--accepted {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+}
+
+.organization-members__status--revoked {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+.organization-members__state {
+    padding:
+        var(--space-5) var(--space-4);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+.organization-members__empty-action {
     color: var(--color-text-muted);
 }
 

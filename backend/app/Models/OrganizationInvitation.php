@@ -32,6 +32,8 @@ class OrganizationInvitation extends Model
 
     public const STATUS_REVOKED = 'revoked';
 
+    public const STATUS_EXPIRED = 'expired';
+
     public const DEFAULT_EXPIRATION_DAYS = 7;
 
     protected function casts(): array
@@ -92,6 +94,18 @@ class OrganizationInvitation extends Model
     {
         return $this->isPending()
             && !$this->isExpired();
+    }
+
+    public function administrativeStatus(): string
+    {
+        if (
+            $this->isPending()
+            && $this->isExpired()
+        ) {
+            return self::STATUS_EXPIRED;
+        }
+
+        return $this->status;
     }
 
     public function matchesToken(
