@@ -16,6 +16,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'datajud_alias',
     'datajud_metadata',
     'datajud_synced_at',
+    'datajud_monitoring_enabled',
+    'datajud_last_attempt_at',
+    'datajud_last_success_at',
+    'datajud_next_sync_at',
+    'datajud_sync_error',
 ])]
 class Folder extends Model
 {
@@ -27,6 +32,10 @@ class Folder extends Model
         return [
             'datajud_metadata' => 'array',
             'datajud_synced_at' => 'datetime',
+            'datajud_monitoring_enabled' => 'boolean',
+            'datajud_last_attempt_at' => 'datetime',
+            'datajud_last_success_at' => 'datetime',
+            'datajud_next_sync_at' => 'datetime',
         ];
     }
 

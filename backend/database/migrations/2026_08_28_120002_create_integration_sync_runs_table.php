@@ -24,6 +24,12 @@ return new class extends Migration
                     ->constrained('monitored_bar_registrations')
                     ->nullOnDelete();
 
+                $table
+                    ->foreignId('folder_id')
+                    ->nullable()
+                    ->constrained('folders')
+                    ->nullOnDelete();
+
                 $table->string(
                     'provider',
                     30,
@@ -34,8 +40,8 @@ return new class extends Migration
                     20,
                 );
 
-                $table->date('period_start');
-                $table->date('period_end');
+                $table->date('period_start')->nullable();
+                $table->date('period_end')->nullable();
                 $table->dateTime('started_at');
 
                 $table
@@ -74,6 +80,11 @@ return new class extends Migration
                     'monitored_bar_registration_id',
                     'status',
                 ]);
+
+                $table->index(
+                    ['folder_id', 'provider', 'started_at'],
+                    'sync_runs_folder_provider_started_index',
+                );
             }
         );
     }

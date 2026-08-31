@@ -22,6 +22,15 @@ return new class extends Migration
                 ->string('process_number', 25)
                 ->nullable();
 
+            $table->string('datajud_alias', 40)->nullable();
+            $table->json('datajud_metadata')->nullable();
+            $table->timestamp('datajud_synced_at')->nullable();
+            $table->boolean('datajud_monitoring_enabled')->default(false);
+            $table->timestamp('datajud_last_attempt_at')->nullable();
+            $table->timestamp('datajud_last_success_at')->nullable();
+            $table->timestamp('datajud_next_sync_at')->nullable();
+            $table->text('datajud_sync_error')->nullable();
+
             $table->timestamps();
 
             $table->index([
@@ -33,6 +42,11 @@ return new class extends Migration
                 'organization_id',
                 'process_number',
             ]);
+
+            $table->index(
+                ['datajud_monitoring_enabled', 'datajud_next_sync_at'],
+                'folders_datajud_monitoring_due_index',
+            );
         });
     }
 

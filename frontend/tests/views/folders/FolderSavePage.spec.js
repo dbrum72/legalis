@@ -416,6 +416,9 @@ describe(
 
                             process_number:
                                 null,
+
+                            datajud_monitoring_enabled:
+                                false,
                         })
                     },
                 )
@@ -510,6 +513,44 @@ describe(
                         )
                     },
                 )
+            },
+        )
+
+        it(
+            'permite habilitar o monitoramento diário para processo informado',
+            async () => {
+                const {
+                    wrapper,
+                    foldersStore,
+                } = await mountPage()
+
+                const createSpy =
+                    vi.spyOn(
+                        foldersStore,
+                        'create',
+                    ).mockResolvedValue({
+                        id: 26,
+                    })
+
+                await findInput(wrapper, 'name')
+                    .setValue('Pasta monitorada')
+
+                await findInput(wrapper, 'process_number')
+                    .setValue('5000000-00.2026.8.21.0001')
+
+                await wrapper
+                    .get('#folder-datajud-monitoring')
+                    .setValue(true)
+
+                await wrapper.get('form').trigger('submit')
+
+                await vi.waitFor(() => {
+                    expect(createSpy).toHaveBeenCalledWith({
+                        name: 'Pasta monitorada',
+                        process_number: '5000000-00.2026.8.21.0001',
+                        datajud_monitoring_enabled: true,
+                    })
+                })
             },
         )
 
@@ -929,6 +970,9 @@ describe(
 
                                 process_number:
                                     '5000002-00.2026.8.21.0001',
+
+                                datajud_monitoring_enabled:
+                                    false,
                             },
                         )
                     },

@@ -82,6 +82,18 @@ return [
 
         'timeout' => (int) env('DATAJUD_TIMEOUT', 20),
 
+        'rate_limit_per_minute' => (int) env(
+            'DATAJUD_RATE_LIMIT_PER_MINUTE',
+            30,
+        ),
+
+        'timezone' => env(
+            'DATAJUD_TIMEZONE',
+            'America/Sao_Paulo',
+        ),
+
+        'sync_time' => env('DATAJUD_SYNC_TIME', '04:00'),
+
         'user_agent' => env(
             'DATAJUD_USER_AGENT',
             'Legalis/1.0',

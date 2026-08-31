@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FolderDeadline;
 use App\Models\FolderEvent;
 use App\Models\FolderTask;
+use App\Models\IntegrationSyncRun;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\JsonResponse;
 
@@ -768,6 +769,24 @@ class DashboardController extends Controller
             ->take(10)
             ->values();
 
+        $unseenDataJudIntegrations = IntegrationSyncRun::query()
+            ->where('provider', 'datajud')
+            ->where('status', IntegrationSyncRun::STATUS_SUCCEEDED)
+            ->whereNotNull('folder_id')
+            ->whereDoesntHave('viewers', fn($query) => $query->where('users.id', $user->id))
+            ->with('folder:id,name,process_number')
+            ->orderByDesc('finished_at')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get()
+            ->map(fn(IntegrationSyncRun $run): array => [
+                'id' => $run->id,
+                'finished_at' => $run->finished_at,
+                'items_seen' => $run->items_seen,
+                'items_imported' => $run->items_imported,
+                'folder' => $this->serializeActivityFolder($run->folder),
+            ]);
+
         /*
         |--------------------------------------------------------------------------
         | Response
@@ -838,7 +857,21 @@ class DashboardController extends Controller
 
             'recent_folders' =>
             $recentFolders,
+
+            'unseen_datajud_integrations' =>
+            $unseenDataJudIntegrations,
         ]);
+    }
+
+    public function markDataJudIntegrationSeen(IntegrationSyncRun $integrationSyncRun): JsonResponse
+    {
+        abort_unless($integrationSyncRun->provider === 'datajud', 404);
+
+        $integrationSyncRun->viewers()->syncWithoutDetaching([
+            auth('api')->id() => ['viewed_at' => now()],
+        ]);
+
+        return response()->json(['message' => 'Integração marcada como vista.']);
     }
 
     private function serializeActivityFolder(

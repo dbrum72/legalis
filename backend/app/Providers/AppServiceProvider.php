@@ -8,6 +8,8 @@ use App\Integrations\DataJud\Contracts\DataJudClient;
 use App\Integrations\DataJud\HttpDataJudClient;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        RateLimiter::for(
+            'datajud',
+            fn () => Limit::perMinute(
+                max(1, (int) config('services.datajud.rate_limit_per_minute', 30)),
+            )->by('datajud'),
+        );
     }
 }

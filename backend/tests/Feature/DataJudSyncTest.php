@@ -11,6 +11,7 @@ use Database\Seeders\OrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
+use App\Services\Folders\SyncFolderWithDataJud;
 
 class DataJudSyncTest extends TestCase
 {
@@ -54,15 +55,10 @@ class DataJudSyncTest extends TestCase
         ]);
         $this->app->instance(DataJudClient::class, $client);
 
-        $token = $this->loginAsSuperAdmin();
+        $service = $this->app->make(SyncFolderWithDataJud::class);
 
-        $this->asTenant($token)->postJson($this->url())
-            ->assertOk()
-            ->assertJsonPath('movements_imported', 1);
-
-        $this->asTenant($token)->postJson($this->url())
-            ->assertOk()
-            ->assertJsonPath('movements_imported', 0);
+        $this->assertSame(1, $service->execute($this->folder)['movements_imported']);
+        $this->assertSame(0, $service->execute($this->folder)['movements_imported']);
 
         $this->assertDatabaseCount('folder_movements', 1);
         $this->assertDatabaseHas('folder_movements', [
@@ -74,6 +70,38 @@ class DataJudSyncTest extends TestCase
         $this->assertDatabaseHas('folders', [
             'id' => $this->folder->id,
             'datajud_alias' => 'tjrs',
+        ]);
+    }
+
+    public function test_sincronizacao_manual_executa_imediatamente(): void
+    {
+        $client = Mockery::mock(DataJudClient::class);
+        $client->shouldReceive('findProcess')->once()->andReturn([
+            'numeroProcesso' => '50000000020268210001',
+            'tribunal' => 'TJRS',
+            'grau' => 'G1',
+            'movimentos' => [[
+                'codigo' => 26,
+                'nome' => 'Distribuição',
+                'dataHora' => '2026-08-30T14:00:00.000Z',
+            ]],
+        ]);
+        $this->app->instance(DataJudClient::class, $client);
+
+        $this->asTenant($this->loginAsSuperAdmin())
+            ->postJson($this->url())
+            ->assertOk()
+            ->assertJsonPath('queued', false);
+
+        $this->assertDatabaseHas('folder_movements', [
+            'folder_id' => $this->folder->id,
+            'source' => 'datajud',
+            'source_code' => '26',
+        ]);
+        $this->assertDatabaseHas('integration_sync_runs', [
+            'folder_id' => $this->folder->id,
+            'provider' => 'datajud',
+            'status' => 'succeeded',
         ]);
     }
 
@@ -110,10 +138,9 @@ class DataJudSyncTest extends TestCase
         $client->shouldReceive('findProcess')->once()->andReturnNull();
         $this->app->instance(DataJudClient::class, $client);
 
-        $this->asTenant($this->loginAsSuperAdmin())
-            ->postJson($this->url())
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('process_number');
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $this->app->make(SyncFolderWithDataJud::class)->execute($this->folder);
     }
 
     private function url(): string

@@ -2,7 +2,10 @@ import { ref } from 'vue'
 
 import { defineStore } from 'pinia'
 
-import { getDashboard as getDashboardRequest } from '@/api/dashboard.js'
+import {
+    getDashboard as getDashboardRequest,
+    markDataJudIntegrationSeen as markDataJudIntegrationSeenRequest,
+} from '@/api/dashboard.js'
 
 function emptySummary() {
     return {
@@ -60,6 +63,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     const recentActivity = ref([])
 
     const myWork = ref(emptyMyWork())
+
+    const unseenDataJudIntegrations = ref([])
 
     /*
     |--------------------------------------------------------------------------
@@ -158,6 +163,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
                 : [],
         }
 
+        unseenDataJudIntegrations.value = Array.isArray(payload?.unseen_datajud_integrations)
+            ? payload.unseen_datajud_integrations
+            : []
+
         /*
         |--------------------------------------------------------------------------
         | Contract
@@ -176,7 +185,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
             recent_activity: recentActivity.value,
 
             my_work: myWork.value,
+
+            unseen_datajud_integrations: unseenDataJudIntegrations.value,
         }
+    }
+
+    async function markDataJudIntegrationSeen(id) {
+        await markDataJudIntegrationSeenRequest(id)
+
+        unseenDataJudIntegrations.value = unseenDataJudIntegrations.value.filter(
+            (integration) => Number(integration.id) !== Number(id),
+        )
     }
 
     /*
@@ -197,6 +216,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
         recentActivity.value = []
 
         myWork.value = emptyMyWork()
+
+        unseenDataJudIntegrations.value = []
     }
 
     /*
@@ -218,7 +239,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
         myWork,
 
+        unseenDataJudIntegrations,
+
         fetchDashboard,
+
+        markDataJudIntegrationSeen,
 
         clear,
     }

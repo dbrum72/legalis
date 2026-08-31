@@ -24,6 +24,11 @@ return new class extends Migration
                     ->constrained()
                     ->nullOnDelete();
 
+                $table->string('source', 30)->nullable();
+                $table->string('external_id', 64)->nullable();
+                $table->string('source_code', 30)->nullable();
+                $table->json('source_metadata')->nullable();
+
                 $table->dateTime(
                     'occurred_at'
                 );
@@ -43,6 +48,11 @@ return new class extends Migration
                     'folder_id',
                     'occurred_at',
                 ]);
+
+                $table->unique(
+                    ['folder_id', 'source', 'external_id'],
+                    'folder_movements_source_external_unique',
+                );
             },
         );
     }

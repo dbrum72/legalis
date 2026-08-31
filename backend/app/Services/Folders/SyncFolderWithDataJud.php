@@ -46,6 +46,7 @@ class SyncFolderWithDataJud
 
         return [
             'message' => 'Dados do processo atualizados pelo DataJud.',
+            'movements_seen' => count($process['movimentos'] ?? []),
             'movements_imported' => $imported,
             'datajud_synced_at' => $folder->fresh()->datajud_synced_at,
         ];

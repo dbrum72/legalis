@@ -246,6 +246,8 @@ async function mountPage({
 
     myWork = emptyMyWork(),
 
+    unseenDataJudIntegrations = [],
+
     fetchError = null,
 } = {}) {
     const pinia = createPinia()
@@ -276,6 +278,8 @@ async function mountPage({
 
     dashboardStore.myWork = myWork
 
+    dashboardStore.unseenDataJudIntegrations = unseenDataJudIntegrations
+
     const folderTasksStore = useFolderTasksStore()
 
     const folderDeadlinesStore = useFolderDeadlinesStore()
@@ -299,6 +303,8 @@ async function mountPage({
             recent_folders: dashboardStore.recentFolders,
 
             my_work: dashboardStore.myWork,
+
+            unseen_datajud_integrations: dashboardStore.unseenDataJudIntegrations,
         })
     }
 
@@ -1442,5 +1448,38 @@ describe('DashboardPage', () => {
         const agenda = wrapper.get('[data-testid="dashboard-today-agenda"]')
 
         expect(agenda.text()).toContain('Nenhum item restante para hoje.')
+    })
+
+    it('exibe e marca uma integração do DataJud como vista', async () => {
+        const { wrapper, dashboardStore } = await mountPage({
+            unseenDataJudIntegrations: [{
+                id: 91,
+                finished_at: '2026-08-31T12:00:00.000000Z',
+                items_seen: 5,
+                items_imported: 2,
+                folder: {
+                    id: 10,
+                    name: 'Ação indenizatória',
+                    process_number: '5000000-00.2026.8.21.0001',
+                },
+            }],
+        })
+        const markSeen = vi.spyOn(dashboardStore, 'markDataJudIntegrationSeen')
+            .mockImplementation(async (id) => {
+                dashboardStore.unseenDataJudIntegrations = dashboardStore.unseenDataJudIntegrations
+                    .filter((integration) => integration.id !== id)
+            })
+
+        const area = wrapper.get('[data-testid="dashboard-datajud-integrations"]')
+
+        expect(area.text()).toContain('Novidades do DataJud')
+        expect(area.text()).toContain('Ação indenizatória')
+        expect(area.text()).toContain('2novos movimentos')
+
+        await wrapper.get('[data-testid="dashboard-datajud-seen-91"]').trigger('click')
+        await flushPromises()
+
+        expect(markSeen).toHaveBeenCalledWith(91)
+        expect(wrapper.find('[data-testid="dashboard-datajud-integrations"]').exists()).toBe(false)
     })
 })

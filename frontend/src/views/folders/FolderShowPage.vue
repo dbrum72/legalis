@@ -336,7 +336,9 @@
                                     </p>
                                 </div>
 
-                                <span class="folder-show-page__source-badge">Fonte pública</span>
+                                <span class="folder-show-page__source-badge">
+                                    {{ folder.datajud_monitoring_enabled ? 'Monitoramento diário ativo' : 'Fonte pública' }}
+                                </span>
                             </div>
 
                             <dl class="folder-show-page__grid">
@@ -396,6 +398,19 @@
                                     <dd class="folder-show-page__value">
                                         {{ formatShortDateTime(folder.datajud_synced_at) }}
                                     </dd>
+                                </div>
+
+                                <div v-if="folder.datajud_next_sync_at" class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Próxima sincronização</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ formatShortDateTime(folder.datajud_next_sync_at) }}
+                                    </dd>
+                                </div>
+
+                                <div v-if="folder.datajud_sync_error"
+                                    class="folder-show-page__field folder-show-page__field--full">
+                                    <dt class="folder-show-page__label">Última falha de sincronização</dt>
+                                    <dd class="folder-show-page__sync-error">{{ folder.datajud_sync_error }}</dd>
                                 </div>
 
                                 <div class="folder-show-page__field folder-show-page__field--full">
@@ -538,6 +553,10 @@ import {
     useFoldersStore,
 } from '@/stores/folders.js'
 
+import {
+    useFolderMovementsStore,
+} from '@/stores/folder-movements.js'
+
 const route =
     useRoute()
 
@@ -549,6 +568,9 @@ const authStore =
 
 const foldersStore =
     useFoldersStore()
+
+const folderMovementsStore =
+    useFolderMovementsStore()
 
 const loadError =
     ref('')
@@ -757,9 +779,11 @@ async function syncDataJud() {
 
     try {
         const result = await foldersStore.syncDataJud(folderId.value)
-        const imported = Number(result?.movements_imported ?? 0)
-
-        syncMessage.value = `${result?.message ?? 'Dados atualizados.'} ${imported} nova(s) movimentação(ões) importada(s).`
+        await Promise.all([
+            foldersStore.fetchFolder(folderId.value),
+            folderMovementsStore.fetchMovements(folderId.value),
+        ])
+        syncMessage.value = result?.message ?? 'Sincronização concluída com sucesso.'
     } catch (error) {
         loadError.value = error?.response?.data?.errors?.process_number?.[0]
             ?? error?.response?.data?.message
@@ -1507,6 +1531,11 @@ onMounted(
     flex-wrap: wrap;
     gap: var(--space-2);
     margin: 0;
+}
+
+.folder-show-page__sync-error {
+    margin: 0;
+    color: var(--color-danger);
 }
 
 .folder-show-page__subject {

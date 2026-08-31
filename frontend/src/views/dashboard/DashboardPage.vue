@@ -731,6 +731,59 @@
                     </div>
                 </section>
 
+                <section v-if="dashboardStore.unseenDataJudIntegrations.length > 0"
+                    class="dashboard-datajud" aria-labelledby="dashboard-datajud-title"
+                    data-testid="dashboard-datajud-integrations">
+                    <header class="dashboard-datajud__header">
+                        <div>
+                            <span class="dashboard-datajud__eyebrow">Monitoramento processual</span>
+                            <h2 id="dashboard-datajud-title" class="dashboard-datajud__title">
+                                Novidades do DataJud
+                            </h2>
+                            <p class="dashboard-datajud__description">
+                                Sincronizações recentes que você ainda não visualizou.
+                            </p>
+                        </div>
+
+                        <span class="dashboard-datajud__count">
+                            {{ dashboardStore.unseenDataJudIntegrations.length }}
+                            {{ dashboardStore.unseenDataJudIntegrations.length === 1 ? 'nova' : 'novas' }}
+                        </span>
+                    </header>
+
+                    <div class="dashboard-datajud__list">
+                        <article v-for="integration in dashboardStore.unseenDataJudIntegrations"
+                            :key="integration.id" class="dashboard-datajud__item">
+                            <span class="dashboard-datajud__status" aria-hidden="true" />
+
+                            <button type="button" class="dashboard-datajud__folder"
+                                @click="goToFolder(integration.folder?.id)">
+                                <strong>{{ integration.folder?.name ?? 'Pasta jurídica' }}</strong>
+                                <span v-if="integration.folder?.process_number">
+                                    {{ integration.folder.process_number }}
+                                </span>
+                            </button>
+
+                            <div class="dashboard-datajud__result">
+                                <strong>{{ integration.items_imported ?? 0 }}</strong>
+                                <span>
+                                    {{ Number(integration.items_imported) === 1 ? 'novo movimento' : 'novos movimentos' }}
+                                </span>
+                            </div>
+
+                            <time class="dashboard-datajud__date" :datetime="integration.finished_at">
+                                {{ formatShortDateTime(integration.finished_at) }}
+                            </time>
+
+                            <AppButton type="button" size="sm" variant="outline"
+                                :data-testid="`dashboard-datajud-seen-${integration.id}`"
+                                @click="markDataJudIntegrationSeen(integration.id)">
+                                Marcar como vista
+                            </AppButton>
+                        </article>
+                    </div>
+                </section>
+
                 <!-- Movimento do escritório -->
                 <div class="dashboard-secondary dashboard-recent-panel" data-testid="dashboard-secondary">
                     <div class="dashboard-office-movement dashboard-recent-panel__grid"
@@ -1260,6 +1313,16 @@ function goToFolder(folderId) {
                 folderId,
         },
     })
+}
+
+async function markDataJudIntegrationSeen(integrationId) {
+    errorMessage.value = ''
+
+    try {
+        await dashboardStore.markDataJudIntegrationSeen(integrationId)
+    } catch {
+        errorMessage.value = 'Não foi possível marcar a integração do DataJud como vista.'
+    }
 }
 
 async function completeEvent(event) {
@@ -2239,6 +2302,143 @@ button.dashboard-my-work-card__footer-link:focus-visible {
     border-radius: var(--radius-sm);
 }
 
+
+/* Novidades do DataJud */
+
+.dashboard-datajud {
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-brand-secondary) 24%, var(--color-border));
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: 0 5px 16px rgb(39 32 23 / 8%);
+}
+
+.dashboard-datajud__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-surface-secondary-soft) 62%, var(--color-surface));
+}
+
+.dashboard-datajud__eyebrow {
+    color: var(--color-brand-secondary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-datajud__title {
+    margin: 3px 0 0;
+    color: var(--color-text);
+    font-size: 1rem;
+}
+
+.dashboard-datajud__description {
+    margin: 4px 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+}
+
+.dashboard-datajud__count {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--color-brand-secondary);
+    color: var(--color-on-brand-secondary);
+    font-size: 0.72rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.dashboard-datajud__list {
+    padding: 0 20px;
+}
+
+.dashboard-datajud__item {
+    display: grid;
+    grid-template-columns: 10px minmax(180px, 1fr) minmax(100px, auto) auto auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-datajud__item:last-child {
+    border-bottom: 0;
+}
+
+.dashboard-datajud__status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 4px rgb(34 197 94 / 12%);
+}
+
+.dashboard-datajud__folder {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.dashboard-datajud__folder span,
+.dashboard-datajud__date,
+.dashboard-datajud__result span {
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
+}
+
+.dashboard-datajud__folder:hover strong {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.dashboard-datajud__result {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.dashboard-datajud__result strong {
+    color: #166534;
+    font-size: 1rem;
+}
+
+.dashboard-datajud__date {
+    white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+    .dashboard-datajud__header {
+        align-items: flex-start;
+    }
+
+    .dashboard-datajud__item {
+        grid-template-columns: 10px minmax(0, 1fr) auto;
+    }
+
+    .dashboard-datajud__result,
+    .dashboard-datajud__date {
+        grid-column: 2;
+        text-align: left;
+    }
+
+    .dashboard-datajud__item > .app-button {
+        grid-column: 2 / 4;
+        justify-self: start;
+    }
+}
 
 /* Atividade recente + Pastas recentes */
 

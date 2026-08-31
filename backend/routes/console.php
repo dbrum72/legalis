@@ -19,3 +19,9 @@ Schedule::command(
         )
     )
     ->withoutOverlapping();
+
+Schedule::command('datajud:sync-folders')
+    ->dailyAt((string) config('services.datajud.sync_time', '04:00'))
+    ->timezone((string) config('services.datajud.timezone', 'America/Sao_Paulo'))
+    ->withoutOverlapping()
+    ->onOneServer();

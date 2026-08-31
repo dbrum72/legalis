@@ -21,6 +21,11 @@
                     <AppInput v-model="form.process_number" name="process_number" label="Número do processo"
                         :error="errors.process_number" :disabled="submitting" :maxlength="25" />
 
+                    <AppSwitch v-model="form.datajud_monitoring_enabled" id="folder-datajud-monitoring"
+                        label="Monitoramento diário pelo DataJud"
+                        hint="Busca diariamente metadados e novas movimentações públicas deste processo."
+                        :disabled="submitting || !form.process_number.trim()" />
+
                     <div v-if="submitError" class="folder-save-page__error" role="alert">
                         {{ submitError }}
                     </div>
@@ -61,6 +66,7 @@ import PageContainer from '@/components/layout/PageContainer/index.vue'
 
 import {
     AppInput,
+    AppSwitch,
 } from '@/components/forms'
 
 import {
@@ -91,6 +97,7 @@ const submitError = ref('')
 const form = reactive({
     name: '',
     process_number: '',
+    datajud_monitoring_enabled: false,
 })
 
 const errors = reactive({
@@ -136,6 +143,7 @@ function clearErrors() {
 function clearForm() {
     form.name = ''
     form.process_number = ''
+    form.datajud_monitoring_enabled = false
 }
 
 function applyFolder(folder) {
@@ -144,6 +152,9 @@ function applyFolder(folder) {
 
     form.process_number =
         folder?.process_number ?? ''
+
+    form.datajud_monitoring_enabled =
+        Boolean(folder?.datajud_monitoring_enabled)
 }
 
 function buildPayload() {
@@ -154,6 +165,12 @@ function buildPayload() {
         process_number:
             form.process_number.trim() ||
             null,
+
+        datajud_monitoring_enabled:
+            Boolean(
+                form.process_number.trim()
+                && form.datajud_monitoring_enabled
+            ),
     }
 }
 

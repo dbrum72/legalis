@@ -1,6 +1,24 @@
 <template>
     <aside class="app-sidebar app-sidebar-nav" aria-label="Barra lateral">
         <header class="sidebar-header">
+            <div v-if="authStore.organization" class="sidebar-organization">
+                <AppSelect v-if="authStore.hasMultipleOrganizations" :model-value="authStore.currentTenant"
+                    name="organization" label="Escritório" :options="organizationOptions" option-label="label"
+                    option-value="value" :disabled="switchingOrganization"
+                    @update:model-value="handleOrganizationChange" />
+
+                <div v-else class="sidebar-organization__current">
+                    <span class="sidebar-organization__label">Escritório</span>
+                    <strong class="sidebar-organization__name">
+                        {{ authStore.organization.name }}
+                    </strong>
+                </div>
+            </div>
+        </header>
+
+        <SideBarNav />
+
+        <footer class="sidebar-footer">
             <div class="sidebar-brand">
                 <img :src="legalisSidebarLogo" class="sidebar-brand__symbol" width="42" height="44" alt=""
                     aria-hidden="true" decoding="async" draggable="false">
@@ -10,17 +28,46 @@
                     <span class="sidebar-brand__tagline">Escritório Jurídico</span>
                 </div>
             </div>
-        </header>
-
-        <SideBarNav />
-
-        <footer class="sidebar-footer"></footer>
+        </footer>
     </aside>
 </template>
 
 <script setup>
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+
 import legalisSidebarLogo from '@/assets/brand/legalis-sidebar-logo.png'
+import { AppSelect } from '@/components/forms'
 import SideBarNav from '@/components/navigation/SideBarNav/index.vue'
+import { useAuthStore } from '@/stores/auth.js'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const switchingOrganization = ref(false)
+
+const organizationOptions = computed(() =>
+    authStore.organizations.map((organization) => ({
+        label: organization.name,
+        value: organization.slug,
+    })),
+)
+
+async function handleOrganizationChange(tenant) {
+    if (switchingOrganization.value || !tenant || tenant === authStore.currentTenant) {
+        return
+    }
+
+    switchingOrganization.value = true
+
+    try {
+        await authStore.selectOrganization(tenant)
+        await router.replace({ name: 'dashboard' })
+    } catch {
+        await router.replace({ name: 'organizations.select' })
+    } finally {
+        switchingOrganization.value = false
+    }
+}
 </script>
 
 <style scoped>
@@ -28,6 +75,8 @@ import SideBarNav from '@/components/navigation/SideBarNav/index.vue'
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 100dvh;
+    height: 100%;
     overflow: hidden;
 }
 
@@ -37,6 +86,30 @@ import SideBarNav from '@/components/navigation/SideBarNav/index.vue'
     flex: 0 0 auto;
     min-height: var(--header-height);
     padding: 0 1.5rem;
+}
+
+.sidebar-organization {
+    width: 100%;
+    min-width: 0;
+}
+
+.sidebar-organization__current {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.sidebar-organization__label {
+    color: rgb(255 255 255 / 0.66);
+    font-size: var(--font-size-sm);
+}
+
+.sidebar-organization__name {
+    overflow: hidden;
+    color: var(--neutral-0);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sidebar-brand {
@@ -91,6 +164,7 @@ import SideBarNav from '@/components/navigation/SideBarNav/index.vue'
 .app-sidebar-nav :deep(.sidebar-nav) {
     flex: 1 1 auto;
     min-height: 0;
+    padding-bottom: calc(var(--header-height) + var(--space-5));
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -98,6 +172,16 @@ import SideBarNav from '@/components/navigation/SideBarNav/index.vue'
 }
 
 .sidebar-footer {
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
     flex: 0 0 auto;
+    width: var(--sidebar-width);
+    min-height: var(--header-height);
+    padding: 0 1.5rem;
+    background: #29432f;
 }
 </style>

@@ -88,10 +88,6 @@ export const useFoldersStore = defineStore('folders', () => {
         try {
             const response = await syncFolderWithDataJudRequest(id)
 
-            if (Number(folder.value?.id) === Number(id)) {
-                await fetchFolder(id)
-            }
-
             return response.data
         } finally {
             syncingDataJud.value = false

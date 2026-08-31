@@ -138,6 +138,11 @@ Route::middleware([
             ]
         );
 
+        Route::post(
+            '/dashboard/datajud-integrations/{integrationSyncRun}/seen',
+            [DashboardController::class, 'markDataJudIntegrationSeen'],
+        );
+
         /*
         |--------------------------------------------------------------------------
         | Agenda

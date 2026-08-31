@@ -1,209 +1,70 @@
 <template>
     <header class="app-header app-header-bar">
-        <div class="app-header-bar__start">
-            <AppBreadcrumb />
+        <button class="app-header-bar__menu" type="button" aria-label="Alternar menu lateral"
+            :aria-expanded="sidebarOpen" @click="$emit('toggle-sidebar')">
+            <Menu :size="21" :stroke-width="1.8" aria-hidden="true" />
+        </button>
+
+        <div v-if="authStore.user" class="app-header-bar__welcome">
+            <strong>{{ greeting }}, {{ displayName }} <span aria-hidden="true">👋</span></strong>
+            <span>Último acesso: {{ lastAccess }}</span>
         </div>
 
-        <div class="app-header-bar__end">
-            <div v-if="authStore.organization" class="app-header-bar__organization">
-                <AppSelect v-if="authStore.hasMultipleOrganizations" :model-value="authStore.currentTenant"
-                    name="organization" label="Escritório" :options="organizationOptions" option-label="label"
-                    option-value="value" :disabled="switchingOrganization || loggingOut"
-                    @update:model-value="handleOrganizationChange" />
-
-                <div v-else class="app-header-bar__organization-current">
-                    <span class="app-header-bar__organization-label">
-                        Escritório
-                    </span>
-
-                    <strong class="app-header-bar__organization-name">
-                        {{ authStore.organization.name }}
-                    </strong>
-                </div>
-            </div>
-
-            <div v-if="authStore.user" class="app-header-bar__user">
-                <span class="app-header-bar__user-name">
-                    {{ authStore.userName }}
+        <nav class="app-header-bar__actions" aria-label="Ações do usuário">
+            <button class="app-header-bar__icon-button app-header-bar__notifications" type="button"
+                aria-label="Notificações, 3 não lidas">
+                <Bell :size="21" :stroke-width="1.8" aria-hidden="true" />
+                <span class="app-header-bar__badge">3</span>
+            </button>
+            <button class="app-header-bar__icon-button" type="button" aria-label="Configurações">
+                <Settings :size="20" :stroke-width="1.8" aria-hidden="true" />
+            </button>
+            <div v-if="authStore.user" class="app-header-bar__profile">
+                <span class="app-header-bar__avatar" aria-hidden="true">{{ initials }}</span>
+                <span class="app-header-bar__identity">
+                    <strong>{{ authStore.userName }}</strong>
+                    <span>{{ roleLabel }}</span>
                 </span>
-
-                <AppButton variant="ghost" size="sm" :loading="loggingOut"
-                    :disabled="loggingOut || switchingOrganization" aria-label="Sair da aplicação"
-                    @click="handleLogout">
-                    Sair
-                </AppButton>
+                <button class="app-header-bar__profile-menu" type="button" aria-label="Sair da aplicação"
+                    :disabled="loggingOut" @click="handleLogout">
+                    <ChevronDown :size="16" :stroke-width="1.8" aria-hidden="true" />
+                    <span class="app-header-bar__sr-only">Sair</span>
+                </button>
             </div>
-        </div>
+        </nav>
     </header>
 </template>
 
 <script setup>
-import {
-    computed,
-    ref,
-} from 'vue'
+import { computed, ref } from 'vue'
+import { Bell, ChevronDown, Menu, Settings } from '@lucide/vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.js'
 
-import {
-    useRouter,
-} from 'vue-router'
+defineProps({ sidebarOpen: { type: Boolean, default: true } })
+defineEmits(['toggle-sidebar'])
 
-import {
-    AppSelect,
-} from '@/components/forms'
-
-import {
-    AppBreadcrumb,
-} from '@/components/navigation'
-
-import {
-    AppButton,
-} from '@/components/ui'
-
-import {
-    useAuthStore,
-} from '@/stores/auth.js'
-
-const router =
-    useRouter()
-
-const authStore =
-    useAuthStore()
-
-const loggingOut =
-    ref(false)
-
-const switchingOrganization =
-    ref(false)
-
-const organizationOptions =
-    computed(
-        () =>
-            authStore.organizations.map(
-                (organization) => ({
-                    label:
-                        organization.name,
-
-                    value:
-                        organization.slug,
-                }),
-            ),
-    )
-
-async function handleOrganizationChange(
-    tenant,
-) {
-    if (
-        switchingOrganization.value ||
-        !tenant ||
-        tenant ===
-        authStore.currentTenant
-    ) {
-        return
-    }
-
-    switchingOrganization.value =
-        true
-
-    try {
-        await authStore.selectOrganization(
-            tenant,
-        )
-
-        await router.replace({
-            name: 'dashboard',
-        })
-    } catch {
-        await router.replace({
-            name:
-                'organizations.select',
-        })
-    } finally {
-        switchingOrganization.value =
-            false
-    }
-}
+const router = useRouter()
+const authStore = useAuthStore()
+const loggingOut = ref(false)
+const currentHour = new Date().getHours()
+const greeting = currentHour < 12 ? 'Bom dia' : currentHour < 18 ? 'Boa tarde' : 'Boa noite'
+const displayName = computed(() => authStore.userName || 'Usuário')
+const initials = computed(() => displayName.value.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase())
+const roleLabel = computed(() => {
+    const role = authStore.roles[0]
+    return role ? role.split('-').map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(' ') : 'Administrador'
+})
+const lastAccess = computed(() => authStore.user?.last_login_at
+    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(authStore.user.last_login_at))
+    : 'Hoje')
 
 async function handleLogout() {
-    if (loggingOut.value) {
-        return
-    }
-
+    if (loggingOut.value) return
     loggingOut.value = true
-
-    try {
-        await authStore.logout()
-    } finally {
+    try { await authStore.logout() } finally {
         loggingOut.value = false
-
-        await router.replace({
-            name: 'login',
-        })
+        await router.replace({ name: 'login' })
     }
 }
 </script>
-
-<style scoped>
-.app-header-bar__end {
-    display: flex;
-    align-items: center;
-
-    gap: var(--space-4);
-}
-
-.app-header-bar__organization {
-    min-width: 220px;
-}
-
-.app-header-bar__organization-current {
-    display: flex;
-    flex-direction: column;
-
-    gap: var(--space-1);
-}
-
-.app-header-bar__organization-label {
-    color:
-        var(--color-text-muted);
-
-    font-size:
-        var(--font-size-sm);
-}
-
-.app-header-bar__organization-name {
-    max-width: 240px;
-
-    overflow: hidden;
-
-    color:
-        var(--color-text);
-
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.app-header-bar__user {
-    display: flex;
-    align-items: center;
-
-    gap: var(--space-3);
-}
-
-@media (max-width: 760px) {
-    .app-header-bar__end {
-        gap:
-            var(--space-2);
-    }
-
-    .app-header-bar__organization {
-        min-width: 160px;
-    }
-
-    .app-header-bar__organization-current {
-        display: none;
-    }
-
-    .app-header-bar__user-name {
-        display: none;
-    }
-}
-</style>

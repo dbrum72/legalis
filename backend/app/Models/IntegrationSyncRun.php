@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable([
     'organization_id',
     'monitored_bar_registration_id',
+    'folder_id',
     'provider',
     'status',
     'period_start',
@@ -58,5 +60,17 @@ class IntegrationSyncRun extends Model
             MonitoredBarRegistration::class,
             'monitored_bar_registration_id',
         );
+    }
+
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(Folder::class);
+    }
+
+    public function viewers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'integration_sync_run_views')
+            ->withPivot('viewed_at')
+            ->withTimestamps();
     }
 }
