@@ -240,6 +240,26 @@ const router = createRouter({
                         permission: 'organization-members.view',
                     },
                 },
+
+                {
+                    path: 'publications',
+                    name: 'publications',
+                    component: () => import('@/views/publications/PublicationListPage.vue'),
+                    meta: {
+                        breadcrumb: 'Publicações',
+                        permission: 'publications.view',
+                    },
+                },
+
+                {
+                    path: 'publications/monitoring',
+                    name: 'publications.monitoring',
+                    component: () => import('@/views/publications/MonitoredBarRegistrationPage.vue'),
+                    meta: {
+                        breadcrumb: 'OABs monitoradas',
+                        permission: 'publications.view',
+                    },
+                },
             ],
         },
     ],

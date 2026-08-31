@@ -13,11 +13,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'organization_id',
     'name',
     'process_number',
+    'datajud_alias',
+    'datajud_metadata',
+    'datajud_synced_at',
 ])]
 class Folder extends Model
 {
     use BelongsToOrganization;
     use HasFactory;
+
+    protected function casts(): array
+    {
+        return [
+            'datajud_metadata' => 'array',
+            'datajud_synced_at' => 'datetime',
+        ];
+    }
 
     public function folderClients(): HasMany
     {

@@ -8,6 +8,7 @@ import {
     getFolder as getFolderRequest,
     listFolders as listFoldersRequest,
     updateFolder as updateFolderRequest,
+    syncFolderWithDataJud as syncFolderWithDataJudRequest,
 } from '@/api/folders.js'
 
 import { createFolderClient, deleteFolderClient, updateFolderClient } from '@/api/folder-clients.js'
@@ -15,6 +16,7 @@ import { createFolderClient, deleteFolderClient, updateFolderClient } from '@/ap
 export const useFoldersStore = defineStore('folders', () => {
     const folders = ref([])
     const folder = ref(null)
+    const syncingDataJud = ref(false)
 
     const count = computed(() => folders.value.length)
 
@@ -80,6 +82,22 @@ export const useFoldersStore = defineStore('folders', () => {
         }
     }
 
+    async function syncDataJud(id) {
+        syncingDataJud.value = true
+
+        try {
+            const response = await syncFolderWithDataJudRequest(id)
+
+            if (Number(folder.value?.id) === Number(id)) {
+                await fetchFolder(id)
+            }
+
+            return response.data
+        } finally {
+            syncingDataJud.value = false
+        }
+    }
+
     async function addClient(folderId, payload) {
         const response = await createFolderClient(folderId, payload)
 
@@ -132,6 +150,7 @@ export const useFoldersStore = defineStore('folders', () => {
 
     function clearCurrent() {
         folder.value = null
+        syncingDataJud.value = false
     }
 
     function clear() {
@@ -142,6 +161,7 @@ export const useFoldersStore = defineStore('folders', () => {
     return {
         folders,
         folder,
+        syncingDataJud,
 
         count,
         folderClients,
@@ -154,6 +174,7 @@ export const useFoldersStore = defineStore('folders', () => {
         create,
         update,
         remove,
+        syncDataJud,
 
         addClient,
         updateClientQualification,

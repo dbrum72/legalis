@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'folder_id',
     'user_id',
+    'source',
+    'external_id',
+    'source_code',
+    'source_metadata',
     'occurred_at',
     'title',
     'description',
@@ -22,6 +26,7 @@ class FolderMovement extends Model
     {
         return [
             'occurred_at' => 'datetime',
+            'source_metadata' => 'array',
         ];
     }
 

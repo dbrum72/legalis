@@ -88,4 +88,19 @@ describe('router', () => {
 
         expect(route.matched.some((record) => record.meta.requiresAuth)).toBe(true)
     })
+
+    it('mantem publicacoes dentro da area autenticada e protegida', () => {
+        const route = router.resolve({ name: 'publications' })
+
+        expect(route.path).toBe('/publications')
+        expect(route.matched.some((record) => record.meta.requiresAuth)).toBe(true)
+        expect(route.meta.permission).toBe('publications.view')
+    })
+
+    it('define a gestao de OABs monitoradas', () => {
+        const route = router.resolve({ name: 'publications.monitoring' })
+
+        expect(route.path).toBe('/publications/monitoring')
+        expect(route.meta.permission).toBe('publications.view')
+    })
 })

@@ -20,11 +20,20 @@
                     <AppButton v-if="canUpdate" type="button" variant="primary" @click="goToEdit">
                         Editar
                     </AppButton>
+
+                    <AppButton v-if="canUpdate && folder?.process_number" type="button" variant="outline"
+                        :loading="foldersStore.syncingDataJud" @click="syncDataJud">
+                        Atualizar pelo DataJud
+                    </AppButton>
                 </div>
             </header>
 
             <div v-if="loadError" class="folder-show-page__error" role="alert">
                 {{ loadError }}
+            </div>
+
+            <div v-if="syncMessage" class="folder-show-page__success" role="status">
+                {{ syncMessage }}
             </div>
 
             <template v-if="folder">
@@ -310,6 +319,95 @@
                                         }}
                                     </dd>
                                 </div>
+
+                            </dl>
+                        </section>
+                    </AppCard>
+
+                    <AppCard v-if="folder.datajud_metadata">
+                        <section class="folder-show-page__section" aria-labelledby="folder-datajud-title">
+                            <div class="folder-show-page__section-heading">
+                                <div>
+                                    <h2 id="folder-datajud-title" class="folder-show-page__section-title">
+                                        Dados processuais · DataJud
+                                    </h2>
+                                    <p class="folder-show-page__section-description">
+                                        Metadados públicos fornecidos pelo Conselho Nacional de Justiça.
+                                    </p>
+                                </div>
+
+                                <span class="folder-show-page__source-badge">Fonte pública</span>
+                            </div>
+
+                            <dl class="folder-show-page__grid">
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Tribunal / grau</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ displayValue(folder.datajud_metadata.tribunal) }} ·
+                                        {{ displayValue(folder.datajud_metadata.grau) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Órgão julgador</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ displayValue(folder.datajud_metadata.orgao_julgador?.nome) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Classe processual</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ displayValue(folder.datajud_metadata.classe?.nome) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Sistema / formato</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ displayValue(folder.datajud_metadata.sistema?.nome) }} ·
+                                        {{ displayValue(folder.datajud_metadata.formato?.nome) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Data de ajuizamento</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ formatDataJudDate(folder.datajud_metadata.data_ajuizamento) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Sigilo</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ dataJudSecrecyLabel(folder.datajud_metadata.nivel_sigilo) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Atualização na fonte</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ formatShortDateTime(folder.datajud_metadata.ultima_atualizacao) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field">
+                                    <dt class="folder-show-page__label">Sincronizado no Legalis</dt>
+                                    <dd class="folder-show-page__value">
+                                        {{ formatShortDateTime(folder.datajud_synced_at) }}
+                                    </dd>
+                                </div>
+
+                                <div class="folder-show-page__field folder-show-page__field--full">
+                                    <dt class="folder-show-page__label">Assuntos</dt>
+                                    <dd class="folder-show-page__subjects">
+                                        <span v-for="subject in dataJudSubjects" :key="subject.codigo ?? subject.nome"
+                                            class="folder-show-page__subject">
+                                            {{ subject.nome }}
+                                        </span>
+                                        <span v-if="!dataJudSubjects.length" class="folder-show-page__value">—</span>
+                                    </dd>
+                                </div>
                             </dl>
                         </section>
                     </AppCard>
@@ -455,6 +553,9 @@ const foldersStore =
 const loadError =
     ref('')
 
+const syncMessage =
+    ref('')
+
 const activeSection =
     ref('overview')
 
@@ -505,6 +606,13 @@ const folderId =
 const folder =
     computed(() =>
         foldersStore.folder,
+    )
+
+const dataJudSubjects =
+    computed(() =>
+        Array.isArray(folder.value?.datajud_metadata?.assuntos)
+            ? folder.value.datajud_metadata.assuntos
+            : [],
     )
 
 const summary =
@@ -621,6 +729,42 @@ function goToEdit() {
                 folder.value.id,
         },
     })
+}
+
+function formatDataJudDate(value) {
+    const match = String(value ?? '').match(/^(\d{4})(\d{2})(\d{2})(\d{2})?(\d{2})?(\d{2})?$/)
+
+    if (!match) {
+        return '—'
+    }
+
+    const [, year, month, day, hour, minute] = match
+
+    return hour && minute
+        ? `${day}/${month}/${year}, ${hour}:${minute}`
+        : `${day}/${month}/${year}`
+}
+
+function dataJudSecrecyLabel(value) {
+    return Number(value) === 0
+        ? 'Público (nível 0)'
+        : `Restrição informada (nível ${value})`
+}
+
+async function syncDataJud() {
+    loadError.value = ''
+    syncMessage.value = ''
+
+    try {
+        const result = await foldersStore.syncDataJud(folderId.value)
+        const imported = Number(result?.movements_imported ?? 0)
+
+        syncMessage.value = `${result?.message ?? 'Dados atualizados.'} ${imported} nova(s) movimentação(ões) importada(s).`
+    } catch (error) {
+        loadError.value = error?.response?.data?.errors?.process_number?.[0]
+            ?? error?.response?.data?.message
+            ?? 'Não foi possível atualizar a pasta pelo DataJud.'
+    }
 }
 
 async function loadFolder() {
@@ -1340,6 +1484,43 @@ onMounted(
 
     font-size:
         var(--font-size-sm);
+}
+
+.folder-show-page__source-badge,
+.folder-show-page__subject {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.folder-show-page__source-badge {
+    background: var(--color-surface-secondary-soft);
+    color: var(--color-brand-secondary-active);
+}
+
+.folder-show-page__subjects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.folder-show-page__subject {
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+}
+
+.folder-show-page__success {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-success);
+    border-radius: var(--radius-md);
+    background: var(--color-success-soft);
+    color: var(--color-success);
+    font-size: var(--font-size-sm);
 }
 
 /* ==========================================================================

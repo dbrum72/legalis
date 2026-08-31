@@ -36,4 +36,12 @@ export default [
         icon: 'users',
         permission: 'organization-members.view',
     },
+
+    {
+        id: 'publications',
+        label: 'Publicações',
+        name: 'publications',
+        icon: 'file',
+        permission: 'publications.view',
+    },
 ]

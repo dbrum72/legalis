@@ -19,3 +19,7 @@ export function updateFolder(id, payload) {
 export function deleteFolder(id) {
     return apiClient.delete(`/folders/${id}`)
 }
+
+export function syncFolderWithDataJud(id) {
+    return apiClient.post(`/folders/${id}/datajud/sync`)
+}

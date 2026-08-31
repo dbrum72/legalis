@@ -25,6 +25,8 @@ import { useFolderTasksStore } from '@/stores/folder-tasks.js'
 import { useFoldersStore } from '@/stores/folders.js'
 import { useOrganizationMembersStore } from '@/stores/organization-members.js'
 import { useOrganizationRolesStore } from '@/stores/organization-roles.js'
+import { useMonitoredBarRegistrationsStore } from '@/stores/monitored-bar-registrations.js'
+import { usePublicationsStore } from '@/stores/publications.js'
 
 export const useAuthStore = defineStore('auth', () => {
     const token = ref(null)
@@ -119,6 +121,10 @@ export const useAuthStore = defineStore('auth', () => {
         useOrganizationMembersStore().clear()
 
         useOrganizationRolesStore().clear()
+
+        useMonitoredBarRegistrationsStore().clear()
+
+        usePublicationsStore().clear()
     }
 
     function clearContext({ removeTenant = false, clearStores = false } = {}) {

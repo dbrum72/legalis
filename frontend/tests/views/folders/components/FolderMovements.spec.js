@@ -167,6 +167,30 @@ describe('FolderMovements', () => {
         expect(wrapper.text()).toContain('Lucas')
     })
 
+    it('identifica movimentação importada do DataJud', async () => {
+        const { wrapper } = await mountComponent({
+            permissions: ['folders.update'],
+            movements: [{
+                id: 9,
+                occurred_at: '2026-08-30T14:00:00.000Z',
+                title: 'Distribuição',
+                description: 'Órgão: 1ª Vara',
+                source: 'datajud',
+                source_code: '26',
+                source_metadata: {
+                    orgao_julgador: { nome: '1ª Vara' },
+                },
+            }],
+        })
+
+        const text = wrapper.text()
+
+        expect(text).toContain('DataJud')
+        expect(text).toContain('TPU 26')
+        expect(text).toContain('1ª Vara')
+        expect(findButtons(wrapper, 'Excluir')).toHaveLength(0)
+    })
+
     it('renderiza estado vazio quando não existem movimentações', async () => {
         const { wrapper } = await mountComponent({
             movements: [],

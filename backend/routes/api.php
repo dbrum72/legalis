@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DjenSyncController;
+use App\Http\Controllers\DataJudSyncController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FolderDeadlineController;
@@ -444,6 +445,16 @@ Route::middleware([
             ]
         )->middleware(
             'can:folders.delete'
+        );
+
+        Route::post(
+            '/folders/{folder}/datajud/sync',
+            [
+                DataJudSyncController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:folders.update'
         );
 
         /*

@@ -28,6 +28,9 @@ class FolderMovementController extends Controller
                 'id',
                 'folder_id',
                 'user_id',
+                'source',
+                'source_code',
+                'source_metadata',
                 'occurred_at',
                 'title',
                 'description',
@@ -94,6 +97,13 @@ class FolderMovementController extends Controller
                 $folder,
                 $movement,
             );
+
+        if ($movement->source !== null) {
+            abort(
+                422,
+                'Movimentações importadas não podem ser excluídas manualmente.',
+            );
+        }
 
         $movement->delete();
 

@@ -72,4 +72,20 @@ return [
         ),
     ],
 
+    'datajud' => [
+        'base_url' => env(
+            'DATAJUD_BASE_URL',
+            'https://api-publica.datajud.cnj.jus.br',
+        ),
+
+        'api_key' => env('DATAJUD_API_KEY'),
+
+        'timeout' => (int) env('DATAJUD_TIMEOUT', 20),
+
+        'user_agent' => env(
+            'DATAJUD_USER_AGENT',
+            'Legalis/1.0',
+        ),
+    ],
+
 ];

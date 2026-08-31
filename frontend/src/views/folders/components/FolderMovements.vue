@@ -88,18 +88,28 @@
                 <div class="folder-movements__content">
                     <div class="folder-movements__item-header">
                         <div>
-                            <h3 class="folder-movements__item-title">
-                                {{ movement.title }}
-                            </h3>
+                            <div class="folder-movements__title-row">
+                                <h3 class="folder-movements__item-title">
+                                    {{ movement.title }}
+                                </h3>
+
+                                <span v-if="movement.source === 'datajud'" class="folder-movements__source">
+                                    DataJud
+                                </span>
+
+                                <span v-if="movement.source_code" class="folder-movements__code">
+                                    TPU {{ movement.source_code }}
+                                </span>
+                            </div>
 
                             <p class="folder-movements__meta">
-                                {{ formatShortDate(movement.occurred_at) }}
+                                {{ formatShortDateTime(movement.occurred_at) }}
                                 ·
-                                {{ movement.user?.name ?? '—' }}
+                                {{ movementActor(movement) }}
                             </p>
                         </div>
 
-                        <AppButton v-if="canUpdate" type="button" size="sm" variant="ghost" :disabled="deleting"
+                        <AppButton v-if="canUpdate && !movement.source" type="button" size="sm" variant="ghost" :disabled="deleting"
                             @click="requestDelete(movement)">
                             Excluir
                         </AppButton>
@@ -131,7 +141,7 @@ import {
     AppConfirmDialog,
 } from '@/components/ui'
 
-import { formatShortDate } from '@/utils/date'
+import { formatShortDateTime } from '@/utils/date'
 
 import { useDeleteConfirmation } from '@/composables/useDeleteConfirmation.js'
 
@@ -202,6 +212,16 @@ const deleteMessage =
 
         return `Deseja realmente excluir a movimentação "${movementToDelete.value.title}"?`
     })
+
+function movementActor(movement) {
+    if (movement.source === 'datajud') {
+        return movement.source_metadata?.orgao_julgador?.nome
+            ?? movement.source_metadata?.orgao_julgador?.nomeOrgao
+            ?? 'DataJud'
+    }
+
+    return movement.user?.name ?? 'Movimentação manual'
+}
 
 function openCreateForm() {
     createError.value =
@@ -513,6 +533,34 @@ onMounted(
 
     font-weight:
         var(--font-weight-semibold);
+}
+
+.folder-movements__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.folder-movements__source,
+.folder-movements__code {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
+.folder-movements__source {
+    background: var(--color-surface-secondary-soft);
+    color: var(--color-brand-secondary-active);
+}
+
+.folder-movements__code {
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
 }
 
 .folder-movements__meta {
