@@ -35,4 +35,41 @@ return [
         ],
     ],
 
+    'djen' => [
+        'base_url' => env(
+            'DJEN_BASE_URL',
+            'https://comunicaapi.pje.jus.br/api/v1',
+        ),
+
+        'timeout' => (int) env(
+            'DJEN_TIMEOUT',
+            20,
+        ),
+
+        'per_page' => (int) env(
+            'DJEN_PER_PAGE',
+            50,
+        ),
+
+        'max_pages_per_sync' => (int) env(
+            'DJEN_MAX_PAGES_PER_SYNC',
+            100,
+        ),
+
+        'lookback_days' => (int) env(
+            'DJEN_LOOKBACK_DAYS',
+            3,
+        ),
+
+        'timezone' => env(
+            'DJEN_TIMEZONE',
+            'America/Sao_Paulo',
+        ),
+
+        'user_agent' => env(
+            'DJEN_USER_AGENT',
+            'Legalis/1.0',
+        ),
+    ],
+
 ];

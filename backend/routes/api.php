@@ -4,6 +4,7 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DjenSyncController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FolderDeadlineController;
@@ -11,7 +12,9 @@ use App\Http\Controllers\FolderDocumentController;
 use App\Http\Controllers\FolderEventController;
 use App\Http\Controllers\FolderMovementController;
 use App\Http\Controllers\FolderTaskController;
+use App\Http\Controllers\LegalPublicationController;
 use App\Http\Controllers\MaritalStatusController;
+use App\Http\Controllers\MonitoredBarRegistrationController;
 use App\Http\Controllers\OrganizationInvitationController;
 use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\OrganizationRoleController;
@@ -240,6 +243,92 @@ Route::middleware([
             ]
         )->middleware(
             'can:organization-members.view'
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Publications
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/monitored-bar-registrations',
+            [
+                MonitoredBarRegistrationController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:publications.view'
+        );
+
+        Route::post(
+            '/monitored-bar-registrations',
+            [
+                MonitoredBarRegistrationController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:publications.manage-monitoring'
+        );
+
+        Route::patch(
+            '/monitored-bar-registrations/{monitoredBarRegistration}',
+            [
+                MonitoredBarRegistrationController::class,
+                'update',
+            ]
+        )->middleware(
+            'can:publications.manage-monitoring'
+        );
+
+        Route::post(
+            '/monitored-bar-registrations/{monitoredBarRegistration}/sync',
+            [
+                DjenSyncController::class,
+                'store',
+            ]
+        )->middleware(
+            'can:publications.sync'
+        );
+
+        Route::get(
+            '/legal-publications',
+            [
+                LegalPublicationController::class,
+                'index',
+            ]
+        )->middleware(
+            'can:publications.view'
+        );
+
+        Route::get(
+            '/legal-publications/{legalPublication}',
+            [
+                LegalPublicationController::class,
+                'show',
+            ]
+        )->middleware(
+            'can:publications.view'
+        );
+
+        Route::patch(
+            '/legal-publications/{legalPublication}/folder',
+            [
+                LegalPublicationController::class,
+                'link',
+            ]
+        )->middleware(
+            'can:publications.review'
+        );
+
+        Route::patch(
+            '/legal-publications/{legalPublication}/review',
+            [
+                LegalPublicationController::class,
+                'review',
+            ]
+        )->middleware(
+            'can:publications.review'
         );
 
         /*

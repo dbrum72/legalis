@@ -24,8 +24,8 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
     use HasFactory;
-    use Notifiable;
     use HasRoles;
+    use Notifiable;
 
     protected string $guard_name =
         'api';
@@ -38,11 +38,9 @@ class User extends Authenticatable implements JWTSubject
     protected function casts(): array
     {
         return [
-            'email_verified_at' =>
-                'datetime',
+            'email_verified_at' => 'datetime',
 
-            'password' =>
-                'hashed',
+            'password' => 'hashed',
         ];
     }
 
@@ -65,6 +63,14 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(
             OrganizationInvitation::class,
             'invited_by'
+        );
+    }
+
+    public function reviewedLegalPublications(): HasMany
+    {
+        return $this->hasMany(
+            LegalPublication::class,
+            'reviewed_by',
         );
     }
 

@@ -25,7 +25,7 @@ class ProvisionOrganizationRolesTest extends TestCase
 
         $this->organization =
             Organization::factory()
-            ->create();
+                ->create();
     }
 
     public function test_provisiona_todas_as_roles_da_organizacao(): void
@@ -41,18 +41,18 @@ class ProvisionOrganizationRolesTest extends TestCase
 
         $roles =
             Role::query()
-            ->where(
-                'organization_id',
-                $this->organization->id,
-            )
-            ->where(
-                'guard_name',
-                'api',
-            )
-            ->pluck('name')
-            ->sort()
-            ->values()
-            ->all();
+                ->where(
+                    'organization_id',
+                    $this->organization->id,
+                )
+                ->where(
+                    'guard_name',
+                    'api',
+                )
+                ->pluck('name')
+                ->sort()
+                ->values()
+                ->all();
 
         $this->assertSame(
             [
@@ -89,11 +89,11 @@ class ProvisionOrganizationRolesTest extends TestCase
 
         $permissions =
             $role
-            ->permissions
-            ->pluck('name')
-            ->sort()
-            ->values()
-            ->all();
+                ->permissions
+                ->pluck('name')
+                ->sort()
+                ->values()
+                ->all();
 
         $this->assertSame(
             [
@@ -113,6 +113,10 @@ class ProvisionOrganizationRolesTest extends TestCase
                 'organization-members.update-role',
                 'organization-members.update-status',
                 'organization-members.view',
+                'publications.manage-monitoring',
+                'publications.review',
+                'publications.sync',
+                'publications.view',
                 'roles.update',
                 'roles.view',
                 'tasks.create',
@@ -129,7 +133,7 @@ class ProvisionOrganizationRolesTest extends TestCase
     {
         $otherOrganization =
             Organization::factory()
-            ->create();
+                ->create();
 
         $service =
             app(

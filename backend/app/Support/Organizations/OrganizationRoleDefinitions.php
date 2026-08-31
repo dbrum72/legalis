@@ -5,34 +5,34 @@ namespace App\Support\Organizations;
 final class OrganizationRoleDefinitions
 {
     public const SUPER_ADMIN =
-    'super-admin';
+        'super-admin';
 
     public const SOCIO_ADMINISTRADOR =
-    'socio-administrador';
+        'socio-administrador';
 
     public const SOCIO =
-    'socio';
+        'socio';
 
     public const ADVOGADO_SENIOR =
-    'advogado-senior';
+        'advogado-senior';
 
     public const ADVOGADO_PLENO =
-    'advogado-pleno';
+        'advogado-pleno';
 
     public const ADVOGADO_JUNIOR =
-    'advogado-junior';
+        'advogado-junior';
 
     public const ADVOGADO_ASSOCIADO =
-    'advogado-associado';
+        'advogado-associado';
 
     public const ASSISTENTE_JURIDICO =
-    'assistente-juridico';
+        'assistente-juridico';
 
     public const ESTAGIARIO_DIREITO =
-    'estagiario-direito';
+        'estagiario-direito';
 
     public const PARALEGAL =
-    'paralegal';
+        'paralegal';
 
     public static function definitions(): array
     {
@@ -50,6 +50,9 @@ final class OrganizationRoleDefinitions
             'folders.create',
             'folders.update',
             'folders.delete',
+
+            'publications.view',
+            'publications.review',
 
             'documents.generate',
 
@@ -69,6 +72,9 @@ final class OrganizationRoleDefinitions
             'organization-members.invite',
             'organization-members.update-role',
             'organization-members.update-status',
+
+            'publications.manage-monitoring',
+            'publications.sync',
         ];
 
         $allPermissions =
@@ -83,27 +89,21 @@ final class OrganizationRoleDefinitions
 
         return [
             self::SUPER_ADMIN => [
-                'description' =>
-                'Acesso total ao escritório',
+                'description' => 'Acesso total ao escritório',
 
-                'permissions' =>
-                $allPermissions,
+                'permissions' => $allPermissions,
             ],
 
             self::SOCIO_ADMINISTRADOR => [
-                'description' =>
-                'Gestão administrativa e jurídica completa do escritório',
+                'description' => 'Gestão administrativa e jurídica completa do escritório',
 
-                'permissions' =>
-                $allPermissions,
+                'permissions' => $allPermissions,
             ],
 
             self::SOCIO => [
-                'description' =>
-                'Gestão jurídica e acompanhamento geral do escritório',
+                'description' => 'Gestão jurídica e acompanhamento geral do escritório',
 
-                'permissions' =>
-                array_values(
+                'permissions' => array_values(
                     array_diff(
                         $basePermissions,
                         [
@@ -114,11 +114,9 @@ final class OrganizationRoleDefinitions
             ],
 
             self::ADVOGADO_SENIOR => [
-                'description' =>
-                'Atuação jurídica sênior com acesso operacional amplo',
+                'description' => 'Atuação jurídica sênior com acesso operacional amplo',
 
-                'permissions' =>
-                array_values(
+                'permissions' => array_values(
                     array_diff(
                         $basePermissions,
                         [
@@ -130,8 +128,7 @@ final class OrganizationRoleDefinitions
             ],
 
             self::ADVOGADO_PLENO => [
-                'description' =>
-                'Atuação jurídica plena em clientes, documentos e tarefas',
+                'description' => 'Atuação jurídica plena em clientes, documentos e tarefas',
 
                 'permissions' => [
                     'clients.view',
@@ -145,6 +142,9 @@ final class OrganizationRoleDefinitions
                     'folders.create',
                     'folders.update',
 
+                    'publications.view',
+                    'publications.review',
+
                     'documents.generate',
 
                     'tasks.view',
@@ -154,8 +154,7 @@ final class OrganizationRoleDefinitions
             ],
 
             self::ADVOGADO_JUNIOR => [
-                'description' =>
-                'Atuação jurídica júnior sob supervisão',
+                'description' => 'Atuação jurídica júnior sob supervisão',
 
                 'permissions' => [
                     'clients.view',
@@ -166,6 +165,9 @@ final class OrganizationRoleDefinitions
                     'files.upload',
 
                     'folders.view',
+
+                    'publications.view',
+                    'publications.review',
 
                     'documents.generate',
 
@@ -176,8 +178,7 @@ final class OrganizationRoleDefinitions
             ],
 
             self::ADVOGADO_ASSOCIADO => [
-                'description' =>
-                'Atuação jurídica associada em clientes e processos internos',
+                'description' => 'Atuação jurídica associada em clientes e processos internos',
 
                 'permissions' => [
                     'clients.view',
@@ -189,6 +190,9 @@ final class OrganizationRoleDefinitions
 
                     'folders.view',
                     'folders.update',
+
+                    'publications.view',
+                    'publications.review',
 
                     'documents.generate',
 
@@ -199,8 +203,7 @@ final class OrganizationRoleDefinitions
             ],
 
             self::ASSISTENTE_JURIDICO => [
-                'description' =>
-                'Suporte às atividades jurídicas e administrativas',
+                'description' => 'Suporte às atividades jurídicas e administrativas',
 
                 'permissions' => [
                     'clients.view',
@@ -210,6 +213,9 @@ final class OrganizationRoleDefinitions
 
                     'folders.view',
 
+                    'publications.view',
+                    'publications.review',
+
                     'tasks.view',
                     'tasks.create',
                     'tasks.update',
@@ -217,8 +223,7 @@ final class OrganizationRoleDefinitions
             ],
 
             self::ESTAGIARIO_DIREITO => [
-                'description' =>
-                'Apoio jurídico supervisionado com acesso restrito',
+                'description' => 'Apoio jurídico supervisionado com acesso restrito',
 
                 'permissions' => [
                     'clients.view',
@@ -226,6 +231,9 @@ final class OrganizationRoleDefinitions
                     'files.view',
 
                     'folders.view',
+
+                    'publications.view',
+                    'publications.review',
 
                     'documents.generate',
 
@@ -236,8 +244,7 @@ final class OrganizationRoleDefinitions
             ],
 
             self::PARALEGAL => [
-                'description' =>
-                'Suporte operacional especializado às atividades jurídicas',
+                'description' => 'Suporte operacional especializado às atividades jurídicas',
 
                 'permissions' => [
                     'clients.view',
@@ -249,6 +256,9 @@ final class OrganizationRoleDefinitions
 
                     'folders.view',
                     'folders.update',
+
+                    'publications.view',
+                    'publications.review',
 
                     'tasks.view',
                     'tasks.create',
@@ -270,8 +280,7 @@ final class OrganizationRoleDefinitions
         $permissions = [];
 
         foreach (
-            self::definitions()
-            as $definition
+            self::definitions() as $definition
         ) {
             $permissions =
                 array_merge(

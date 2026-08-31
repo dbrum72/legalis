@@ -1,24 +1,41 @@
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
-import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath, URL } from "node:url";
+
+import { defineConfig } from "vitest/config";
+import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
-    plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true,
-            fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
+    plugins: [vue()],
+
+    define: {
+        "import.meta.env.VITE_API_URL": JSON.stringify(
+            "http://127.0.0.1:8000/api",
+        ),
+    },
+
+    resolve: {
+        alias: {
+            "@": fileURLToPath(new URL("./src", import.meta.url)),
+        },
+    },
+
+    test: {
+        globals: true,
+        environment: "jsdom",
+
+        include: ["tests/**/*.spec.js", "tests/**/*.test.js"],
+
+        coverage: {
+            provider: "v8",
+            reporter: ["text", "html", "lcov"],
+
+            include: ["src/**/*.{js,vue}"],
+
+            exclude: [
+                "src/main.js",
+                "src/router/**",
+                "src/views/**",
+                "src/playground/**",
             ],
-        }),
-        tailwindcss(),
-    ],
-    server: {
-        watch: {
-            ignored: ['**/storage/framework/views/**'],
         },
     },
 });

@@ -16,8 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Folder extends Model
 {
-    use HasFactory;
     use BelongsToOrganization;
+    use HasFactory;
 
     public function folderClients(): HasMany
     {
@@ -72,6 +72,13 @@ class Folder extends Model
     {
         return $this->hasMany(
             FolderTask::class
+        );
+    }
+
+    public function legalPublications(): HasMany
+    {
+        return $this->hasMany(
+            LegalPublication::class
         );
     }
 }

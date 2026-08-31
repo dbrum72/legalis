@@ -49,4 +49,25 @@ class Organization extends Model
             Folder::class
         );
     }
+
+    public function monitoredBarRegistrations(): HasMany
+    {
+        return $this->hasMany(
+            MonitoredBarRegistration::class
+        );
+    }
+
+    public function legalPublications(): HasMany
+    {
+        return $this->hasMany(
+            LegalPublication::class
+        );
+    }
+
+    public function integrationSyncRuns(): HasMany
+    {
+        return $this->hasMany(
+            IntegrationSyncRun::class
+        );
+    }
 }
