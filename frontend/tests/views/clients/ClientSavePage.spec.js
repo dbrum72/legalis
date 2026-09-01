@@ -11,6 +11,8 @@ import ClientSavePage from '@/views/clients/ClientSavePage.vue'
 import { useClientsStore } from '@/stores/clients.js'
 import { useMaritalStatusesStore } from '@/stores/marital-statuses.js'
 
+import { getAddressByPostalCode } from '@/api/postal-codes.js'
+
 vi.mock('@/api/clients.js', () => ({
     listClients: vi.fn(),
     getClient: vi.fn(),
@@ -21,6 +23,10 @@ vi.mock('@/api/clients.js', () => ({
 
 vi.mock('@/api/marital-statuses.js', () => ({
     listMaritalStatuses: vi.fn(),
+}))
+
+vi.mock('@/api/postal-codes.js', () => ({
+    getAddressByPostalCode: vi.fn(),
 }))
 
 function createTestRouter() {
@@ -102,6 +108,50 @@ describe('ClientSavePage', () => {
         const { maritalStatusesStore } = await mountPage()
 
         expect(maritalStatusesStore.fetchMaritalStatuses).toHaveBeenCalledTimes(1)
+    })
+
+    it('preenche endereço consultando o endpoint interno ao completar o CEP', async () => {
+        getAddressByPostalCode.mockResolvedValue({
+            data: {
+                data: {
+                    address: 'Praça da Sé',
+                    district: 'Sé',
+                    city: 'São Paulo',
+                    state: 'SP',
+                },
+            },
+        })
+
+        const { wrapper } = await mountPage()
+
+        await wrapper.get('input[name="postal_code"]').setValue('01001-000')
+
+        await vi.waitFor(() => {
+            expect(getAddressByPostalCode).toHaveBeenCalledWith('01001000')
+        })
+
+        expect(wrapper.get('input[name="postal_code"]').element.value).toBe('01001000')
+        expect(wrapper.get('input[name="address"]').element.value).toBe('Praça da Sé')
+        expect(wrapper.get('input[name="district"]').element.value).toBe('Sé')
+        expect(wrapper.get('input[name="city"]').element.value).toBe('São Paulo')
+    })
+
+    it('mantém preenchimento manual disponível quando o CEP não existe', async () => {
+        getAddressByPostalCode.mockRejectedValue({
+            response: {
+                status: 404,
+            },
+        })
+
+        const { wrapper } = await mountPage()
+
+        await wrapper.get('input[name="postal_code"]').setValue('99999999')
+
+        await vi.waitFor(() => {
+            expect(wrapper.text()).toContain('CEP não encontrado.')
+        })
+
+        expect(wrapper.get('input[name="address"]').attributes('disabled')).toBeUndefined()
     })
 
     it('não envia formulário sem nome', async () => {

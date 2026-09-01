@@ -114,6 +114,7 @@ import {
     onMounted,
     reactive,
     ref,
+    watch,
 } from 'vue'
 
 import {
@@ -140,6 +141,8 @@ import { useClientsStore } from '@/stores/clients.js'
 
 import { useMaritalStatusesStore } from '@/stores/marital-statuses.js'
 
+import { getAddressByPostalCode } from '@/api/postal-codes.js'
+
 import {
     applyValidationErrors,
     clearValidationErrors,
@@ -162,6 +165,12 @@ const submitting =
 
 const submitError =
     ref('')
+
+const lookingUpPostalCode =
+    ref(false)
+
+let lastPostalCode = ''
+let postalCodeRequest = 0
 
 const form =
     reactive({
@@ -243,6 +252,7 @@ function clearErrors() {
 }
 
 function applyClient(client) {
+    lastPostalCode = String(client?.postal_code ?? '').replace(/\D/g, '')
     form.name = client?.name ?? ''
     form.document = client?.document ?? ''
     form.identity_document = client?.identity_document ?? ''
@@ -269,6 +279,65 @@ function nullable(value) {
 
     return value
 }
+
+async function lookupPostalCode(postalCode) {
+    const request = ++postalCodeRequest
+
+    lookingUpPostalCode.value = true
+    errors.postal_code = ''
+
+    try {
+        const response = await getAddressByPostalCode(postalCode)
+
+        if (request !== postalCodeRequest) {
+            return
+        }
+
+        const address = response?.data?.data ?? {}
+
+        form.address = address.address ?? ''
+        form.district = address.district ?? ''
+        form.city = address.city ?? ''
+    } catch (error) {
+        if (request !== postalCodeRequest) {
+            return
+        }
+
+        if (error?.response?.status === 404) {
+            errors.postal_code = 'CEP não encontrado.'
+        }
+    } finally {
+        if (request === postalCodeRequest) {
+            lookingUpPostalCode.value = false
+        }
+    }
+}
+
+watch(
+    () => form.postal_code,
+    (value) => {
+        const postalCode = String(value ?? '').replace(/\D/g, '').slice(0, 8)
+
+        if (postalCode !== value) {
+            form.postal_code = postalCode
+            return
+        }
+
+        if (postalCode.length !== 8) {
+            lastPostalCode = ''
+            postalCodeRequest++
+            lookingUpPostalCode.value = false
+            return
+        }
+
+        if (postalCode === lastPostalCode) {
+            return
+        }
+
+        lastPostalCode = postalCode
+        lookupPostalCode(postalCode)
+    },
+)
 
 function buildPayload() {
     return {

@@ -100,4 +100,10 @@ return [
         ),
     ],
 
+    'viacep' => [
+        'base_url' => env('VIACEP_BASE_URL', 'https://viacep.com.br'),
+        'timeout' => (int) env('VIACEP_TIMEOUT', 5),
+        'user_agent' => env('VIACEP_USER_AGENT', 'Legalis/1.0'),
+    ],
+
 ];

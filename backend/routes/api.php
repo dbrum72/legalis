@@ -4,8 +4,8 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DjenSyncController;
 use App\Http\Controllers\DataJudSyncController;
+use App\Http\Controllers\DjenSyncController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FolderDeadlineController;
@@ -19,6 +19,7 @@ use App\Http\Controllers\MonitoredBarRegistrationController;
 use App\Http\Controllers\OrganizationInvitationController;
 use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\OrganizationRoleController;
+use App\Http\Controllers\PostalCodeController;
 use App\Http\Controllers\QualificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -124,6 +125,11 @@ Route::middleware([
     'tenant',
 ])
     ->group(function () {
+        Route::get(
+            '/postal-codes/{postalCode}',
+            [PostalCodeController::class, 'show'],
+        )->where('postalCode', '[0-9]{8}');
+
         /*
         |--------------------------------------------------------------------------
         | Dashboard
