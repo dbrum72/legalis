@@ -257,6 +257,20 @@ Route::middleware([
             'can:organization-members.view'
         );
 
+        Route::get(
+            '/organization-roles/{role}',
+            [OrganizationRoleController::class, 'show']
+        )->middleware(
+            'can:roles.view'
+        );
+
+        Route::patch(
+            '/organization-roles/{role}/permissions',
+            [OrganizationRoleController::class, 'updatePermissions']
+        )->middleware(
+            'can:roles.update'
+        );
+
         /*
         |--------------------------------------------------------------------------
         | Publications

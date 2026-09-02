@@ -26,11 +26,11 @@ class OrganizationRoleTest extends TestCase
 
         $this->organization =
             Organization::query()
-            ->where(
-                'slug',
-                OrganizationSeeder::DEFAULT_SLUG,
-            )
-            ->firstOrFail();
+                ->where(
+                    'slug',
+                    OrganizationSeeder::DEFAULT_SLUG,
+                )
+                ->firstOrFail();
     }
 
     public function test_index_exige_autenticacao(): void
@@ -65,18 +65,16 @@ class OrganizationRoleTest extends TestCase
     {
         $user =
             User::factory()
-            ->create();
+                ->create();
 
         $this->organization
             ->users()
             ->attach(
                 $user->getKey(),
                 [
-                    'status' =>
-                    'active',
+                    'status' => 'active',
 
-                    'joined_at' =>
-                    now(),
+                    'joined_at' => now(),
                 ],
             );
 
@@ -102,12 +100,12 @@ class OrganizationRoleTest extends TestCase
 
         $response =
             $this
-            ->asTenant(
-                $token
-            )
-            ->getJson(
-                '/api/organization-roles'
-            );
+                ->asTenant(
+                    $token
+                )
+                ->getJson(
+                    '/api/organization-roles'
+                );
 
         $response
             ->assertOk()
@@ -115,15 +113,15 @@ class OrganizationRoleTest extends TestCase
                 '*' => [
                     'id',
                     'name',
+                    'description',
+                    'permissions_count',
                 ],
             ])
             ->assertJsonFragment([
-                'name' =>
-                'super-admin',
+                'name' => 'super-admin',
             ])
             ->assertJsonFragment([
-                'name' =>
-                'advogado-junior',
+                'name' => 'advogado-junior',
             ]);
     }
 
@@ -131,35 +129,31 @@ class OrganizationRoleTest extends TestCase
     {
         $otherOrganization =
             Organization::factory()
-            ->create();
+                ->create();
 
         $exclusiveRole =
             Role::query()
-            ->create([
-                'organization_id' =>
-                $otherOrganization->getKey(),
+                ->create([
+                    'organization_id' => $otherOrganization->getKey(),
 
-                'name' =>
-                'role-exclusiva-outra-organizacao',
+                    'name' => 'role-exclusiva-outra-organizacao',
 
-                'guard_name' =>
-                'api',
+                    'guard_name' => 'api',
 
-                'description' =>
-                'Role exclusiva para teste',
-            ]);
+                    'description' => 'Role exclusiva para teste',
+                ]);
 
         $token =
             $this->loginAsSuperAdmin();
 
         $response =
             $this
-            ->asTenant(
-                $token
-            )
-            ->getJson(
-                '/api/organization-roles'
-            );
+                ->asTenant(
+                    $token
+                )
+                ->getJson(
+                    '/api/organization-roles'
+                );
 
         $response->assertOk();
 
@@ -167,7 +161,7 @@ class OrganizationRoleTest extends TestCase
             collect(
                 $response->json()
             )
-            ->pluck('id');
+                ->pluck('id');
 
         $this->assertFalse(
             $returnedIds->contains(
@@ -183,12 +177,12 @@ class OrganizationRoleTest extends TestCase
 
         $response =
             $this
-            ->asTenant(
-                $token
-            )
-            ->getJson(
-                '/api/organization-roles'
-            );
+                ->asTenant(
+                    $token
+                )
+                ->getJson(
+                    '/api/organization-roles'
+                );
 
         $response->assertOk();
 
@@ -196,8 +190,8 @@ class OrganizationRoleTest extends TestCase
             collect(
                 $response->json()
             )
-            ->pluck('name')
-            ->all();
+                ->pluck('name')
+                ->all();
 
         $sortedNames =
             $names;
@@ -220,29 +214,112 @@ class OrganizationRoleTest extends TestCase
 
         $response =
             $this
-            ->asTenant(
-                $token
-            )
-            ->getJson(
-                '/api/organization-roles'
-            );
+                ->asTenant(
+                    $token
+                )
+                ->getJson(
+                    '/api/organization-roles'
+                );
 
         $response->assertOk();
 
         foreach (
-            $response->json()
-            as $role
+            $response->json() as $role
         ) {
             $this->assertSame(
                 [
                     'id',
                     'name',
+                    'description',
+                    'permissions_count',
                 ],
                 array_keys(
                     $role
                 )
             );
         }
+    }
+
+    public function test_usuario_autorizado_pode_consultar_permissoes_da_role(): void
+    {
+        $role = $this->organizationRole('advogado-junior');
+
+        $this
+            ->asTenant($this->loginAsSuperAdmin())
+            ->getJson("/api/organization-roles/{$role->getKey()}")
+            ->assertOk()
+            ->assertJsonPath('id', $role->getKey())
+            ->assertJsonPath('name', 'advogado-junior')
+            ->assertJsonStructure([
+                'id',
+                'name',
+                'description',
+                'permissions',
+                'available_permissions',
+            ]);
+    }
+
+    public function test_usuario_autorizado_pode_atualizar_permissoes_da_role(): void
+    {
+        $role = $this->organizationRole('advogado-junior');
+
+        $permissions = [
+            'clients.view',
+            'folders.view',
+        ];
+
+        $this
+            ->asTenant($this->loginAsSuperAdmin())
+            ->patchJson(
+                "/api/organization-roles/{$role->getKey()}/permissions",
+                compact('permissions'),
+            )
+            ->assertOk()
+            ->assertJsonPath('permissions', $permissions);
+
+        $this->assertEqualsCanonicalizing(
+            $permissions,
+            $role->refresh()->permissions->pluck('name')->all(),
+        );
+    }
+
+    public function test_atualizacao_rejeita_permissao_inexistente(): void
+    {
+        $role = $this->organizationRole('advogado-junior');
+
+        $this
+            ->asTenant($this->loginAsSuperAdmin())
+            ->patchJson(
+                "/api/organization-roles/{$role->getKey()}/permissions",
+                ['permissions' => ['permission.inexistente']],
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('permissions.0');
+    }
+
+    public function test_nao_permite_acessar_role_de_outra_organizacao(): void
+    {
+        $otherOrganization = Organization::factory()->create();
+
+        $role = Role::query()->create([
+            'organization_id' => $otherOrganization->getKey(),
+            'name' => 'role-externa',
+            'guard_name' => 'api',
+        ]);
+
+        $this
+            ->asTenant($this->loginAsSuperAdmin())
+            ->getJson("/api/organization-roles/{$role->getKey()}")
+            ->assertNotFound();
+    }
+
+    private function organizationRole(string $name): Role
+    {
+        return Role::query()
+            ->where('organization_id', $this->organization->getKey())
+            ->where('guard_name', 'api')
+            ->where('name', $name)
+            ->firstOrFail();
     }
 
     private function loginAsSuperAdmin(): string

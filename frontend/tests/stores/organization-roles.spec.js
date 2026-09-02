@@ -5,10 +5,16 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useOrganizationRolesStore } from '@/stores/organization-roles.js'
 
 vi.mock('@/api/organization-roles.js', () => ({
+    getOrganizationRole: vi.fn(),
     listOrganizationRoles: vi.fn(),
+    updateOrganizationRolePermissions: vi.fn(),
 }))
 
-import { listOrganizationRoles } from '@/api/organization-roles.js'
+import {
+    getOrganizationRole,
+    listOrganizationRoles,
+    updateOrganizationRolePermissions,
+} from '@/api/organization-roles.js'
 
 describe('organization roles store', () => {
     beforeEach(() => {
@@ -68,6 +74,44 @@ describe('organization roles store', () => {
         expect(store.roles).toEqual([])
 
         expect(result).toEqual([])
+    })
+
+    it('fetchRole carrega detalhes e permissões da função', async () => {
+        const role = {
+            id: 7,
+            name: 'advogado-pleno',
+            permissions: ['clients.view'],
+            available_permissions: ['clients.view', 'clients.create'],
+        }
+
+        getOrganizationRole.mockResolvedValue({ data: role })
+
+        const store = useOrganizationRolesStore()
+        const result = await store.fetchRole(7)
+
+        expect(getOrganizationRole).toHaveBeenCalledWith(7)
+        expect(store.selectedRole).toEqual(role)
+        expect(store.loadingRole).toBe(false)
+        expect(result).toEqual(role)
+    })
+
+    it('updatePermissions persiste e atualiza a função selecionada', async () => {
+        const role = {
+            id: 7,
+            name: 'advogado-pleno',
+            permissions: ['clients.view', 'clients.create'],
+        }
+
+        updateOrganizationRolePermissions.mockResolvedValue({ data: role })
+
+        const store = useOrganizationRolesStore()
+        const permissions = ['clients.view', 'clients.create']
+        const result = await store.updatePermissions(7, permissions)
+
+        expect(updateOrganizationRolePermissions).toHaveBeenCalledWith(7, permissions)
+        expect(store.selectedRole).toEqual(role)
+        expect(store.updatingPermissions).toBe(false)
+        expect(result).toEqual(role)
     })
 
     it('gera opções para AppSelect', () => {
@@ -139,6 +183,7 @@ describe('organization roles store', () => {
         store.clear()
 
         expect(store.roles).toEqual([])
+        expect(store.selectedRole).toBeNull()
 
         expect(store.count).toBe(0)
     })

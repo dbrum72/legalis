@@ -44,4 +44,12 @@ export default [
         icon: 'file',
         permission: 'publications.view',
     },
+
+    {
+        id: 'role-permissions',
+        label: 'Configurações',
+        name: 'role-permissions',
+        icon: 'settings',
+        permission: 'roles.view',
+    },
 ]

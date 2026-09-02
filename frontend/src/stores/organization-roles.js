@@ -2,10 +2,17 @@ import { computed, ref } from 'vue'
 
 import { defineStore } from 'pinia'
 
-import { listOrganizationRoles as listOrganizationRolesRequest } from '@/api/organization-roles.js'
+import {
+    getOrganizationRole as getOrganizationRoleRequest,
+    listOrganizationRoles as listOrganizationRolesRequest,
+    updateOrganizationRolePermissions as updateOrganizationRolePermissionsRequest,
+} from '@/api/organization-roles.js'
 
 export const useOrganizationRolesStore = defineStore('organization-roles', () => {
     const roles = ref([])
+    const selectedRole = ref(null)
+    const loadingRole = ref(false)
+    const updatingPermissions = ref(false)
 
     const count = computed(() => roles.value.length)
 
@@ -33,12 +40,47 @@ export const useOrganizationRolesStore = defineStore('organization-roles', () =>
         return roles.value
     }
 
+    async function fetchRole(roleId) {
+        loadingRole.value = true
+
+        try {
+            const response = await getOrganizationRoleRequest(roleId)
+
+            selectedRole.value = response.data
+
+            return selectedRole.value
+        } finally {
+            loadingRole.value = false
+        }
+    }
+
+    async function updatePermissions(roleId, permissions) {
+        updatingPermissions.value = true
+
+        try {
+            const response = await updateOrganizationRolePermissionsRequest(
+                roleId,
+                permissions,
+            )
+
+            selectedRole.value = response.data
+
+            return selectedRole.value
+        } finally {
+            updatingPermissions.value = false
+        }
+    }
+
     function clear() {
         roles.value = []
+        selectedRole.value = null
     }
 
     return {
         roles,
+        selectedRole,
+        loadingRole,
+        updatingPermissions,
 
         count,
         options,
@@ -47,6 +89,8 @@ export const useOrganizationRolesStore = defineStore('organization-roles', () =>
         getByName,
 
         fetchRoles,
+        fetchRole,
+        updatePermissions,
 
         clear,
     }

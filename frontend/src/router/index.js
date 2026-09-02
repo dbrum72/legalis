@@ -260,6 +260,16 @@ const router = createRouter({
                         permission: 'publications.view',
                     },
                 },
+
+                {
+                    path: 'settings/roles',
+                    name: 'role-permissions',
+                    component: () => import('@/views/settings/RolePermissionsPage.vue'),
+                    meta: {
+                        breadcrumb: 'Perfis e permissões',
+                        permission: 'roles.view',
+                    },
+                },
             ],
         },
     ],
