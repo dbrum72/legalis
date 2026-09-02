@@ -184,6 +184,20 @@ describe('ClientSavePage', () => {
         expect(wrapper.text()).toContain('Informe o CPF ou CNPJ.')
     })
 
+    it('não envia formulário com CPF inválido', async () => {
+        const { wrapper, clientsStore } = await mountPage()
+
+        const createSpy = vi.spyOn(clientsStore, 'create')
+
+        await wrapper.get('input[name="name"]').setValue('Cliente Teste')
+        await wrapper.get('input[name="document"]').setValue('123.456.789-01')
+        await wrapper.get('form').trigger('submit')
+
+        expect(createSpy).not.toHaveBeenCalled()
+        expect(wrapper.text()).toContain('Informe um CPF válido.')
+        expect(wrapper.get('input[name="document"]').element.value).toBe('12345678901')
+    })
+
     it('cria cliente e retorna para listagem', async () => {
         const { wrapper, router, clientsStore } = await mountPage()
 
@@ -199,7 +213,7 @@ describe('ClientSavePage', () => {
 
         await nameInput.setValue('Cliente Teste')
 
-        await documentInput.setValue('12345678901')
+        await documentInput.setValue('52998224725')
 
         await wrapper.get('form').trigger('submit')
 
@@ -226,7 +240,7 @@ describe('ClientSavePage', () => {
         clientsStore.client = {
             id: 10,
             name: 'Cliente Existente',
-            document: '12345678901',
+            document: '52998224725',
             identity_document: '1234567890',
             identity_issuer: 'SSP/RS',
             marital_status_id: 2,
@@ -284,7 +298,7 @@ describe('ClientSavePage', () => {
         const fetchClientSpy = vi.spyOn(clientsStore, 'fetchClient').mockResolvedValue({
             id: 10,
             name: 'Cliente Existente',
-            document: '12345678901',
+            document: '52998224725',
             identity_document: '1234567890',
             identity_issuer: 'SSP/RS',
             marital_status_id: 2,
@@ -339,7 +353,7 @@ describe('ClientSavePage', () => {
 
         await nameInput.setValue('Cliente Teste')
 
-        await documentInput.setValue('12345678901')
+        await documentInput.setValue('52998224725')
 
         await wrapper.get('form').trigger('submit')
 
@@ -365,7 +379,7 @@ describe('ClientSavePage', () => {
 
         await nameInput.setValue('Cliente Teste')
 
-        await documentInput.setValue('12345678901')
+        await documentInput.setValue('52998224725')
 
         await wrapper.get('form').trigger('submit')
 

@@ -3,12 +3,26 @@
 namespace App\Http\Requests;
 
 use App\Models\Client;
+use App\Rules\ValidCpf;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class ClientRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('document')) {
+            $this->merge([
+                'document' => preg_replace(
+                    '/\D/',
+                    '',
+                    (string) $this->input('document'),
+                ),
+            ]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -42,6 +56,8 @@ class ClientRequest extends FormRequest
                 'required',
                 'string',
                 'max:14',
+                'regex:/^(?:\d{11}|\d{14})$/',
+                new ValidCpf,
 
                 Rule::unique(
                     'clients',
@@ -125,6 +141,13 @@ class ClientRequest extends FormRequest
                 'email',
                 'max:255',
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'document.regex' => 'Informe um CPF ou CNPJ com 11 ou 14 dígitos.',
         ];
     }
 }

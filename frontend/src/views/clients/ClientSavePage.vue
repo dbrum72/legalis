@@ -148,6 +148,8 @@ import {
     clearValidationErrors,
 } from '@/utils/validationErrors'
 
+import { isValidCpf } from '@/utils/cpf.js'
+
 const route =
     useRoute()
 
@@ -339,6 +341,17 @@ watch(
     },
 )
 
+watch(
+    () => form.document,
+    (value) => {
+        const document = String(value ?? '').replace(/\D/g, '').slice(0, 14)
+
+        if (document !== value) {
+            form.document = document
+        }
+    },
+)
+
 function buildPayload() {
     return {
         name:
@@ -444,6 +457,18 @@ async function handleSubmit() {
     if (!form.document.trim()) {
         errors.document =
             'Informe o CPF ou CNPJ.'
+    } else if (
+        form.document.length !== 11 &&
+        form.document.length !== 14
+    ) {
+        errors.document =
+            'Informe um CPF ou CNPJ com 11 ou 14 dígitos.'
+    } else if (
+        form.document.length === 11 &&
+        !isValidCpf(form.document)
+    ) {
+        errors.document =
+            'Informe um CPF válido.'
     }
 
     if (

@@ -159,7 +159,7 @@ class ClientTest extends TestCase
             'Cliente Teste',
 
             'document' =>
-            '12345678901',
+            '52998224725',
 
             'identity_document' =>
             '123456789',
@@ -217,7 +217,7 @@ class ClientTest extends TestCase
             )
             ->assertJsonPath(
                 'document',
-                '12345678901',
+                '52998224725',
             )
             ->assertJsonPath(
                 'organization_id',
@@ -234,6 +234,44 @@ class ClientTest extends TestCase
                 'organization_id' =>
                 $this->organization->id,
 
+                'document' =>
+                '52998224725',
+            ],
+        );
+    }
+
+    public function test_nao_cria_cliente_com_cpf_invalido(): void
+    {
+        $token =
+            $this->loginAsSuperAdmin();
+
+        $this
+            ->asTenant(
+                $token,
+                $this->organization,
+            )
+            ->postJson(
+                '/api/clients',
+                [
+                    'name' =>
+                    'Cliente Teste',
+
+                    'document' =>
+                    '12345678901',
+                ],
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(
+                'document'
+            )
+            ->assertJsonPath(
+                'errors.document.0',
+                'Informe um CPF válido.',
+            );
+
+        $this->assertDatabaseMissing(
+            'clients',
+            [
                 'document' =>
                 '12345678901',
             ],
@@ -264,7 +302,7 @@ class ClientTest extends TestCase
                     'Cliente Teste',
 
                     'document' =>
-                    '12345678901',
+                    '52998224725',
                 ],
             )
             ->assertCreated()
@@ -280,7 +318,7 @@ class ClientTest extends TestCase
                 $this->organization->id,
 
                 'document' =>
-                '12345678901',
+                '52998224725',
             ],
         );
 
@@ -291,7 +329,7 @@ class ClientTest extends TestCase
                 $otherOrganization->id,
 
                 'document' =>
-                '12345678901',
+                '52998224725',
             ],
         );
     }
@@ -304,7 +342,7 @@ class ClientTest extends TestCase
             )
             ->create([
                 'document' =>
-                '12345678901',
+                '52998224725',
             ]);
 
         $token =
@@ -322,7 +360,7 @@ class ClientTest extends TestCase
                     'Outro Cliente',
 
                     'document' =>
-                    '12345678901',
+                    '52998224725',
                 ],
             )
             ->assertUnprocessable()
@@ -339,7 +377,7 @@ class ClientTest extends TestCase
             )
             ->create([
                 'document' =>
-                '12345678901',
+                '52998224725',
             ]);
 
         $user =
@@ -369,7 +407,7 @@ class ClientTest extends TestCase
                     'Cliente Outra Organização',
 
                     'document' =>
-                    '12345678901',
+                    '52998224725',
                 ],
             )
             ->assertCreated()
@@ -385,7 +423,7 @@ class ClientTest extends TestCase
                 $this->organization->id,
 
                 'document' =>
-                '12345678901',
+                '52998224725',
             ],
         );
 
@@ -396,7 +434,7 @@ class ClientTest extends TestCase
                 $otherOrganization->id,
 
                 'document' =>
-                '12345678901',
+                '52998224725',
             ],
         );
 
@@ -405,7 +443,7 @@ class ClientTest extends TestCase
             Client::withoutGlobalScopes()
                 ->where(
                     'document',
-                    '12345678901',
+                    '52998224725',
                 )
                 ->count(),
         );
@@ -428,7 +466,7 @@ class ClientTest extends TestCase
                     'Cliente Teste',
 
                     'document' =>
-                    '12345678901',
+                    '52998224725',
 
                     'marital_status_id' =>
                     999999,
@@ -512,7 +550,7 @@ class ClientTest extends TestCase
                 'Cliente Antigo',
 
                 'document' =>
-                '12345678901',
+                '52998224725',
             ]);
 
         $token =
@@ -530,7 +568,7 @@ class ClientTest extends TestCase
                     'Cliente Atualizado',
 
                     'document' =>
-                    '12345678901',
+                    '52998224725',
                 ],
             )
             ->assertOk()
