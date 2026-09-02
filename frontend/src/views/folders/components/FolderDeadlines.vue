@@ -56,7 +56,7 @@
                     Cancelar
                 </AppButton>
 
-                <AppButton type="submit" variant="primary" :loading="submitting" :disabled="submitting">
+                <AppButton type="submit" variant="highlight" :loading="submitting" :disabled="submitting">
                     Criar prazo
                 </AppButton>
             </footer>

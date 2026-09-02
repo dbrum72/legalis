@@ -73,7 +73,7 @@
                     Cancelar
                 </AppButton>
 
-                <AppButton type="submit" form="folder-client-form" variant="primary" :loading="saving"
+                <AppButton type="submit" form="folder-client-form" variant="highlight" :loading="saving"
                     :disabled="saving">
                     {{ submitLabel }}
                 </AppButton>

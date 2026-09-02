@@ -55,7 +55,7 @@
                     <div class="monitoring__form-actions">
                         <AppButton type="button" variant="ghost" :disabled="saving" @click="closeDialog">Cancelar
                         </AppButton>
-                        <AppButton type="submit" :loading="saving">Salvar</AppButton>
+                        <AppButton type="submit" variant="highlight" :loading="saving">Salvar</AppButton>
                     </div>
                 </form>
             </AppDialog>

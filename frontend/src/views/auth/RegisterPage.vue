@@ -70,7 +70,7 @@
                         {{ registerError }}
                     </div>
 
-                    <AppButton type="submit" variant="primary" size="lg" :loading="loading" :disabled="loading" block>
+                    <AppButton type="submit" variant="highlight" size="lg" :loading="loading" :disabled="loading" block>
                         Criar minha conta
                     </AppButton>
                 </form>

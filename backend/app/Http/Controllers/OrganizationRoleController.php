@@ -6,6 +6,7 @@ use App\Http\Requests\OrganizationRolePermissionsUpdateRequest;
 use App\Support\Organizations\OrganizationRoleDefinitions;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -76,12 +77,43 @@ class OrganizationRoleController extends Controller
             $currentOrganization,
         );
 
+        $requestedPermissions = collect(
+            $request->validated('permissions')
+        )->sort()->values();
+
+        $currentPermissions = $role->permissions()
+            ->pluck('name')
+            ->sort()
+            ->values();
+
+        if (
+            $role->name === OrganizationRoleDefinitions::SUPER_ADMIN
+            && $requestedPermissions->all() !== $currentPermissions->all()
+        ) {
+            throw ValidationException::withMessages([
+                'permissions' => 'As permissões do Super Admin são protegidas.',
+            ]);
+        }
+
+        if (
+            $currentPermissions->contains('roles.update')
+            && ! $requestedPermissions->contains('roles.update')
+            && ! $this->anotherRoleCanManageRoles(
+                $role,
+                $currentOrganization,
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'permissions' => 'A organização deve manter ao menos uma função capaz de configurar permissões.',
+            ]);
+        }
+
         $permissions =
             Permission::query()
                 ->where('guard_name', 'api')
                 ->whereIn(
                     'name',
-                    $request->validated('permissions'),
+                    $requestedPermissions,
                 )
                 ->get();
 
@@ -90,6 +122,21 @@ class OrganizationRoleController extends Controller
         return response()->json(
             $this->rolePayload($role->refresh())
         );
+    }
+
+    private function anotherRoleCanManageRoles(
+        Role $role,
+        CurrentOrganization $currentOrganization,
+    ): bool {
+        return Role::query()
+            ->where('organization_id', $currentOrganization->get()->getKey())
+            ->where('guard_name', 'api')
+            ->whereKeyNot($role->getKey())
+            ->whereHas(
+                'permissions',
+                fn ($query) => $query->where('name', 'roles.update')
+            )
+            ->exists();
     }
 
     private function ensureRoleBelongsToOrganization(

@@ -76,7 +76,7 @@
                     <section v-if="canReview" class="publication-detail__action">
                         <AppSelect v-model="selectedFolderId" id="publication-folder" label="Pasta vinculada"
                             placeholder="Selecione uma pasta" :options="folderOptions" />
-                        <AppButton type="button" variant="outline" :loading="saving" @click="saveFolder">Salvar vínculo
+                        <AppButton type="button" variant="highlight" :loading="saving" @click="saveFolder">Salvar vínculo
                         </AppButton>
                     </section>
 

@@ -148,7 +148,7 @@
                             {{ submitError }}
                         </div>
 
-                        <AppButton type="submit" variant="primary" size="lg" :loading="submitting"
+                        <AppButton type="submit" variant="highlight" size="lg" :loading="submitting"
                             :disabled="submitting" block>
                             Aceitar convite
                         </AppButton>

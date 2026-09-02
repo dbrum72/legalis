@@ -7,6 +7,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\OrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -311,6 +312,57 @@ class OrganizationRoleTest extends TestCase
             ->asTenant($this->loginAsSuperAdmin())
             ->getJson("/api/organization-roles/{$role->getKey()}")
             ->assertNotFound();
+    }
+
+    public function test_nao_permite_alterar_permissoes_do_super_admin(): void
+    {
+        $role = $this->organizationRole('super-admin');
+
+        $this
+            ->asTenant($this->loginAsSuperAdmin())
+            ->patchJson(
+                "/api/organization-roles/{$role->getKey()}/permissions",
+                ['permissions' => ['clients.view']],
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('permissions');
+    }
+
+    public function test_organizacao_deve_manter_role_capaz_de_configurar_permissoes(): void
+    {
+        $permission = Permission::findByName(
+            'roles.update',
+            'api',
+        );
+
+        $target = $this->organizationRole('socio-administrador');
+
+        setPermissionsTeamId($this->organization->getKey());
+
+        $superAdmin = $this->superAdmin();
+        $superAdmin->givePermissionTo($permission);
+        $token = auth('api')->login($superAdmin);
+
+        Role::query()
+            ->where('organization_id', $this->organization->getKey())
+            ->whereKeyNot($target->getKey())
+            ->get()
+            ->each(fn (Role $role) => $role->revokePermissionTo($permission));
+
+        $remaining = $target->permissions
+            ->pluck('name')
+            ->reject(fn (string $name) => $name === 'roles.update')
+            ->values()
+            ->all();
+
+        $this
+            ->asTenant($token)
+            ->patchJson(
+                "/api/organization-roles/{$target->getKey()}/permissions",
+                ['permissions' => $remaining],
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('permissions');
     }
 
     private function organizationRole(string $name): Role

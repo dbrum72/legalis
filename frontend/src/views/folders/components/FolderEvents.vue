@@ -131,7 +131,7 @@
                     Cancelar
                 </AppButton>
 
-                <AppButton type="submit" :disabled="isSubmitting">
+                <AppButton type="submit" variant="highlight" :disabled="isSubmitting">
                     Salvar compromisso
                 </AppButton>
             </div>

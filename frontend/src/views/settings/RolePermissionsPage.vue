@@ -18,7 +18,7 @@
                     <AppButton
                         variant="highlight"
                         :loading="saving"
-                        :disabled="!hasChanges || !canUpdate"
+                        :disabled="!hasChanges || !editable"
                         @click="saveChanges"
                     >
                         Salvar alterações
@@ -83,7 +83,7 @@
                                                 class="role-permissions__checkbox"
                                                 :model-value="isGroupChecked(group)"
                                                 :indeterminate="isGroupIndeterminate(group)"
-                                                :disabled="!canUpdate"
+                                                :disabled="!editable"
                                                 :label="`Alternar permissões de ${group.label}`"
                                                 @update:model-value="toggleGroup(group, $event)"
                                             />
@@ -104,7 +104,7 @@
                                                 :model-value="
                                                     draftPermissions.includes(permission.name)
                                                 "
-                                                :disabled="!canUpdate"
+                                                :disabled="!editable"
                                                 :label="permission.label"
                                                 @update:model-value="
                                                     togglePermission(permission.name, $event)
@@ -174,6 +174,8 @@ const currentRole = computed(() => rolesStore.selectedRole)
 const loading = computed(() => rolesStore.loadingRole)
 const saving = computed(() => rolesStore.updatingPermissions)
 const canUpdate = computed(() => authStore.hasPermission('roles.update'))
+const protectedRole = computed(() => currentRole.value?.name === 'super-admin')
+const editable = computed(() => canUpdate.value && !protectedRole.value)
 const availablePermissions = computed(() => currentRole.value?.available_permissions ?? [])
 const selectedCount = computed(() => draftPermissions.value.length)
 const hasChanges = computed(

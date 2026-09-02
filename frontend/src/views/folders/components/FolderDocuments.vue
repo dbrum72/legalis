@@ -57,7 +57,7 @@
                     Cancelar
                 </AppButton>
 
-                <AppButton type="submit" variant="primary" :loading="uploading" :disabled="uploading">
+                <AppButton type="submit" variant="highlight" :loading="uploading" :disabled="uploading">
                     Anexar
                 </AppButton>
             </footer>

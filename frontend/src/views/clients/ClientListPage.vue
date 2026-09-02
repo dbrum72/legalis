@@ -12,7 +12,7 @@
                     </p>
                 </div>
 
-                <AppButton v-if="canCreate" type="button" @click="createClient">
+                <AppButton variant="highlight" v-if="canCreate" type="button" @click="createClient">
                     Novo cliente
                 </AppButton>
             </header>

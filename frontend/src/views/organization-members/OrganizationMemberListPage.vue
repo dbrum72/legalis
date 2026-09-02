@@ -147,7 +147,7 @@
                             Cancelar
                         </AppButton>
 
-                        <AppButton type="submit" :loading="invitationsStore.creating"
+                        <AppButton type="submit" variant="highlight" :loading="invitationsStore.creating"
                             :disabled="invitationsStore.creating">
                             Enviar convite
                         </AppButton>
@@ -176,7 +176,7 @@
                             Cancelar
                         </AppButton>
 
-                        <AppButton type="submit" :loading="updatingRole" :disabled="updatingRole">
+                        <AppButton type="submit" variant="highlight" :loading="updatingRole" :disabled="updatingRole">
                             Salvar
                         </AppButton>
                     </div>
