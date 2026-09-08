@@ -79,6 +79,27 @@ describe('AppCurrency', () => {
         expect(updates.at(-1)).toEqual([2500.75])
     })
 
+    it('desloca os centavos a cada dígito quando habilitado', async () => {
+        const wrapper = mountComponent({
+            modelValue: null,
+            shiftDecimal: true,
+        })
+        const input = wrapper.get('input')
+
+        await input.trigger('focus')
+        await input.setValue('1')
+        expect(wrapper.emitted('update:modelValue').at(-1)).toEqual([0.01])
+        expect(input.element.value).toBe('0,01')
+
+        await input.setValue('0,012')
+        expect(wrapper.emitted('update:modelValue').at(-1)).toEqual([0.12])
+        expect(input.element.value).toBe('0,12')
+
+        await input.setValue('0,123')
+        expect(wrapper.emitted('update:modelValue').at(-1)).toEqual([1.23])
+        expect(input.element.value).toBe('1,23')
+    })
+
     it('restaura a formatação ao perder foco', async () => {
         const wrapper = mountComponent()
 

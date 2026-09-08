@@ -12,7 +12,7 @@
                     </p>
                 </div>
 
-                <AppButton v-if="canCreate" type="button" @click="createFolder">
+                <AppButton v-if="canCreate" type="button" variant="navigation" @click="createFolder">
                     Nova pasta
                 </AppButton>
             </header>
@@ -24,11 +24,11 @@
 
                 <template #cell-actions="{ row }">
                     <div class="folder-list__actions">
-                        <AppButton type="button" size="sm" variant="ghost" @click="showFolder(row)">
+                        <AppButton type="button" size="sm" variant="navigation" @click="showFolder(row)">
                             Visualizar
                         </AppButton>
 
-                        <AppButton v-if="canUpdate" type="button" size="sm" variant="outline" @click="editFolder(row)">
+                        <AppButton v-if="canUpdate" type="button" size="sm" variant="navigation" @click="editFolder(row)">
                             Editar
                         </AppButton>
 

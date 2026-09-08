@@ -8,7 +8,7 @@
                     </p>
                 </div>
                 <div class="monitoring__header-actions">
-                    <AppButton type="button" variant="ghost" @click="back">Voltar às publicações</AppButton>
+                    <AppButton type="button" variant="navigation" @click="back">Voltar às publicações</AppButton>
                     <AppButton v-if="canManage" type="button" @click="openCreate">Nova OAB</AppButton>
                 </div>
             </header>

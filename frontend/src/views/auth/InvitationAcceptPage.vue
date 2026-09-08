@@ -33,7 +33,7 @@
                         {{ pageError.message }}
                     </p>
 
-                    <AppButton type="button" variant="primary" @click="goToLogin">
+                    <AppButton type="button" variant="navigation" @click="goToLogin">
                         Ir para o login
                     </AppButton>
                 </div>
@@ -55,7 +55,7 @@
                         foi configurado com sucesso.
                     </p>
 
-                    <AppButton type="button" variant="primary" @click="goToLogin">
+                    <AppButton type="button" variant="navigation" @click="goToLogin">
                         Entrar no Legalis
                     </AppButton>
                 </div>

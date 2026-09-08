@@ -17,12 +17,12 @@
                 </div>
 
                 <div v-if="hasQuickActions" class="dashboard-actions">
-                    <AppButton v-if="authStore.hasPermission('clients.create')" type="button" variant="outline"
+                    <AppButton v-if="authStore.hasPermission('clients.create')" type="button" variant="navigation"
                         @click="goToClientCreate">
                         Novo cliente
                     </AppButton>
 
-                    <AppButton v-if="authStore.hasPermission('folders.create')" type="button" @click="goToFolderCreate">
+                    <AppButton v-if="authStore.hasPermission('folders.create')" type="button" variant="navigation" @click="goToFolderCreate">
                         Nova pasta
                     </AppButton>
                 </div>

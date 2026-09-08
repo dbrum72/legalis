@@ -46,6 +46,14 @@ export default [
     },
 
     {
+        id: 'finance',
+        label: 'Financeiro',
+        name: 'finance',
+        icon: 'wallet',
+        permission: 'finance.view',
+    },
+
+    {
         id: 'role-permissions',
         label: 'Configurações',
         name: 'role-permissions',

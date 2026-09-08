@@ -154,6 +154,7 @@ const permissionLabels = {
     review: 'Revisar publicações',
     'manage-monitoring': 'Gerenciar OABs monitoradas',
     sync: 'Executar sincronizações',
+    manage: 'Gerenciar',
     invite: 'Convidar membros',
     'update-role': 'Alterar função de membros',
     'update-status': 'Ativar ou desativar membros',
@@ -168,6 +169,9 @@ const groupLabels = {
     users: 'Usuários',
     roles: 'Funções e acessos',
     'organization-members': 'Equipe',
+    finance: 'Financeiro',
+    'time-entries': 'Apontamentos de horas',
+    expenses: 'Despesas',
 }
 
 const currentRole = computed(() => rolesStore.selectedRole)

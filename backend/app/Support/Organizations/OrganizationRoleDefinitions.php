@@ -77,12 +77,44 @@ final class OrganizationRoleDefinitions
             'publications.sync',
         ];
 
+        $financialPermissions = [
+            'finance.view',
+            'finance.manage',
+
+            'time-entries.view',
+            'time-entries.create',
+            'time-entries.update',
+            'time-entries.delete',
+
+            'expenses.view',
+            'expenses.create',
+            'expenses.update',
+            'expenses.delete',
+        ];
+
+        $financialOperationPermissions = [
+            'time-entries.view',
+            'time-entries.create',
+            'time-entries.update',
+
+            'expenses.view',
+            'expenses.create',
+            'expenses.update',
+        ];
+
+        $financialSupervisionPermissions = [
+            ...$financialOperationPermissions,
+            'time-entries.delete',
+            'expenses.delete',
+        ];
+
         $allPermissions =
             array_values(
                 array_unique(
                     array_merge(
                         $basePermissions,
                         $organizationAdministrationPermissions,
+                        $financialPermissions,
                     )
                 )
             );
@@ -104,11 +136,17 @@ final class OrganizationRoleDefinitions
                 'description' => 'Gestão jurídica e acompanhamento geral do escritório',
 
                 'permissions' => array_values(
-                    array_diff(
-                        $basePermissions,
-                        [
-                            'roles.update',
-                        ],
+                    array_unique(
+                        array_merge(
+                            array_diff(
+                                $basePermissions,
+                                [
+                                    'roles.update',
+                                ],
+                            ),
+                            ['finance.view'],
+                            $financialSupervisionPermissions,
+                        )
                     )
                 ),
             ],
@@ -117,12 +155,17 @@ final class OrganizationRoleDefinitions
                 'description' => 'Atuação jurídica sênior com acesso operacional amplo',
 
                 'permissions' => array_values(
-                    array_diff(
-                        $basePermissions,
-                        [
-                            'roles.view',
-                            'roles.update',
-                        ],
+                    array_unique(
+                        array_merge(
+                            array_diff(
+                                $basePermissions,
+                                [
+                                    'roles.view',
+                                    'roles.update',
+                                ],
+                            ),
+                            $financialSupervisionPermissions,
+                        )
                     )
                 ),
             ],
@@ -130,7 +173,7 @@ final class OrganizationRoleDefinitions
             self::ADVOGADO_PLENO => [
                 'description' => 'Atuação jurídica plena em clientes, documentos e tarefas',
 
-                'permissions' => [
+                'permissions' => array_merge([
                     'clients.view',
                     'clients.create',
                     'clients.update',
@@ -150,13 +193,13 @@ final class OrganizationRoleDefinitions
                     'tasks.view',
                     'tasks.create',
                     'tasks.update',
-                ],
+                ], $financialOperationPermissions),
             ],
 
             self::ADVOGADO_JUNIOR => [
                 'description' => 'Atuação jurídica júnior sob supervisão',
 
-                'permissions' => [
+                'permissions' => array_merge([
                     'clients.view',
                     'clients.create',
                     'clients.update',
@@ -174,13 +217,13 @@ final class OrganizationRoleDefinitions
                     'tasks.view',
                     'tasks.create',
                     'tasks.update',
-                ],
+                ], $financialOperationPermissions),
             ],
 
             self::ADVOGADO_ASSOCIADO => [
                 'description' => 'Atuação jurídica associada em clientes e processos internos',
 
-                'permissions' => [
+                'permissions' => array_merge([
                     'clients.view',
                     'clients.create',
                     'clients.update',
@@ -199,13 +242,13 @@ final class OrganizationRoleDefinitions
                     'tasks.view',
                     'tasks.create',
                     'tasks.update',
-                ],
+                ], $financialOperationPermissions),
             ],
 
             self::ASSISTENTE_JURIDICO => [
                 'description' => 'Suporte às atividades jurídicas e administrativas',
 
-                'permissions' => [
+                'permissions' => array_merge([
                     'clients.view',
 
                     'files.view',
@@ -219,13 +262,13 @@ final class OrganizationRoleDefinitions
                     'tasks.view',
                     'tasks.create',
                     'tasks.update',
-                ],
+                ], $financialOperationPermissions),
             ],
 
             self::ESTAGIARIO_DIREITO => [
                 'description' => 'Apoio jurídico supervisionado com acesso restrito',
 
-                'permissions' => [
+                'permissions' => array_merge([
                     'clients.view',
 
                     'files.view',
@@ -240,13 +283,13 @@ final class OrganizationRoleDefinitions
                     'tasks.view',
                     'tasks.create',
                     'tasks.update',
-                ],
+                ], $financialOperationPermissions),
             ],
 
             self::PARALEGAL => [
                 'description' => 'Suporte operacional especializado às atividades jurídicas',
 
-                'permissions' => [
+                'permissions' => array_merge([
                     'clients.view',
                     'clients.create',
                     'clients.update',
@@ -263,7 +306,7 @@ final class OrganizationRoleDefinitions
                     'tasks.view',
                     'tasks.create',
                     'tasks.update',
-                ],
+                ], $financialOperationPermissions),
             ],
         ];
     }

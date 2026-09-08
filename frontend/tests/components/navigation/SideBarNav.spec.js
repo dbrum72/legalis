@@ -62,6 +62,14 @@ function createTestRouter() {
                     template: '<div>Playground</div>',
                 },
             },
+
+            {
+                path: '/finance',
+                name: 'finance',
+                component: {
+                    template: '<div>Financeiro</div>',
+                },
+            },
         ],
     })
 }
@@ -151,6 +159,14 @@ describe('SideBarNav', () => {
         })
 
         expect(wrapper.text()).toContain('Pastas')
+    })
+
+    it('mostra Financeiro somente com finance.view', async () => {
+        const hidden = await mountNav()
+        const visible = await mountNav({ permissions: ['finance.view'] })
+
+        expect(hidden.wrapper.text()).not.toContain('Financeiro')
+        expect(visible.wrapper.text()).toContain('Financeiro')
     })
 
     it('nao mostra Equipe sem organization-members.view', async () => {

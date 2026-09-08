@@ -56,4 +56,9 @@ export const appCurrencyProps = {
     type: Boolean,
     default: true,
   },
+
+  shiftDecimal: {
+    type: Boolean,
+    default: false,
+  },
 }

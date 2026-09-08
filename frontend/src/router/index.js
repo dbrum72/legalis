@@ -270,6 +270,16 @@ const router = createRouter({
                         permission: 'roles.view',
                     },
                 },
+
+                {
+                    path: 'finance',
+                    name: 'finance',
+                    component: () => import('@/views/finance/FinancePage.vue'),
+                    meta: {
+                        breadcrumb: 'Financeiro',
+                        permission: 'finance.view',
+                    },
+                },
             ],
         },
     ],

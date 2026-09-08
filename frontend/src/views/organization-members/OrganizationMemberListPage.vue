@@ -12,7 +12,7 @@
                     </p>
                 </div>
 
-                <AppButton v-if="canInvite" type="button" icon="email" @click="openInvitationDialog">
+                <AppButton v-if="canInvite" type="button" variant="navigation" icon="email" @click="openInvitationDialog">
                     Convidar membro
                 </AppButton>
             </header>

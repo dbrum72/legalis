@@ -7,7 +7,7 @@
                     <p class="publications__description">Consulte e revise as comunicações importadas do DJEN.</p>
                 </div>
 
-                <AppButton type="button" variant="outline" @click="openMonitoring">OABs monitoradas</AppButton>
+                <AppButton type="button" variant="navigation" @click="openMonitoring">OABs monitoradas</AppButton>
             </header>
 
             <form class="publications__filters" aria-label="Filtros de publicações" @submit.prevent="load">

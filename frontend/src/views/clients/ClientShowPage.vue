@@ -13,11 +13,11 @@
                 </div>
 
                 <div class="client-show-page__header-actions">
-                    <AppButton type="button" variant="ghost" @click="goBack">
+                    <AppButton type="button" variant="navigation" @click="goBack">
                         Voltar
                     </AppButton>
 
-                    <AppButton v-if="canUpdate" type="button" variant="primary" @click="goToEdit">
+                    <AppButton v-if="canUpdate" type="button" variant="navigation" @click="goToEdit">
                         Editar
                     </AppButton>
                 </div>

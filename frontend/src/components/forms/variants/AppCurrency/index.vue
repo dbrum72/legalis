@@ -96,6 +96,7 @@ const inputProps = computed(() => {
         allowEmpty,
         useGrouping,
         showCurrency,
+        shiftDecimal,
         ...forwardedProps
     } = props
 
@@ -120,6 +121,11 @@ watch(
 )
 
 function handleInput(value) {
+    if (props.shiftDecimal) {
+        handleShiftDecimalInput(value)
+        return
+    }
+
     draftValue.value = value
 
     const result = processNumber(
@@ -137,6 +143,31 @@ function handleInput(value) {
     }
 
     emit('update:modelValue', result.clamped)
+}
+
+function handleShiftDecimalInput(value) {
+    const digits = String(value ?? '').replace(/\D/g, '')
+
+    if (!digits) {
+        draftValue.value = ''
+        emit('update:modelValue', props.allowEmpty ? null : 0)
+        return
+    }
+
+    const parsed = Number(digits) / (10 ** props.precision)
+    const clamped = Math.min(
+        props.max ?? Number.POSITIVE_INFINITY,
+        Math.max(props.min ?? Number.NEGATIVE_INFINITY, parsed),
+    )
+
+    draftValue.value = formatNumber(clamped, {
+        locale: props.locale,
+        minimumFractionDigits: props.precision,
+        maximumFractionDigits: props.precision,
+        useGrouping: props.useGrouping,
+    })
+
+    emit('update:modelValue', clamped)
 }
 
 function handleFocus(event) {

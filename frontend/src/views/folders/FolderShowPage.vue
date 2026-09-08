@@ -13,11 +13,11 @@
                 </div>
 
                 <div class="folder-show-page__actions">
-                    <AppButton type="button" variant="ghost" @click="goBack">
+                    <AppButton type="button" variant="navigation" @click="goBack">
                         Voltar
                     </AppButton>
 
-                    <AppButton v-if="canUpdate" type="button" variant="primary" @click="goToEdit">
+                    <AppButton v-if="canUpdate" type="button" variant="navigation" @click="goToEdit">
                         Editar
                     </AppButton>
 
@@ -503,6 +503,10 @@
                 <AppCard v-if="activeSection === 'tasks'">
                     <FolderTasks :folder-id="folder.id" @changed="refreshFolderSummary" />
                 </AppCard>
+
+                <AppCard v-if="activeSection === 'financial'">
+                    <FolderFinancial :folder-id="folder.id" :clients="financialClients" />
+                </AppCard>
             </template>
         </div>
     </PageContainer>
@@ -542,6 +546,7 @@ import {
 import FolderDeadlines from '@/views/folders/components/FolderDeadlines.vue'
 import FolderDocuments from '@/views/folders/components/FolderDocuments.vue'
 import FolderEvents from '@/views/folders/components/FolderEvents.vue'
+import FolderFinancial from '@/views/folders/components/FolderFinancial.vue'
 import FolderMovements from '@/views/folders/components/FolderMovements.vue'
 import FolderTasks from '@/views/folders/components/FolderTasks.vue'
 
@@ -581,7 +586,7 @@ const syncMessage =
 const activeSection =
     ref('overview')
 
-const sections = [
+const sections = computed(() => [
     {
         value: 'overview',
         label: 'Visão geral',
@@ -616,7 +621,9 @@ const sections = [
         value: 'tasks',
         label: 'Tarefas',
     },
-]
+
+    ...(canViewFinancial.value ? [{ value: 'financial', label: 'Financeiro' }] : []),
+])
 
 const folderId =
     computed(() =>
@@ -688,6 +695,16 @@ const canUpdate =
             'folders.update',
         ),
     )
+
+const canViewFinancial = computed(() =>
+    ['finance.view', 'time-entries.view', 'expenses.view'].some((permission) =>
+        authStore.hasPermission(permission),
+    ),
+)
+
+const financialClients = computed(() =>
+    foldersStore.folderClients.map((item) => item.client).filter(Boolean),
+)
 
 const partsColumns = [
     {

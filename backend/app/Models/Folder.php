@@ -101,4 +101,24 @@ class Folder extends Model
             LegalPublication::class
         );
     }
+
+    public function feeAgreements(): HasMany
+    {
+        return $this->hasMany(FeeAgreement::class);
+    }
+
+    public function timeEntries(): HasMany
+    {
+        return $this->hasMany(TimeEntry::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
 }

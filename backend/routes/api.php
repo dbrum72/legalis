@@ -6,6 +6,9 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataJudSyncController;
 use App\Http\Controllers\DjenSyncController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\FeeAgreementController;
+use App\Http\Controllers\FinancialSummaryController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FolderDeadlineController;
@@ -13,14 +16,17 @@ use App\Http\Controllers\FolderDocumentController;
 use App\Http\Controllers\FolderEventController;
 use App\Http\Controllers\FolderMovementController;
 use App\Http\Controllers\FolderTaskController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LegalPublicationController;
 use App\Http\Controllers\MaritalStatusController;
 use App\Http\Controllers\MonitoredBarRegistrationController;
 use App\Http\Controllers\OrganizationInvitationController;
 use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\OrganizationRoleController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PostalCodeController;
 use App\Http\Controllers\QualificationController;
+use App\Http\Controllers\TimeEntryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')
@@ -481,6 +487,54 @@ Route::middleware([
         )->middleware(
             'can:folders.update'
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Folder financial operations
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/folders/{folder}/fee-agreements', [FeeAgreementController::class, 'index'])
+            ->middleware('can:finance.view');
+        Route::post('/folders/{folder}/fee-agreements', [FeeAgreementController::class, 'store'])
+            ->middleware('can:finance.manage');
+        Route::patch('/folders/{folder}/fee-agreements/{feeAgreement}', [FeeAgreementController::class, 'update'])
+            ->middleware('can:finance.manage');
+        Route::delete('/folders/{folder}/fee-agreements/{feeAgreement}', [FeeAgreementController::class, 'destroy'])
+            ->middleware('can:finance.manage');
+
+        Route::get('/folders/{folder}/time-entries', [TimeEntryController::class, 'index'])
+            ->middleware('can:time-entries.view');
+        Route::post('/folders/{folder}/time-entries', [TimeEntryController::class, 'store'])
+            ->middleware('can:time-entries.create');
+        Route::patch('/folders/{folder}/time-entries/{timeEntry}', [TimeEntryController::class, 'update'])
+            ->middleware('can:time-entries.update');
+        Route::delete('/folders/{folder}/time-entries/{timeEntry}', [TimeEntryController::class, 'destroy'])
+            ->middleware('can:time-entries.delete');
+
+        Route::get('/folders/{folder}/expenses', [ExpenseController::class, 'index'])
+            ->middleware('can:expenses.view');
+        Route::post('/folders/{folder}/expenses', [ExpenseController::class, 'store'])
+            ->middleware('can:expenses.create');
+        Route::patch('/folders/{folder}/expenses/{expense}', [ExpenseController::class, 'update'])
+            ->middleware('can:expenses.update');
+        Route::delete('/folders/{folder}/expenses/{expense}', [ExpenseController::class, 'destroy'])
+            ->middleware('can:expenses.delete');
+
+        Route::get('/finance/summary', FinancialSummaryController::class)
+            ->middleware('can:finance.view');
+        Route::get('/invoices', [InvoiceController::class, 'index'])
+            ->middleware('can:finance.view');
+        Route::post('/invoices', [InvoiceController::class, 'store'])
+            ->middleware('can:finance.manage');
+        Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update'])
+            ->middleware('can:finance.manage');
+        Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])
+            ->middleware('can:finance.manage');
+        Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
+            ->middleware('can:finance.manage');
+        Route::post('/invoices/{invoice}/installments', [InvoiceController::class, 'storeInstallment'])
+            ->middleware('can:finance.manage');
 
         /*
         |--------------------------------------------------------------------------

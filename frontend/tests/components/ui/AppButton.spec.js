@@ -49,6 +49,14 @@ describe('AppButton', () => {
         expect(wrapper.get('button').classes()).toContain('btn--accent')
     })
 
+    it('aplica a variante verde de navegação', () => {
+        const wrapper = mountComponent({
+            variant: 'navigation',
+        })
+
+        expect(wrapper.get('button').classes()).toContain('btn--navigation')
+    })
+
     it('não aplica classe de tamanho para md', () => {
         const wrapper = mountComponent({
             size: 'md',

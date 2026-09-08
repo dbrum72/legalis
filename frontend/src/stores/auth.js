@@ -20,9 +20,11 @@ import { useFolderDeadlinesStore } from '@/stores/folder-deadlines.js'
 import { useDashboardStore } from '@/stores/dashboard.js'
 import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
 import { useFolderEventsStore } from '@/stores/folder-events.js'
+import { useFolderFinancialStore } from '@/stores/folder-financial.js'
 import { useFolderMovementsStore } from '@/stores/folder-movements.js'
 import { useFolderTasksStore } from '@/stores/folder-tasks.js'
 import { useFoldersStore } from '@/stores/folders.js'
+import { useFinanceStore } from '@/stores/finance.js'
 import { useOrganizationMembersStore } from '@/stores/organization-members.js'
 import { useOrganizationRolesStore } from '@/stores/organization-roles.js'
 import { useMonitoredBarRegistrationsStore } from '@/stores/monitored-bar-registrations.js'
@@ -117,11 +119,15 @@ export const useAuthStore = defineStore('auth', () => {
 
         useFolderEventsStore().clear()
 
+        useFolderFinancialStore().clear()
+
         useFolderMovementsStore().clear()
 
         useFolderTasksStore().clear()
 
         useFoldersStore().clear()
+
+        useFinanceStore().clear()
 
         useOrganizationMembersStore().clear()
 

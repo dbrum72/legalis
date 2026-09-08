@@ -29,8 +29,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Client extends Model
 {
-    use HasFactory;
     use BelongsToOrganization;
+    use HasFactory;
 
     protected function casts(): array
     {
@@ -65,5 +65,15 @@ class Client extends Model
                 'qualification_id',
             ])
             ->withTimestamps();
+    }
+
+    public function feeAgreements(): HasMany
+    {
+        return $this->hasMany(FeeAgreement::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
     }
 }

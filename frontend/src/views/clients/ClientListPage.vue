@@ -12,7 +12,7 @@
                     </p>
                 </div>
 
-                <AppButton variant="highlight" v-if="canCreate" type="button" @click="createClient">
+                <AppButton v-if="canCreate" type="button" variant="navigation" @click="createClient">
                     Novo cliente
                 </AppButton>
             </header>
@@ -24,11 +24,11 @@
 
                 <template #cell-actions="{ row }">
                     <div class="client-list__actions">
-                        <AppButton type="button" size="sm" variant="ghost" @click="showClient(row)">
+                        <AppButton type="button" size="sm" variant="navigation" @click="showClient(row)">
                             Visualizar
                         </AppButton>
 
-                        <AppButton v-if="canUpdate" type="button" size="sm" variant="outline" @click="editClient(row)">
+                        <AppButton v-if="canUpdate" type="button" size="sm" variant="navigation" @click="editClient(row)">
                             Editar
                         </AppButton>
 

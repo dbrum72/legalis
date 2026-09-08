@@ -94,7 +94,7 @@
                     </div>
 
                     <footer class="client-form-page__actions">
-                        <AppButton type="button" variant="ghost" :disabled="submitting" @click="goBack">
+                        <AppButton type="button" variant="navigation" :disabled="submitting" @click="goBack">
                             Cancelar
                         </AppButton>
 
