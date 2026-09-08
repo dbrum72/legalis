@@ -87,6 +87,7 @@ describe('auth store', () => {
                 id: 1,
                 name: 'Super Admin',
                 email: 'super-admin@legalis.local',
+                last_login_at: '2026-09-08T09:45:00-03:00',
             },
 
             organizations: [
@@ -108,7 +109,10 @@ describe('auth store', () => {
             id: 1,
             name: 'Super Admin',
             email: 'super-admin@legalis.local',
+            last_login_at: '2026-09-08T09:45:00-03:00',
         })
+
+        expect(store.last_login_at).toBe('2026-09-08T09:45:00-03:00')
 
         expect(store.organizations).toEqual([
             {
@@ -213,6 +217,8 @@ describe('auth store', () => {
             name: 'Super Admin',
         }
 
+        store.last_login_at = '2026-09-08T09:45:00-03:00'
+
         store.organizations = [
             {
                 id: 10,
@@ -234,6 +240,8 @@ describe('auth store', () => {
         expect(store.token).toBeNull()
 
         expect(store.user).toBeNull()
+
+        expect(store.last_login_at).toBeNull()
 
         expect(store.organizations).toEqual([])
 
@@ -302,6 +310,10 @@ describe('auth store', () => {
         expect(store.token).toBe('jwt-token')
 
         expect(store.user.email).toBe('super-admin@legalis.local')
+
+        expect(store.last_login_at).toBeTruthy()
+
+        expect(Number.isNaN(new Date(store.last_login_at).getTime())).toBe(false)
 
         expect(store.organizations).toHaveLength(1)
 

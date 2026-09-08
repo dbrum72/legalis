@@ -33,6 +33,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     const user = ref(null)
 
+    const last_login_at = ref(null)
+
     const organizations = ref([])
 
     const organization = ref(null)
@@ -73,6 +75,9 @@ export const useAuthStore = defineStore('auth', () => {
 
     function applyIdentityPayload(payload) {
         user.value = payload?.user ?? null
+
+        last_login_at.value = payload?.user?.last_login_at
+            ?? (user.value ? last_login_at.value : null)
 
         organizations.value = Array.isArray(payload?.organizations) ? payload.organizations : []
     }
@@ -149,6 +154,8 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = null
 
         user.value = null
+
+        last_login_at.value = null
 
         organizations.value = []
 
@@ -260,6 +267,8 @@ export const useAuthStore = defineStore('auth', () => {
 
         applyAuthPayload(response.data)
 
+        last_login_at.value = response.data?.user?.last_login_at ?? new Date().toISOString()
+
         await initializeContext()
 
         return response.data
@@ -326,6 +335,7 @@ export const useAuthStore = defineStore('auth', () => {
     return {
         token,
         user,
+        last_login_at,
 
         organizations,
         organization,
