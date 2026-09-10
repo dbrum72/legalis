@@ -10,6 +10,7 @@ import {
     listExpenses,
     listFeeAgreements,
     listTimeEntries,
+    updateFeeAgreement as updateFeeAgreementRequest,
 } from '@/api/folder-financial.js'
 
 export const useFolderFinancialStore = defineStore('folder-financial', () => {
@@ -47,6 +48,12 @@ export const useFolderFinancialStore = defineStore('folder-financial', () => {
         return data
     }
 
+    async function updateAgreement(folderId, id, payload) {
+        const { data } = await updateFeeAgreementRequest(folderId, id, payload)
+        agreements.value = agreements.value.map((item) => Number(item.id) === Number(id) ? data : item)
+        return data
+    }
+
     async function createTime(folderId, payload) {
         const { data } = await createTimeEntryRequest(folderId, payload)
         timeEntries.value.unshift(data)
@@ -81,5 +88,5 @@ export const useFolderFinancialStore = defineStore('folder-financial', () => {
         loading.value = false
     }
 
-    return { agreements, timeEntries, expenses, loading, billableMinutes, billableTimeCents, reimbursableExpenseCents, fetchAll, createAgreement, createTime, createExpense, removeAgreement, removeTime, removeExpense, clear }
+    return { agreements, timeEntries, expenses, loading, billableMinutes, billableTimeCents, reimbursableExpenseCents, fetchAll, createAgreement, updateAgreement, createTime, createExpense, removeAgreement, removeTime, removeExpense, clear }
 })

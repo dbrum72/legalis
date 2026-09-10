@@ -66,9 +66,23 @@
 
             <AppCard>
                 <section class="finance-page__invoices">
-                    <div class="finance-page__section-heading"><div><h2>Contas a receber</h2><p>Cobranças atuais e histórico de recebimentos.</p></div></div>
+                    <div class="finance-page__section-heading"><div><h2>Contas a receber</h2><p>Cobranças atuais e histórico de recebimentos.</p></div><span v-if="hasActiveInvoiceFilters" class="finance-page__filter-count">{{ financeStore.invoices.length }} resultado(s)</span></div>
+                    <form class="finance-page__filters" aria-label="Filtros de contas a receber" @submit.prevent="applyInvoiceFilters">
+                        <label>Cliente<select v-model="invoiceFilters.client_id"><option value="">Todos os clientes</option><option v-for="client in clientsStore.clients" :key="client.id" :value="client.id">{{ client.name }}</option></select></label>
+                        <label>Transação<input v-model.trim="invoiceFilters.transaction" type="search" placeholder="Cobrança ou transação"></label>
+                        <label>Vencimento<select v-model="invoiceFilters.period_type"><option value="all">Qualquer período</option><option value="month">Por mês</option><option value="range">Período personalizado</option></select></label>
+                        <label v-if="invoiceFilters.period_type === 'month'">Mês<input v-model="invoiceFilters.month" type="month" required></label>
+                        <template v-if="invoiceFilters.period_type === 'range'">
+                            <label>De<input v-model="invoiceFilters.due_from" type="date" required></label>
+                            <label>Até<input v-model="invoiceFilters.due_to" type="date" :min="invoiceFilters.due_from" required></label>
+                        </template>
+                        <div class="finance-page__filter-actions">
+                            <AppButton v-if="hasInvoiceFilterInput" type="button" variant="ghost" :disabled="financeStore.loading" @click="clearInvoiceFilters">Limpar</AppButton>
+                            <AppButton type="submit" variant="outline" :loading="financeStore.loading">Filtrar</AppButton>
+                        </div>
+                    </form>
                     <p v-if="financeStore.loading" class="finance-page__empty">Carregando cobranças...</p>
-                    <p v-else-if="!financeStore.invoices.length" class="finance-page__empty">Nenhuma cobrança registrada.</p>
+                    <p v-else-if="!financeStore.invoices.length" class="finance-page__empty">{{ hasActiveInvoiceFilters ? 'Nenhuma cobrança corresponde aos filtros.' : 'Nenhuma cobrança registrada.' }}</p>
                     <div v-else class="finance-page__table-wrap">
                         <table>
                             <thead><tr><th>Cobrança</th><th>Parcela</th><th>Cliente</th><th>Vencimento</th><th>Situação</th><th>Saldo</th><th><span class="sr-only">Ações</span></th></tr></thead>
@@ -126,9 +140,12 @@ const authStore = useAuthStore(); const clientsStore = useClientsStore(); const 
 const error = ref(''); const submitting = ref(false); const showInvoiceForm = ref(false); const paymentInvoice = ref(null); const installmentInvoice = ref(null); const pendingDelete = ref(null)
 const localDate = () => new Date().toLocaleDateString('en-CA'); const localDateTime = () => `${localDate()}T${new Date().toTimeString().slice(0, 5)}`
 const invoiceForm = reactive({ client_id: '', folder_id: '', due_on: localDate(), subtotal: 0, discount: 0, installment_count: 1, installment_interval_months: 1, notes: '' })
+const invoiceFilters = reactive({ client_id: '', transaction: '', period_type: 'all', month: localDate().slice(0, 7), due_from: '', due_to: '' })
 const paymentForm = reactive({ amount: null, paid_at: localDateTime(), method: 'pix' })
 const installmentForm = reactive({ due_on: localDate(), subtotal: 0, discount: 0, notes: '' })
 const canManage = computed(() => authStore.hasPermission('finance.manage'))
+const hasInvoiceFilterInput = computed(() => Boolean(invoiceFilters.client_id || invoiceFilters.transaction || invoiceFilters.period_type !== 'all'))
+const hasActiveInvoiceFilters = computed(() => Object.keys(financeStore.activeFilters).length > 0)
 const overdueDescription = computed(() => {
     const count = Number(financeStore.summary.overdue_count || 0)
     return `${count} ${count === 1 ? 'cobrança vencida' : 'cobranças vencidas'}`
@@ -140,6 +157,9 @@ const displayStatus = (invoice) => isOverdue(invoice) ? 'overdue' : invoice.stat
 const statusLabel = (invoice) => ({ draft: 'Rascunho', open: 'Em aberto', partial: 'Parcial', paid: 'Pago', cancelled: 'Cancelado', overdue: 'Vencido' })[displayStatus(invoice)] ?? invoice.status
 function message(exception) { return exception?.response?.data?.message ?? Object.values(exception?.response?.data?.errors ?? {})[0]?.[0] ?? 'Não foi possível concluir a operação.' }
 async function submitInvoice() { submitting.value = true; error.value = ''; try { await financeStore.addInvoice({ client_id: Number(invoiceForm.client_id), folder_id: invoiceForm.folder_id ? Number(invoiceForm.folder_id) : null, due_on: invoiceForm.due_on, subtotal_cents: Math.round(invoiceForm.subtotal * 100), discount_cents: Math.round((invoiceForm.discount || 0) * 100), installment_count: invoiceForm.installment_count, installment_interval_months: invoiceForm.installment_interval_months, notes: invoiceForm.notes || null }); showInvoiceForm.value = false } catch (exception) { error.value = message(exception) } finally { submitting.value = false } }
+function invoiceFilterPayload() { return { ...(invoiceFilters.client_id ? { client_id: Number(invoiceFilters.client_id) } : {}), ...(invoiceFilters.transaction ? { transaction: invoiceFilters.transaction } : {}), ...(invoiceFilters.period_type === 'month' ? { month: invoiceFilters.month } : {}), ...(invoiceFilters.period_type === 'range' ? { due_from: invoiceFilters.due_from, due_to: invoiceFilters.due_to } : {}) } }
+async function applyInvoiceFilters() { error.value = ''; try { await financeStore.fetchAll(invoiceFilterPayload()) } catch (exception) { error.value = message(exception) } }
+async function clearInvoiceFilters() { Object.assign(invoiceFilters, { client_id: '', transaction: '', period_type: 'all', month: localDate().slice(0, 7), due_from: '', due_to: '' }); await applyInvoiceFilters() }
 const isLastInstallment = (invoice) => Number(invoice.installment_number ?? 1) === Number(invoice.installment_count ?? 1)
 function openInstallment(invoice) { installmentInvoice.value = invoice; installmentForm.due_on = nextMonth(invoice.due_on); installmentForm.subtotal = 0; installmentForm.discount = 0; installmentForm.notes = '' }
 function nextMonth(value) { const source = new Date(`${String(value).slice(0, 10)}T12:00:00Z`); const day = source.getUTCDate(); source.setUTCDate(1); source.setUTCMonth(source.getUTCMonth() + 1); const lastDay = new Date(Date.UTC(source.getUTCFullYear(), source.getUTCMonth() + 1, 0)).getUTCDate(); source.setUTCDate(Math.min(day, lastDay)); return source.toISOString().slice(0, 10) }
@@ -242,5 +262,52 @@ onMounted(async () => { try { await Promise.all([financeStore.fetchAll(), client
     margin-top: var(--space-2);
     color: var(--color-text-muted) !important;
     font-size: var(--font-size-xs);
+}
+
+.finance-page__filters {
+    display: grid;
+    grid-template-columns: minmax(11rem, 1.25fr) minmax(12rem, 1.5fr) minmax(11rem, 1fr);
+    padding: var(--space-4);
+    gap: var(--space-3);
+    align-items: end;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.finance-page__filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.finance-page__filter-count {
+    padding: .35rem .65rem;
+    color: var(--color-brand-secondary);
+    background: var(--color-surface-secondary-soft);
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+    .finance-page__filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .finance-page__filters {
+        grid-template-columns: 1fr;
+    }
+
+    .finance-page__filter-actions {
+        justify-content: stretch;
+    }
+
+    .finance-page__filter-actions > * {
+        flex: 1;
+    }
 }
 </style>

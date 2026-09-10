@@ -31,15 +31,20 @@
         </div>
 
         <form v-if="activeForm === 'agreement'" class="folder-financial__form" @submit.prevent="submitAgreement">
-            <h3>Novo contrato de honorários</h3>
+            <h3>{{ editingAgreement ? 'Editar contrato de honorários' : 'Novo contrato de honorários' }}</h3>
             <div class="folder-financial__grid">
                 <label>Cliente<select v-model="agreementForm.client_id" required><option value="" disabled>Selecione</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select></label>
                 <label>Modalidade<select v-model="agreementForm.type"><option value="hourly">Por hora</option><option value="fixed">Valor fixo</option><option value="contingency">Êxito</option><option value="hybrid">Híbrido</option></select></label>
-                <label v-if="['hourly', 'hybrid'].includes(agreementForm.type)">Valor por hora (R$)<input v-model.number="agreementForm.hourly_rate" type="number" min="0" step="0.01"></label>
-                <label v-if="['fixed', 'hybrid'].includes(agreementForm.type)">Valor fixo (R$)<input v-model.number="agreementForm.fixed_fee" type="number" min="0" step="0.01"></label>
+                <AppCurrency v-if="['hourly', 'hybrid'].includes(agreementForm.type)" v-model="agreementForm.hourly_rate" id="agreement-hourly-rate" label="Valor por hora" :min="0" :allow-empty="false" shift-decimal />
+                <AppCurrency v-if="['fixed', 'hybrid'].includes(agreementForm.type)" v-model="agreementForm.fixed_fee" id="agreement-fixed-fee" label="Valor fixo" :min="0" :allow-empty="false" shift-decimal />
                 <label v-if="['contingency', 'hybrid'].includes(agreementForm.type)">Êxito (%)<input v-model.number="agreementForm.contingency_percentage" type="number" min="0.01" max="100" step="0.01"></label>
+                <label>Status<select v-model="agreementForm.status"><option value="draft">Rascunho</option><option value="active">Ativo</option><option value="closed">Encerrado</option><option value="cancelled">Cancelado</option></select></label>
+                <label>Dia de cobrança<input v-model.number="agreementForm.billing_day" type="number" min="1" max="31" placeholder="Ex.: 10"></label>
+                <label>Início da vigência<input v-model="agreementForm.starts_on" type="date"></label>
+                <label>Fim da vigência<input v-model="agreementForm.ends_on" type="date" :min="agreementForm.starts_on"></label>
+                <label class="folder-financial__wide">Observações<textarea v-model.trim="agreementForm.notes" rows="3" maxlength="10000" /></label>
             </div>
-            <div class="folder-financial__form-actions"><AppButton type="button" variant="ghost" @click="activeForm = ''">Cancelar</AppButton><AppButton type="submit" :loading="submitting">Salvar contrato</AppButton></div>
+            <div class="folder-financial__form-actions"><AppButton type="button" variant="ghost" @click="closeForm">Cancelar</AppButton><AppButton type="submit" :loading="submitting">{{ editingAgreement ? 'Salvar alterações' : 'Salvar contrato' }}</AppButton></div>
         </form>
 
         <form v-if="activeForm === 'time'" class="folder-financial__form" @submit.prevent="submitTime">
@@ -69,8 +74,8 @@
             <div v-if="!financialStore.agreements.length" class="folder-financial__empty">Nenhum contrato cadastrado.</div>
             <article v-for="agreement in financialStore.agreements" :key="agreement.id" class="folder-financial__row">
                 <div><strong>{{ agreement.client?.name ?? 'Sem cliente' }}</strong><span>{{ agreementLabel(agreement) }}</span></div>
-                <span class="folder-financial__badge">{{ agreement.status === 'active' ? 'Ativo' : 'Rascunho' }}</span>
-                <AppButton v-if="canManageFinance" size="sm" variant="ghost" @click="askDelete('agreement', agreement)">Excluir</AppButton>
+                <span class="folder-financial__badge">{{ agreementStatusLabel(agreement.status) }}</span>
+                <div v-if="canManageFinance" class="folder-financial__row-actions"><AppButton size="sm" variant="outline" @click="editAgreement(agreement)">Editar</AppButton><AppButton size="sm" variant="ghost" @click="askDelete('agreement', agreement)">Excluir</AppButton></div>
             </article>
         </section>
 
@@ -100,6 +105,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { AppCurrency } from '@/components/forms'
 import { AppButton, AppConfirmDialog } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth.js'
 import { useFolderFinancialStore } from '@/stores/folder-financial.js'
@@ -112,8 +118,9 @@ const error = ref('')
 const submitting = ref(false)
 const deleting = ref(false)
 const pendingDelete = ref(null)
+const editingAgreement = ref(null)
 const today = () => new Date().toLocaleDateString('en-CA')
-const agreementForm = reactive({ client_id: '', type: 'hourly', hourly_rate: null, fixed_fee: null, contingency_percentage: null })
+const agreementForm = reactive({ client_id: '', type: 'hourly', status: 'active', hourly_rate: 0, fixed_fee: 0, contingency_percentage: null, billing_day: null, starts_on: '', ends_on: '', notes: '' })
 const timeForm = reactive({ worked_on: today(), duration_minutes: 60, description: '', billable: true })
 const expenseForm = reactive({ incurred_on: today(), amount: null, description: '', reimbursable: true })
 const allowed = (permission) => authStore.hasPermission(permission)
@@ -129,9 +136,13 @@ const formatMoney = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency
 const formatDate = (value) => value ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(value)) : '—'
 const formatDuration = (minutes) => `${Math.floor(Number(minutes || 0) / 60)}h ${Number(minutes || 0) % 60}min`
 const agreementLabel = (item) => ({ hourly: `${formatMoney(item.hourly_rate_cents)}/hora`, fixed: formatMoney(item.fixed_fee_cents), contingency: `${item.contingency_percentage}% de êxito`, hybrid: 'Modelo híbrido' })[item.type] ?? item.type
-function toggleForm(name) { activeForm.value = activeForm.value === name ? '' : name; error.value = '' }
+const agreementStatusLabel = (status) => ({ draft: 'Rascunho', active: 'Ativo', closed: 'Encerrado', cancelled: 'Cancelado' })[status] ?? status
+function resetAgreementForm() { Object.assign(agreementForm, { client_id: '', type: 'hourly', status: 'active', hourly_rate: 0, fixed_fee: 0, contingency_percentage: null, billing_day: null, starts_on: '', ends_on: '', notes: '' }); editingAgreement.value = null }
+function closeForm() { activeForm.value = ''; editingAgreement.value = null }
+function toggleForm(name) { if (activeForm.value === name) { closeForm(); return } if (name === 'agreement') resetAgreementForm(); activeForm.value = name; error.value = '' }
+function editAgreement(agreement) { editingAgreement.value = agreement; Object.assign(agreementForm, { client_id: agreement.client_id ?? '', type: agreement.type, status: agreement.status, hourly_rate: Number(agreement.hourly_rate_cents || 0) / 100, fixed_fee: Number(agreement.fixed_fee_cents || 0) / 100, contingency_percentage: agreement.contingency_percentage == null ? null : Number(agreement.contingency_percentage), billing_day: agreement.billing_day, starts_on: String(agreement.starts_on || '').slice(0, 10), ends_on: String(agreement.ends_on || '').slice(0, 10), notes: agreement.notes || '' }); activeForm.value = 'agreement'; error.value = '' }
 async function submit(action) { submitting.value = true; error.value = ''; try { await action(); activeForm.value = '' } catch (exception) { error.value = exception?.response?.data?.message ?? Object.values(exception?.response?.data?.errors ?? {})[0]?.[0] ?? 'Não foi possível salvar o registro.' } finally { submitting.value = false } }
-function submitAgreement() { return submit(() => financialStore.createAgreement(props.folderId, { client_id: Number(agreementForm.client_id), type: agreementForm.type, status: 'active', hourly_rate_cents: agreementForm.hourly_rate == null ? null : Math.round(agreementForm.hourly_rate * 100), fixed_fee_cents: agreementForm.fixed_fee == null ? null : Math.round(agreementForm.fixed_fee * 100), contingency_percentage: agreementForm.contingency_percentage })) }
+function submitAgreement() { const payload = { client_id: Number(agreementForm.client_id), type: agreementForm.type, status: agreementForm.status, hourly_rate_cents: ['hourly', 'hybrid'].includes(agreementForm.type) ? Math.round(agreementForm.hourly_rate * 100) : null, fixed_fee_cents: ['fixed', 'hybrid'].includes(agreementForm.type) ? Math.round(agreementForm.fixed_fee * 100) : null, contingency_percentage: ['contingency', 'hybrid'].includes(agreementForm.type) ? agreementForm.contingency_percentage : null, billing_day: agreementForm.billing_day || null, starts_on: agreementForm.starts_on || null, ends_on: agreementForm.ends_on || null, notes: agreementForm.notes || null }; return submit(() => editingAgreement.value ? financialStore.updateAgreement(props.folderId, editingAgreement.value.id, payload) : financialStore.createAgreement(props.folderId, payload)) }
 function submitTime() { return submit(() => financialStore.createTime(props.folderId, { ...timeForm })) }
 function submitExpense() { return submit(() => financialStore.createExpense(props.folderId, { incurred_on: expenseForm.incurred_on, description: expenseForm.description, amount_cents: Math.round(expenseForm.amount * 100), reimbursable: expenseForm.reimbursable })) }
 function askDelete(type, item) { pendingDelete.value = { type, item } }

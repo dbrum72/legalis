@@ -18,9 +18,30 @@ class InvoiceController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $filters = $request->validate([
+            'client_id' => ['nullable', 'integer'],
+            'transaction' => ['nullable', 'string', 'max:40'],
+            'month' => ['nullable', 'date_format:Y-m'],
+            'due_from' => ['nullable', 'date'],
+            'due_to' => ['nullable', 'date', 'after_or_equal:due_from'],
+        ]);
+
         $invoices = Invoice::query()
             ->with(['client:id,name', 'folder:id,name', 'payments'])
             ->when($request->string('status')->isNotEmpty(), fn ($query) => $query->where('status', $request->string('status')))
+            ->when($filters['client_id'] ?? null, fn ($query, $clientId) => $query->where('client_id', $clientId))
+            ->when($filters['transaction'] ?? null, function ($query, $transaction): void {
+                $query->where(function ($query) use ($transaction): void {
+                    $query->where('charge_identifier', 'like', "%{$transaction}%")
+                        ->orWhere('number', 'like', "%{$transaction}%");
+                });
+            })
+            ->when($filters['month'] ?? null, function ($query, $month): void {
+                $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+                $query->whereBetween('due_on', [$start->toDateString(), $start->copy()->endOfMonth()->toDateString()]);
+            })
+            ->when($filters['due_from'] ?? null, fn ($query, $date) => $query->whereDate('due_on', '>=', $date))
+            ->when($filters['due_to'] ?? null, fn ($query, $date) => $query->whereDate('due_on', '<=', $date))
             ->orderByRaw("CASE WHEN status IN ('open', 'partial') AND due_on < CURRENT_DATE THEN 0 ELSE 1 END")
             ->orderBy('due_on')
             ->latest('id')

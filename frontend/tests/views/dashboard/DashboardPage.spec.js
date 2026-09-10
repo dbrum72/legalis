@@ -64,6 +64,14 @@ function createTestRouter() {
                     template: '<div>Detalhes da pasta</div>',
                 },
             },
+
+            {
+                path: '/finance',
+                name: 'finance',
+                component: {
+                    template: '<div>Financeiro</div>',
+                },
+            },
         ],
     })
 }
@@ -248,6 +256,13 @@ async function mountPage({
 
     unseenDataJudIntegrations = [],
 
+    financialSummary = {
+        receivable_cents: 0,
+        overdue_cents: 0,
+        overdue_count: 0,
+        received_this_month_cents: 0,
+    },
+
     fetchError = null,
 } = {}) {
     const pinia = createPinia()
@@ -280,6 +295,8 @@ async function mountPage({
 
     dashboardStore.unseenDataJudIntegrations = unseenDataJudIntegrations
 
+    dashboardStore.financialSummary = financialSummary
+
     const folderTasksStore = useFolderTasksStore()
 
     const folderDeadlinesStore = useFolderDeadlinesStore()
@@ -305,6 +322,8 @@ async function mountPage({
             my_work: dashboardStore.myWork,
 
             unseen_datajud_integrations: dashboardStore.unseenDataJudIntegrations,
+
+            financial_summary: dashboardStore.financialSummary,
         })
     }
 
@@ -1481,5 +1500,34 @@ describe('DashboardPage', () => {
 
         expect(markSeen).toHaveBeenCalledWith(91)
         expect(wrapper.find('[data-testid="dashboard-datajud-integrations"]').exists()).toBe(false)
+    })
+
+    it('exibe a visão financeira apenas para usuário autorizado', async () => {
+        const { wrapper, router } = await mountPage({
+            permissions: ['finance.view'],
+            financialSummary: {
+                receivable_cents: 150000,
+                overdue_cents: 50000,
+                overdue_count: 2,
+                received_this_month_cents: 90000,
+            },
+        })
+        const financial = wrapper.get('[data-testid="dashboard-financial-summary"]')
+        const myWork = wrapper.get('[data-testid="dashboard-my-work"]')
+
+        expect(financial.text()).toContain('R$ 1.500,00')
+        expect(financial.text()).toContain('R$ 500,00')
+        expect(financial.text()).toContain('2 cobrança(s) vencida(s)')
+        expect(myWork.element.compareDocumentPosition(financial.element) & 4).toBe(4)
+
+        await findButton(financial, 'Ver financeiro').trigger('click')
+        await flushPromises()
+        expect(router.currentRoute.value.name).toBe('finance')
+    })
+
+    it('oculta a visão financeira sem permissão', async () => {
+        const { wrapper } = await mountPage()
+
+        expect(wrapper.find('[data-testid="dashboard-financial-summary"]').exists()).toBe(false)
     })
 })

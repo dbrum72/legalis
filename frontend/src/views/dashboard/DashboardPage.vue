@@ -731,6 +731,36 @@
                     </div>
                 </section>
 
+                <section v-if="authStore.hasPermission('finance.view')" class="dashboard-financial"
+                    aria-labelledby="dashboard-financial-title" data-testid="dashboard-financial-summary">
+                    <header class="dashboard-financial__header">
+                        <div>
+                            <span class="dashboard-financial__eyebrow">Gestão financeira</span>
+                            <h2 id="dashboard-financial-title">Visão de recebíveis</h2>
+                        </div>
+                        <AppButton type="button" variant="navigation" size="sm" @click="goToFinance">
+                            Ver financeiro
+                        </AppButton>
+                    </header>
+                    <div class="dashboard-financial__metrics">
+                        <div class="dashboard-financial__metric">
+                            <span>A receber</span>
+                            <strong>{{ formatMoney(dashboardStore.financialSummary.receivable_cents) }}</strong>
+                            <small>Saldo total em aberto</small>
+                        </div>
+                        <div class="dashboard-financial__metric dashboard-financial__metric--danger">
+                            <span>Vencido</span>
+                            <strong>{{ formatMoney(dashboardStore.financialSummary.overdue_cents) }}</strong>
+                            <small>{{ dashboardStore.financialSummary.overdue_count }} cobrança(s) vencida(s)</small>
+                        </div>
+                        <div class="dashboard-financial__metric dashboard-financial__metric--success">
+                            <span>Recebido no mês</span>
+                            <strong>{{ formatMoney(dashboardStore.financialSummary.received_this_month_cents) }}</strong>
+                            <small>Pagamentos confirmados</small>
+                        </div>
+                    </div>
+                </section>
+
                 <section v-if="dashboardStore.unseenDataJudIntegrations.length > 0"
                     class="dashboard-datajud" aria-labelledby="dashboard-datajud-title"
                     data-testid="dashboard-datajud-integrations">
@@ -1078,6 +1108,15 @@ const hasQuickActions =
                 'folders.create',
             ),
     )
+
+const formatMoney = (cents) => new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+}).format(Number(cents || 0) / 100)
+
+function goToFinance() {
+    router.push({ name: 'finance' })
+}
 
 function startOfLocalDay(value) {
     const date =
@@ -1496,6 +1535,93 @@ onMounted(
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
+}
+
+.dashboard-financial {
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: 0 5px 16px rgb(42 48 39 / 6%);
+}
+
+.dashboard-financial__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-financial__header h2 {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text);
+    font-size: 1.05rem;
+}
+
+.dashboard-financial__eyebrow {
+    color: var(--color-brand-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 750;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.dashboard-financial__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-financial__metric {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-5);
+    border-right: 1px solid var(--color-border);
+}
+
+.dashboard-financial__metric:last-child {
+    border-right: 0;
+}
+
+.dashboard-financial__metric span,
+.dashboard-financial__metric small {
+    color: var(--color-text-muted);
+}
+
+.dashboard-financial__metric strong {
+    color: var(--color-brand-secondary);
+    font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+.dashboard-financial__metric--danger strong {
+    color: var(--color-danger);
+}
+
+.dashboard-financial__metric--success strong {
+    color: var(--color-success);
+}
+
+@media (max-width: 700px) {
+    .dashboard-financial__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .dashboard-financial__metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-financial__metric {
+        border-right: 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .dashboard-financial__metric:last-child {
+        border-bottom: 0;
+    }
 }
 
 .dashboard-stat-card {

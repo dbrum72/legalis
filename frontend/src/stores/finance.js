@@ -6,11 +6,13 @@ export const useFinanceStore = defineStore('finance', () => {
     const summary = ref({ receivable_cents: 0, overdue_cents: 0, overdue_count: 0, received_this_month_cents: 0 })
     const invoices = ref([])
     const loading = ref(false)
+    const activeFilters = ref({})
 
-    async function fetchAll() {
+    async function fetchAll(filters = activeFilters.value) {
         loading.value = true
+        activeFilters.value = { ...filters }
         try {
-            const [summaryResponse, invoicesResponse] = await Promise.all([getFinancialSummary(), listInvoices()])
+            const [summaryResponse, invoicesResponse] = await Promise.all([getFinancialSummary(), listInvoices(activeFilters.value)])
             summary.value = summaryResponse.data
             invoices.value = invoicesResponse.data
         } finally {
@@ -49,8 +51,9 @@ export const useFinanceStore = defineStore('finance', () => {
     function clear() {
         summary.value = { receivable_cents: 0, overdue_cents: 0, overdue_count: 0, received_this_month_cents: 0 }
         invoices.value = []
+        activeFilters.value = {}
         loading.value = false
     }
 
-    return { summary, invoices, loading, fetchAll, addInvoice, addInstallment, addPayment, removeInvoice, refreshSummary, clear }
+    return { summary, invoices, loading, activeFilters, fetchAll, addInvoice, addInstallment, addPayment, removeInvoice, refreshSummary, clear }
 })

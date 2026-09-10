@@ -15,6 +15,18 @@ describe('finance store', () => {
         await store.fetchAll()
         expect(store.summary.receivable_cents).toBe(90000)
         expect(store.invoices).toEqual([{ id: 1 }])
+        expect(api.listInvoices).toHaveBeenCalledWith({})
+    })
+
+    it('envia os filtros de cobrança para a API', async () => {
+        api.getFinancialSummary.mockResolvedValue({ data: {} })
+        api.listInvoices.mockResolvedValue({ data: [] })
+        const store = useFinanceStore()
+
+        await store.fetchAll({ client_id: 7, month: '2026-09' })
+
+        expect(api.listInvoices).toHaveBeenCalledWith({ client_id: 7, month: '2026-09' })
+        expect(store.activeFilters).toEqual({ client_id: 7, month: '2026-09' })
     })
 
     it('recarrega os dados após registrar pagamento', async () => {

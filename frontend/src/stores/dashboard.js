@@ -45,6 +45,15 @@ function emptyMyWork() {
     }
 }
 
+function emptyFinancialSummary() {
+    return {
+        receivable_cents: 0,
+        overdue_cents: 0,
+        overdue_count: 0,
+        received_this_month_cents: 0,
+    }
+}
+
 export const useDashboardStore = defineStore('dashboard', () => {
     /*
     |--------------------------------------------------------------------------
@@ -65,6 +74,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     const myWork = ref(emptyMyWork())
 
     const unseenDataJudIntegrations = ref([])
+
+    const financialSummary = ref(emptyFinancialSummary())
 
     /*
     |--------------------------------------------------------------------------
@@ -167,6 +178,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
             ? payload.unseen_datajud_integrations
             : []
 
+        financialSummary.value = {
+            receivable_cents: Number(payload?.financial_summary?.receivable_cents) || 0,
+            overdue_cents: Number(payload?.financial_summary?.overdue_cents) || 0,
+            overdue_count: Number(payload?.financial_summary?.overdue_count) || 0,
+            received_this_month_cents: Number(payload?.financial_summary?.received_this_month_cents) || 0,
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Contract
@@ -187,6 +205,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
             my_work: myWork.value,
 
             unseen_datajud_integrations: unseenDataJudIntegrations.value,
+
+            financial_summary: financialSummary.value,
         }
     }
 
@@ -218,6 +238,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
         myWork.value = emptyMyWork()
 
         unseenDataJudIntegrations.value = []
+
+        financialSummary.value = emptyFinancialSummary()
     }
 
     /*
@@ -240,6 +262,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
         myWork,
 
         unseenDataJudIntegrations,
+
+        financialSummary,
 
         fetchDashboard,
 

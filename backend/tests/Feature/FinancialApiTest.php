@@ -179,6 +179,29 @@ class FinancialApiTest extends TestCase
             ->count());
     }
 
+    public function test_filtra_cobrancas_por_cliente_transacao_mes_e_periodo(): void
+    {
+        $septemberInvoice = $this->createInvoice(10000, '2026-09-20');
+        $otherClient = $this->organization->clients()->create([
+            'name' => 'Cliente de outubro',
+            'document' => '98765432100',
+        ]);
+        $octoberInvoice = $this->asTenant()->postJson('/api/invoices', [
+            'client_id' => $otherClient->id,
+            'due_on' => '2026-10-15',
+            'subtotal_cents' => 20000,
+        ])->assertCreated();
+
+        $this->asTenant()->getJson('/api/invoices?client_id='.$otherClient->id)
+            ->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $octoberInvoice->json('id'));
+        $this->asTenant()->getJson('/api/invoices?transaction='.$septemberInvoice->json('charge_identifier'))
+            ->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $septemberInvoice->json('id'));
+        $this->asTenant()->getJson('/api/invoices?month=2026-09')
+            ->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $septemberInvoice->json('id'));
+        $this->asTenant()->getJson('/api/invoices?due_from=2026-10-01&due_to=2026-10-31')
+            ->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $octoberInvoice->json('id'));
+    }
+
     public function test_pagamentos_atualizam_saldo_e_situacao_da_cobranca(): void
     {
         $invoice = $this->createInvoice(100000);

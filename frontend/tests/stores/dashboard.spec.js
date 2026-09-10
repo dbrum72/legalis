@@ -389,6 +389,8 @@ describe('dashboard store', () => {
             my_work: store.myWork,
 
             unseen_datajud_integrations: store.unseenDataJudIntegrations,
+
+            financial_summary: store.financialSummary,
         })
     })
 

@@ -4,6 +4,7 @@ const basePath = (folderId) => `/folders/${folderId}`
 
 export const listFeeAgreements = (folderId) => apiClient.get(`${basePath(folderId)}/fee-agreements`)
 export const createFeeAgreement = (folderId, payload) => apiClient.post(`${basePath(folderId)}/fee-agreements`, payload)
+export const updateFeeAgreement = (folderId, id, payload) => apiClient.patch(`${basePath(folderId)}/fee-agreements/${id}`, payload)
 export const deleteFeeAgreement = (folderId, id) => apiClient.delete(`${basePath(folderId)}/fee-agreements/${id}`)
 
 export const listTimeEntries = (folderId) => apiClient.get(`${basePath(folderId)}/time-entries`)

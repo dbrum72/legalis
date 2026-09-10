@@ -149,6 +149,14 @@ class DashboardTest extends TestCase
             ->assertJsonPath(
                 'summary.folders',
                 3,
+            )
+            ->assertJsonPath(
+                'financial_summary.receivable_cents',
+                0,
+            )
+            ->assertJsonPath(
+                'financial_summary.overdue_cents',
+                0,
             );
 
         $this->assertIsInt(
