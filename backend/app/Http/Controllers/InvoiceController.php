@@ -16,7 +16,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InvoiceController extends Controller
 {
@@ -46,13 +48,14 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice): JsonResponse
     {
         return response()->json($invoice->load([
-            'client:id,name',
+            'client:id,name,email',
             'folder:id,name',
             'feeAgreement.client:id,name',
             'timeEntries.user:id,name',
             'expenses.user:id,name',
             'payments.recordedBy:id,name',
             'payments.cancelledBy:id,name',
+            'reminders.sentBy:id,name',
         ]));
     }
 
@@ -123,16 +126,31 @@ class InvoiceController extends Controller
             'month' => ['nullable', 'date_format:Y-m'],
             'due_from' => ['nullable', 'date'],
             'due_to' => ['nullable', 'date', 'after_or_equal:due_from'],
+            'aging' => ['nullable', Rule::in(['current', 'days_1_30', 'days_31_60', 'days_61_90', 'over_90'])],
+            'status' => ['nullable', Rule::in(['pending', 'overdue', 'draft', 'paid', 'cancelled'])],
+            'sort' => ['nullable', Rule::in(['priority', 'due_asc', 'due_desc', 'balance_desc', 'recent'])],
+            'contact' => ['nullable', Rule::in(['without_reminder', 'reminded'])],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
         $invoices = Invoice::query()
-            ->with(['client:id,name', 'folder:id,name', 'payments'])
-            ->when($request->string('status')->isNotEmpty(), fn ($query) => $query->where('status', $request->string('status')))
+            ->with(['client:id,name,email', 'folder:id,name', 'payments'])
+            ->withCount('reminders')
+            ->withMax(['reminders as last_reminder_at'], 'sent_at')
+            ->when($filters['status'] ?? null, function ($query, $status): void {
+                match ($status) {
+                    'pending' => $query->whereIn('status', ['open', 'partial']),
+                    'overdue' => $query->whereIn('status', ['open', 'partial'])->whereDate('due_on', '<', today()),
+                    default => $query->where('status', $status),
+                };
+            })
             ->when($filters['client_id'] ?? null, fn ($query, $clientId) => $query->where('client_id', $clientId))
             ->when($filters['transaction'] ?? null, function ($query, $transaction): void {
                 $query->where(function ($query) use ($transaction): void {
                     $query->where('charge_identifier', 'like', "%{$transaction}%")
-                        ->orWhere('number', 'like', "%{$transaction}%");
+                        ->orWhere('number', 'like', "%{$transaction}%")
+                        ->orWhereHas('payments', fn ($payments) => $payments->where('reference', 'like', "%{$transaction}%"));
                 });
             })
             ->when($filters['month'] ?? null, function ($query, $month): void {
@@ -141,12 +159,78 @@ class InvoiceController extends Controller
             })
             ->when($filters['due_from'] ?? null, fn ($query, $date) => $query->whereDate('due_on', '>=', $date))
             ->when($filters['due_to'] ?? null, fn ($query, $date) => $query->whereDate('due_on', '<=', $date))
-            ->orderByRaw("CASE WHEN status IN ('open', 'partial') AND due_on < CURRENT_DATE THEN 0 ELSE 1 END")
-            ->orderBy('due_on')
-            ->latest('id')
-            ->get();
+            ->when($filters['aging'] ?? null, function ($query, $aging): void {
+                $query->whereIn('status', ['open', 'partial']);
+                match ($aging) {
+                    'current' => $query->whereDate('due_on', '>=', today()),
+                    'days_1_30' => $query->whereBetween('due_on', [today()->subDays(30), today()->subDay()]),
+                    'days_31_60' => $query->whereBetween('due_on', [today()->subDays(60), today()->subDays(31)]),
+                    'days_61_90' => $query->whereBetween('due_on', [today()->subDays(90), today()->subDays(61)]),
+                    'over_90' => $query->whereDate('due_on', '<=', today()->subDays(91)),
+                };
+            })
+            ->when($filters['contact'] ?? null, function ($query, $contact): void {
+                $query->whereIn('status', ['open', 'partial'])->whereDate('due_on', '<', today());
+                if ($contact === 'without_reminder') {
+                    $query->doesntHave('reminders');
+                } else {
+                    $query->whereHas('reminders');
+                }
+            });
 
-        return response()->json($invoices);
+        match ($filters['sort'] ?? 'priority') {
+            'due_asc' => $invoices->orderBy('due_on')->latest('id'),
+            'due_desc' => $invoices->orderByDesc('due_on')->latest('id'),
+            'balance_desc' => $invoices->orderByDesc('balance_cents')->orderBy('due_on'),
+            'recent' => $invoices->latest('id'),
+            default => $invoices->orderByRaw("CASE WHEN status IN ('open', 'partial') AND due_on < CURRENT_DATE THEN 0 ELSE 1 END")->orderBy('due_on')->latest('id'),
+        };
+
+        if ($filters['per_page'] ?? null) {
+            return response()->json($invoices->paginate($filters['per_page']));
+        }
+
+        return response()->json($invoices->get());
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $invoices = $this->index($request)->getData(true);
+        $filename = 'contas-a-receber-'.today()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($invoices): void {
+            $output = fopen('php://output', 'w');
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, ['Cobrança', 'Parcela', 'Cliente', 'Pasta', 'Vencimento', 'Situação', 'Subtotal (R$)', 'Desconto (R$)', 'Total (R$)', 'Pago (R$)', 'Saldo (R$)', 'Referências de pagamento', 'Último lembrete'], ';');
+
+            foreach ($invoices as $invoice) {
+                fputcsv($output, [
+                    $invoice['charge_identifier'] ?? $invoice['number'],
+                    ($invoice['installment_number'] ?? 1).'/'.($invoice['installment_count'] ?? 1),
+                    $invoice['client']['name'] ?? '',
+                    $invoice['folder']['name'] ?? 'Sem pasta',
+                    Carbon::parse($invoice['due_on'])->format('d/m/Y'),
+                    match ($invoice['status']) {
+                        'draft' => 'Rascunho', 'open' => 'Em aberto', 'partial' => 'Parcial',
+                        'paid' => 'Pago', 'cancelled' => 'Cancelado', default => $invoice['status'],
+                    },
+                    $this->csvMoney($invoice['subtotal_cents']),
+                    $this->csvMoney($invoice['discount_cents']),
+                    $this->csvMoney($invoice['total_cents']),
+                    $this->csvMoney($invoice['paid_cents']),
+                    $this->csvMoney($invoice['balance_cents']),
+                    collect($invoice['payments'] ?? [])->whereNull('cancelled_at')->pluck('reference')->filter()->join(' | '),
+                    isset($invoice['last_reminder_at']) ? Carbon::parse($invoice['last_reminder_at'])->format('d/m/Y H:i') : '',
+                ], ';');
+            }
+
+            fclose($output);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function csvMoney(int $cents): string
+    {
+        return number_format($cents / 100, 2, ',', '.');
     }
 
     public function store(InvoiceRequest $request): JsonResponse

@@ -116,10 +116,26 @@ return new class extends Migration
             $table->index(['organization_id', 'paid_at']);
             $table->index(['organization_id', 'invoice_id']);
         });
+
+        Schema::create('invoice_reminders', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->restrictOnDelete();
+            $table->foreignId('invoice_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sent_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('channel', 20)->default('email');
+            $table->string('recipient');
+            $table->string('subject', 180);
+            $table->text('message');
+            $table->timestamp('sent_at');
+            $table->timestamps();
+
+            $table->index(['organization_id', 'invoice_id', 'sent_at']);
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('invoice_reminders');
         Schema::dropIfExists('payments');
         Schema::dropIfExists('expenses');
         Schema::dropIfExists('time_entries');

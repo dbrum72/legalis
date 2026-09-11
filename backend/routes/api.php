@@ -17,6 +17,7 @@ use App\Http\Controllers\FolderEventController;
 use App\Http\Controllers\FolderMovementController;
 use App\Http\Controllers\FolderTaskController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceReminderController;
 use App\Http\Controllers\LegalPublicationController;
 use App\Http\Controllers\MaritalStatusController;
 use App\Http\Controllers\MonitoredBarRegistrationController;
@@ -528,6 +529,8 @@ Route::middleware([
             ->middleware('can:finance.view');
         Route::get('/invoices', [InvoiceController::class, 'index'])
             ->middleware('can:finance.view');
+        Route::get('/invoices/export', [InvoiceController::class, 'export'])
+            ->middleware('can:finance.view');
         Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])
             ->middleware('can:finance.view');
         Route::post('/invoices', [InvoiceController::class, 'store'])
@@ -537,6 +540,8 @@ Route::middleware([
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])
             ->middleware('can:finance.manage');
         Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
+            ->middleware('can:finance.manage');
+        Route::post('/invoices/{invoice}/reminders', [InvoiceReminderController::class, 'store'])
             ->middleware('can:finance.manage');
         Route::post('/invoices/{invoice}/payments/{payment}/cancel', [PaymentController::class, 'cancel'])
             ->middleware('can:finance.manage');

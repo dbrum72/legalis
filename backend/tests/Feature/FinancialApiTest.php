@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\InvoiceReminderMail;
 use App\Models\Client;
 use App\Models\Folder;
 use App\Models\Invoice;
@@ -11,6 +12,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\OrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class FinancialApiTest extends TestCase
@@ -227,6 +229,53 @@ class FinancialApiTest extends TestCase
             ->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $octoberInvoice->json('id'));
     }
 
+    public function test_exporta_contas_a_receber_respeitando_os_filtros(): void
+    {
+        $invoice = $this->createInvoice(123456, '2026-10-15');
+
+        $response = $this->asTenant()->get('/api/invoices/export?transaction='.$invoice->json('charge_identifier'))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Cobrança;Parcela;Cliente;Pasta;Vencimento', $csv);
+        $this->assertStringContainsString($invoice->json('charge_identifier'), $csv);
+        $this->assertStringContainsString('1.234,56', $csv);
+    }
+
+    public function test_pagina_contas_a_receber_sem_alterar_o_formato_da_exportacao(): void
+    {
+        $this->asTenant()->postJson('/api/invoices', [
+            'client_id' => $this->client->id,
+            'folder_id' => $this->folder->id,
+            'due_on' => today()->addDay()->toDateString(),
+            'subtotal_cents' => 160000,
+            'installment_count' => 16,
+        ])->assertCreated();
+
+        $this->asTenant()->getJson('/api/invoices?per_page=15&page=2')->assertOk()
+            ->assertJsonPath('current_page', 2)
+            ->assertJsonPath('last_page', 2)
+            ->assertJsonPath('total', 16)
+            ->assertJsonCount(1, 'data');
+
+        $this->asTenant()->get('/api/invoices/export')->assertOk();
+    }
+
+    public function test_filtra_por_situacao_e_ordena_a_carteira(): void
+    {
+        $smaller = $this->createInvoice(10000, today()->subDays(2)->toDateString());
+        $larger = $this->createInvoice(50000, today()->subDay()->toDateString());
+        $this->createInvoice(30000, today()->addDay()->toDateString());
+
+        $this->asTenant()->getJson('/api/invoices?status=overdue&sort=balance_desc')->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonPath('0.id', $larger->json('id'))
+            ->assertJsonPath('1.id', $smaller->json('id'));
+
+        $this->asTenant()->getJson('/api/invoices?status=invalid')->assertUnprocessable();
+    }
+
     public function test_gera_cobranca_a_partir_de_horas_e_despesas_abertas(): void
     {
         $timeEntry = $this->asTenant()->postJson($this->url('time-entries'), [
@@ -286,6 +335,69 @@ class FinancialApiTest extends TestCase
             'method' => 'bank_transfer',
         ])->assertCreated();
         $this->assertDatabaseHas('invoices', ['id' => $invoice->json('id'), 'balance_cents' => 0, 'status' => 'paid']);
+    }
+
+    public function test_pagamento_registra_referencia_e_permite_localizar_a_transacao(): void
+    {
+        $invoice = $this->createInvoice(100000);
+
+        $this->asTenant()->postJson("/api/invoices/{$invoice->json('id')}/payments", [
+            'paid_at' => now()->toDateTimeString(),
+            'amount_cents' => 25000,
+            'method' => 'pix',
+            'reference' => 'E2E-PIX-2026-00042',
+            'notes' => 'Pagamento conciliado no extrato',
+        ])->assertCreated()
+            ->assertJsonPath('reference', 'E2E-PIX-2026-00042')
+            ->assertJsonPath('notes', 'Pagamento conciliado no extrato');
+
+        $this->asTenant()->getJson('/api/invoices?transaction=PIX-2026-00042')->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $invoice->json('id'));
+
+        $csv = $this->asTenant()->get('/api/invoices/export?transaction=PIX-2026-00042')->assertOk()->streamedContent();
+        $this->assertStringContainsString('E2E-PIX-2026-00042', $csv);
+    }
+
+    public function test_envia_e_registra_lembrete_de_cobranca(): void
+    {
+        Mail::fake();
+        $this->client->update(['email' => 'financeiro@cliente.test']);
+        $invoice = $this->createInvoice(100000, today()->subDay()->toDateString());
+
+        $this->asTenant()->postJson("/api/invoices/{$invoice->json('id')}/reminders", [
+            'subject' => 'Cobrança pendente',
+            'message' => 'Identificamos um saldo pendente.',
+        ])->assertCreated()
+            ->assertJsonPath('recipient', 'financeiro@cliente.test')
+            ->assertJsonPath('subject', 'Cobrança pendente')
+            ->assertJsonPath('sent_by.name', 'Super Admin');
+
+        Mail::assertSent(InvoiceReminderMail::class, function ($mail): bool {
+            $html = $mail->render();
+
+            return $mail->hasTo('financeiro@cliente.test')
+                && str_contains($html, $this->organization->name)
+                && str_contains($html, 'Comunicado financeiro')
+                && str_contains($html, 'Resumo da cobrança');
+        });
+        $this->assertDatabaseHas('invoice_reminders', [
+            'invoice_id' => $invoice->json('id'),
+            'recipient' => 'financeiro@cliente.test',
+            'subject' => 'Cobrança pendente',
+        ]);
+
+        $this->asTenant()->getJson("/api/invoices/{$invoice->json('id')}")->assertOk()
+            ->assertJsonPath('reminders.0.message', 'Identificamos um saldo pendente.');
+
+        $withoutReminder = $this->createInvoice(50000, today()->subDays(2)->toDateString());
+        $this->asTenant()->getJson('/api/invoices?contact=reminded')->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $invoice->json('id'))
+            ->assertJsonPath('0.reminders_count', 1);
+        $this->asTenant()->getJson('/api/invoices?contact=without_reminder')->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $withoutReminder->json('id'));
     }
 
     public function test_edita_cobranca_em_aberto_e_recalcula_o_saldo(): void
@@ -349,6 +461,43 @@ class FinancialApiTest extends TestCase
             ->assertJsonPath('overdue_cents', 75000)
             ->assertJsonPath('overdue_count', 1)
             ->assertJsonPath('received_this_month_cents', 25000);
+    }
+
+    public function test_resumo_e_filtro_classificam_recebiveis_por_faixa_de_atraso(): void
+    {
+        $this->createInvoice(10000, today()->addDay()->toDateString());
+        $this->createInvoice(20000, today()->subDays(15)->toDateString());
+        $this->createInvoice(30000, today()->subDays(45)->toDateString());
+        $this->createInvoice(40000, today()->subDays(75)->toDateString());
+        $this->createInvoice(50000, today()->subDays(100)->toDateString());
+
+        $this->asTenant()->getJson('/api/finance/summary')->assertOk()
+            ->assertJsonPath('aging.current.balance_cents', 10000)
+            ->assertJsonPath('aging.days_1_30.balance_cents', 20000)
+            ->assertJsonPath('aging.days_31_60.balance_cents', 30000)
+            ->assertJsonPath('aging.days_61_90.balance_cents', 40000)
+            ->assertJsonPath('aging.over_90.balance_cents', 50000);
+
+        $this->asTenant()->getJson('/api/invoices?aging=days_31_60')->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.balance_cents', 30000);
+    }
+
+    public function test_mapa_de_vencimentos_consolida_todas_as_parcelas_da_cobranca(): void
+    {
+        $this->asTenant()->postJson('/api/invoices', [
+            'client_id' => $this->client->id,
+            'folder_id' => $this->folder->id,
+            'due_on' => today()->toDateString(),
+            'subtotal_cents' => 350000,
+            'installment_count' => 7,
+        ])->assertCreated();
+
+        $response = $this->asTenant()->getJson('/api/finance/summary')->assertOk()
+            ->assertJsonPath('aging.current.count', 7)
+            ->assertJsonPath('aging.current.balance_cents', 350000);
+
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
     }
 
     private function createInvoice(int $amount, string $dueOn = '2026-09-20')
