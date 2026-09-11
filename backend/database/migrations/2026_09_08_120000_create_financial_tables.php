@@ -48,6 +48,8 @@ return new class extends Migration
             $table->unsignedBigInteger('paid_cents')->default(0);
             $table->unsignedBigInteger('balance_cents')->default(0);
             $table->text('notes')->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
             $table->timestamps();
 
             $table->unique(['organization_id', 'number']);
@@ -101,11 +103,14 @@ return new class extends Migration
             $table->foreignId('organization_id')->constrained()->restrictOnDelete();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete();
             $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('cancelled_by')->nullable()->constrained('users')->nullOnDelete();
             $table->dateTime('paid_at');
             $table->unsignedBigInteger('amount_cents');
             $table->string('method', 30);
             $table->string('reference', 120)->nullable();
             $table->text('notes')->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
             $table->timestamps();
 
             $table->index(['organization_id', 'paid_at']);

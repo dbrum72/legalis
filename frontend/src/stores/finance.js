@@ -1,12 +1,14 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { createInvoice, createInvoiceInstallment, createPayment, deleteInvoice, getFinancialSummary, listInvoices } from '@/api/finance.js'
+import { cancelInvoice as cancelInvoiceRequest, cancelPayment as cancelPaymentRequest, createInvoice, createInvoiceInstallment, createPayment, deleteInvoice, getFinancialSummary, getInvoice, listInvoices, updateInvoice as updateInvoiceRequest } from '@/api/finance.js'
 
 export const useFinanceStore = defineStore('finance', () => {
     const summary = ref({ receivable_cents: 0, overdue_cents: 0, overdue_count: 0, received_this_month_cents: 0 })
     const invoices = ref([])
     const loading = ref(false)
     const activeFilters = ref({})
+    const invoiceDetails = ref(null)
+    const loadingDetails = ref(false)
 
     async function fetchAll(filters = activeFilters.value) {
         loading.value = true
@@ -26,6 +28,28 @@ export const useFinanceStore = defineStore('finance', () => {
         return data
     }
 
+    async function updateInvoice(id, payload) {
+        const { data } = await updateInvoiceRequest(id, payload)
+        await fetchAll()
+        if (Number(invoiceDetails.value?.id) === Number(id)) invoiceDetails.value = data
+        return data
+    }
+
+    async function fetchInvoice(id) {
+        loadingDetails.value = true
+        try {
+            const { data } = await getInvoice(id)
+            invoiceDetails.value = data
+            return data
+        } finally {
+            loadingDetails.value = false
+        }
+    }
+
+    function clearInvoiceDetails() {
+        invoiceDetails.value = null
+    }
+
     async function addInstallment(invoiceId, payload) {
         const { data } = await createInvoiceInstallment(invoiceId, payload)
         await fetchAll()
@@ -35,6 +59,18 @@ export const useFinanceStore = defineStore('finance', () => {
     async function addPayment(invoiceId, payload) {
         await createPayment(invoiceId, payload)
         await fetchAll()
+    }
+
+    async function cancelPayment(invoiceId, paymentId, payload) {
+        const { data } = await cancelPaymentRequest(invoiceId, paymentId, payload)
+        await Promise.all([fetchAll(), fetchInvoice(invoiceId)])
+        return data
+    }
+
+    async function cancelInvoice(invoiceId, payload) {
+        const { data } = await cancelInvoiceRequest(invoiceId, payload)
+        await fetchAll()
+        return data
     }
 
     async function removeInvoice(id) {
@@ -52,8 +88,10 @@ export const useFinanceStore = defineStore('finance', () => {
         summary.value = { receivable_cents: 0, overdue_cents: 0, overdue_count: 0, received_this_month_cents: 0 }
         invoices.value = []
         activeFilters.value = {}
+        invoiceDetails.value = null
+        loadingDetails.value = false
         loading.value = false
     }
 
-    return { summary, invoices, loading, activeFilters, fetchAll, addInvoice, addInstallment, addPayment, removeInvoice, refreshSummary, clear }
+    return { summary, invoices, loading, activeFilters, invoiceDetails, loadingDetails, fetchAll, fetchInvoice, clearInvoiceDetails, addInvoice, updateInvoice, addInstallment, addPayment, cancelPayment, cancelInvoice, removeInvoice, refreshSummary, clear }
 })

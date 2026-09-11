@@ -5,7 +5,7 @@ const permissions = new Set()
 const financialStore = {
     agreements: [], timeEntries: [], expenses: [], loading: false,
     billableMinutes: 90, billableTimeCents: 30000, reimbursableExpenseCents: 15000,
-    fetchAll: vi.fn().mockResolvedValue(), createAgreement: vi.fn(), createTime: vi.fn(), createExpense: vi.fn(),
+    fetchAll: vi.fn().mockResolvedValue(), createBilling: vi.fn(), createAgreement: vi.fn(), updateAgreement: vi.fn(), createTime: vi.fn(), updateTime: vi.fn(), createExpense: vi.fn(), updateExpense: vi.fn(),
     removeAgreement: vi.fn(), removeTime: vi.fn(), removeExpense: vi.fn(),
 }
 vi.mock('@/stores/auth.js', () => ({ useAuthStore: () => ({ hasPermission: (name) => permissions.has(name) }) }))

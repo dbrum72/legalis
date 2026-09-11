@@ -12,8 +12,8 @@ class FinancialSummaryService
         $overdue = (clone $receivable)->whereDate('due_on', '<', today());
         $monthRange = [now()->startOfMonth(), now()->endOfMonth()];
         $receivedThisMonth = Invoice::query()
-            ->whereHas('payments', fn ($query) => $query->whereBetween('paid_at', $monthRange))
-            ->withSum(['payments as month_paid_cents' => fn ($query) => $query->whereBetween('paid_at', $monthRange)], 'amount_cents')
+            ->whereHas('payments', fn ($query) => $query->whereNull('cancelled_at')->whereBetween('paid_at', $monthRange))
+            ->withSum(['payments as month_paid_cents' => fn ($query) => $query->whereNull('cancelled_at')->whereBetween('paid_at', $monthRange)], 'amount_cents')
             ->get()
             ->sum('month_paid_cents');
 

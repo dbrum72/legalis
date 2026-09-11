@@ -150,6 +150,31 @@ class FinancialApiTest extends TestCase
         $this->assertSame(1000, (int) Invoice::query()->where('charge_identifier', $identifier)->sum('discount_cents'));
     }
 
+    public function test_vincula_contrato_de_honorarios_a_todas_as_parcelas(): void
+    {
+        $agreement = $this->folder->feeAgreements()->create([
+            'organization_id' => $this->organization->id,
+            'client_id' => $this->client->id,
+            'type' => 'fixed',
+            'status' => 'active',
+            'fixed_fee_cents' => 90000,
+        ]);
+
+        $response = $this->asTenant()->postJson('/api/invoices', [
+            'client_id' => $this->client->id,
+            'folder_id' => $this->folder->id,
+            'fee_agreement_id' => $agreement->id,
+            'due_on' => '2026-09-20',
+            'subtotal_cents' => 90000,
+            'installment_count' => 3,
+        ])->assertCreated()->assertJsonPath('fee_agreement_id', $agreement->id);
+
+        $this->assertSame(3, Invoice::query()
+            ->where('charge_identifier', $response->json('charge_identifier'))
+            ->where('fee_agreement_id', $agreement->id)
+            ->count());
+    }
+
     public function test_adiciona_parcela_a_cobranca_parcelada_existente(): void
     {
         $invoice = $this->asTenant()->postJson('/api/invoices', [
@@ -202,6 +227,48 @@ class FinancialApiTest extends TestCase
             ->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $octoberInvoice->json('id'));
     }
 
+    public function test_gera_cobranca_a_partir_de_horas_e_despesas_abertas(): void
+    {
+        $timeEntry = $this->asTenant()->postJson($this->url('time-entries'), [
+            'worked_on' => '2026-09-10',
+            'duration_minutes' => 60,
+            'description' => 'Consultoria jurídica',
+            'hourly_rate_cents' => 20000,
+            'billable' => true,
+        ])->assertCreated();
+        $expense = $this->asTenant()->postJson($this->url('expenses'), [
+            'incurred_on' => '2026-09-10',
+            'description' => 'Emolumentos',
+            'amount_cents' => 15000,
+            'reimbursable' => true,
+        ])->assertCreated();
+
+        $invoice = $this->asTenant()->postJson($this->url('billing'), [
+            'client_id' => $this->client->id,
+            'due_on' => '2026-09-30',
+            'time_entry_ids' => [$timeEntry->json('id')],
+            'expense_ids' => [$expense->json('id')],
+        ])->assertCreated()
+            ->assertJsonPath('subtotal_cents', 35000)
+            ->assertJsonPath('balance_cents', 35000);
+
+        $this->assertDatabaseHas('time_entries', ['id' => $timeEntry->json('id'), 'invoice_id' => $invoice->json('id'), 'status' => 'billed']);
+        $this->assertDatabaseHas('expenses', ['id' => $expense->json('id'), 'invoice_id' => $invoice->json('id'), 'status' => 'billed']);
+        $this->asTenant()->getJson('/api/invoices/'.$invoice->json('id'))
+            ->assertOk()
+            ->assertJsonPath('time_entries.0.id', $timeEntry->json('id'))
+            ->assertJsonPath('expenses.0.id', $expense->json('id'));
+
+        $this->asTenant()->postJson('/api/invoices/'.$invoice->json('id').'/cancel', [
+            'reason' => 'Cobrança emitida incorretamente',
+        ])->assertOk()
+            ->assertJsonPath('status', 'cancelled')
+            ->assertJsonPath('balance_cents', 0)
+            ->assertJsonPath('cancellation_reason', 'Cobrança emitida incorretamente');
+        $this->assertDatabaseHas('time_entries', ['id' => $timeEntry->json('id'), 'invoice_id' => null, 'status' => 'open']);
+        $this->assertDatabaseHas('expenses', ['id' => $expense->json('id'), 'invoice_id' => null, 'status' => 'open']);
+    }
+
     public function test_pagamentos_atualizam_saldo_e_situacao_da_cobranca(): void
     {
         $invoice = $this->createInvoice(100000);
@@ -219,6 +286,53 @@ class FinancialApiTest extends TestCase
             'method' => 'bank_transfer',
         ])->assertCreated();
         $this->assertDatabaseHas('invoices', ['id' => $invoice->json('id'), 'balance_cents' => 0, 'status' => 'paid']);
+    }
+
+    public function test_edita_cobranca_em_aberto_e_recalcula_o_saldo(): void
+    {
+        $invoice = $this->createInvoice(100000);
+
+        $this->asTenant()->patchJson("/api/invoices/{$invoice->json('id')}", [
+            'due_on' => '2026-10-15',
+            'subtotal_cents' => 120000,
+            'discount_cents' => 10000,
+            'notes' => 'Condição renegociada',
+        ])->assertOk()
+            ->assertJsonPath('total_cents', 110000)
+            ->assertJsonPath('balance_cents', 110000)
+            ->assertJsonPath('notes', 'Condição renegociada');
+    }
+
+    public function test_pagamento_pode_ser_cancelado_sem_apagar_o_historico(): void
+    {
+        $invoice = $this->createInvoice(100000);
+        $payment = $this->asTenant()->postJson("/api/invoices/{$invoice->json('id')}/payments", [
+            'paid_at' => now()->toDateTimeString(),
+            'amount_cents' => 40000,
+            'method' => 'pix',
+        ])->assertCreated();
+
+        $this->asTenant()->postJson("/api/invoices/{$invoice->json('id')}/payments/{$payment->json('id')}/cancel", [
+            'reason' => 'Pagamento registrado em duplicidade',
+        ])->assertOk()
+            ->assertJsonPath('cancellation_reason', 'Pagamento registrado em duplicidade')
+            ->assertJsonPath('cancelled_by.name', 'Super Admin');
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->json('id'),
+            'amount_cents' => 40000,
+            'cancellation_reason' => 'Pagamento registrado em duplicidade',
+        ]);
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->json('id'),
+            'paid_cents' => 0,
+            'balance_cents' => 100000,
+            'status' => 'open',
+        ]);
+
+        $this->asTenant()->postJson("/api/invoices/{$invoice->json('id')}/payments/{$payment->json('id')}/cancel", [
+            'reason' => 'Novo cancelamento',
+        ])->assertUnprocessable();
     }
 
     public function test_resumo_consolida_recebiveis_vencidos_e_recebidos_no_mes(): void

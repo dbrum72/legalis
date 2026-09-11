@@ -26,6 +26,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'paid_cents',
     'balance_cents',
     'notes',
+    'cancellation_reason',
+    'cancelled_at',
 ])]
 class Invoice extends Model
 {
@@ -43,6 +45,7 @@ class Invoice extends Model
             'balance_cents' => 'integer',
             'installment_number' => 'integer',
             'installment_count' => 'integer',
+            'cancelled_at' => 'datetime',
         ];
     }
 

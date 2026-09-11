@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
     createExpense as createExpenseRequest,
+    createFolderBilling as createFolderBillingRequest,
     createFeeAgreement as createFeeAgreementRequest,
     createTimeEntry as createTimeEntryRequest,
     deleteExpense as deleteExpenseRequest,
@@ -11,6 +12,8 @@ import {
     listFeeAgreements,
     listTimeEntries,
     updateFeeAgreement as updateFeeAgreementRequest,
+    updateTimeEntry as updateTimeEntryRequest,
+    updateExpense as updateExpenseRequest,
 } from '@/api/folder-financial.js'
 
 export const useFolderFinancialStore = defineStore('folder-financial', () => {
@@ -48,6 +51,15 @@ export const useFolderFinancialStore = defineStore('folder-financial', () => {
         return data
     }
 
+    async function createBilling(folderId, payload) {
+        const { data } = await createFolderBillingRequest(folderId, payload)
+        const timeIds = new Set(payload.time_entry_ids ?? [])
+        const expenseIds = new Set(payload.expense_ids ?? [])
+        timeEntries.value = timeEntries.value.map((item) => timeIds.has(item.id) ? { ...item, invoice_id: data.id, status: 'billed' } : item)
+        expenses.value = expenses.value.map((item) => expenseIds.has(item.id) ? { ...item, invoice_id: data.id, status: 'billed' } : item)
+        return data
+    }
+
     async function updateAgreement(folderId, id, payload) {
         const { data } = await updateFeeAgreementRequest(folderId, id, payload)
         agreements.value = agreements.value.map((item) => Number(item.id) === Number(id) ? data : item)
@@ -60,9 +72,21 @@ export const useFolderFinancialStore = defineStore('folder-financial', () => {
         return data
     }
 
+    async function updateTime(folderId, id, payload) {
+        const { data } = await updateTimeEntryRequest(folderId, id, payload)
+        timeEntries.value = timeEntries.value.map((item) => Number(item.id) === Number(id) ? data : item)
+        return data
+    }
+
     async function createExpense(folderId, payload) {
         const { data } = await createExpenseRequest(folderId, payload)
         expenses.value.unshift(data)
+        return data
+    }
+
+    async function updateExpense(folderId, id, payload) {
+        const { data } = await updateExpenseRequest(folderId, id, payload)
+        expenses.value = expenses.value.map((item) => Number(item.id) === Number(id) ? data : item)
         return data
     }
 
@@ -88,5 +112,5 @@ export const useFolderFinancialStore = defineStore('folder-financial', () => {
         loading.value = false
     }
 
-    return { agreements, timeEntries, expenses, loading, billableMinutes, billableTimeCents, reimbursableExpenseCents, fetchAll, createAgreement, updateAgreement, createTime, createExpense, removeAgreement, removeTime, removeExpense, clear }
+    return { agreements, timeEntries, expenses, loading, billableMinutes, billableTimeCents, reimbursableExpenseCents, fetchAll, createBilling, createAgreement, updateAgreement, createTime, updateTime, createExpense, updateExpense, removeAgreement, removeTime, removeExpense, clear }
 })

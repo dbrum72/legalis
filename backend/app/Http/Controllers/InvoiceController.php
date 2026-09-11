@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CancelInvoiceRequest;
+use App\Http\Requests\FolderBillingRequest;
 use App\Http\Requests\InvoiceInstallmentRequest;
 use App\Http\Requests\InvoiceRequest;
 use App\Models\Client;
+use App\Models\Expense;
 use App\Models\FeeAgreement;
 use App\Models\Folder;
 use App\Models\Invoice;
+use App\Models\TimeEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -16,6 +20,101 @@ use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
+    public function cancel(CancelInvoiceRequest $request, Invoice $invoice): JsonResponse
+    {
+        if ($invoice->status === 'cancelled') {
+            throw ValidationException::withMessages(['invoice' => 'A cobrança já está cancelada.']);
+        }
+        if ($invoice->payments()->exists() || $invoice->paid_cents > 0) {
+            throw ValidationException::withMessages(['invoice' => 'Uma cobrança com pagamentos não pode ser cancelada.']);
+        }
+
+        DB::transaction(function () use ($invoice, $request): void {
+            $invoice->timeEntries()->update(['invoice_id' => null, 'status' => 'open']);
+            $invoice->expenses()->update(['invoice_id' => null, 'status' => 'open']);
+            $invoice->update([
+                'status' => 'cancelled',
+                'balance_cents' => 0,
+                'cancellation_reason' => $request->validated('reason'),
+                'cancelled_at' => now(),
+            ]);
+        });
+
+        return response()->json($invoice->refresh()->load(['client:id,name', 'folder:id,name']));
+    }
+
+    public function show(Invoice $invoice): JsonResponse
+    {
+        return response()->json($invoice->load([
+            'client:id,name',
+            'folder:id,name',
+            'feeAgreement.client:id,name',
+            'timeEntries.user:id,name',
+            'expenses.user:id,name',
+            'payments.recordedBy:id,name',
+            'payments.cancelledBy:id,name',
+        ]));
+    }
+
+    public function storeFromFolderItems(FolderBillingRequest $request, Folder $folder): JsonResponse
+    {
+        $data = $request->validated();
+        $this->validateRelations($data + ['folder_id' => $folder->id]);
+        $timeEntryIds = $data['time_entry_ids'] ?? [];
+        $expenseIds = $data['expense_ids'] ?? [];
+
+        if ($timeEntryIds === [] && $expenseIds === []) {
+            throw ValidationException::withMessages(['items' => 'Selecione ao menos um lançamento para faturar.']);
+        }
+
+        $invoice = DB::transaction(function () use ($data, $folder, $timeEntryIds, $expenseIds): Invoice {
+            $timeEntries = TimeEntry::query()->where('folder_id', $folder->id)->whereIn('id', $timeEntryIds)
+                ->whereNull('invoice_id')->where('status', 'open')->where('billable', true)->lockForUpdate()->get();
+            $expenses = Expense::query()->where('folder_id', $folder->id)->whereIn('id', $expenseIds)
+                ->whereNull('invoice_id')->where('status', 'open')->where('reimbursable', true)->lockForUpdate()->get();
+
+            if ($timeEntries->count() !== count($timeEntryIds) || $expenses->count() !== count($expenseIds)) {
+                throw ValidationException::withMessages(['items' => 'Um ou mais lançamentos não estão disponíveis para faturamento.']);
+            }
+
+            $subtotal = $timeEntries->sum(fn (TimeEntry $entry) => $entry->billableAmountCents())
+                + $expenses->sum('amount_cents');
+            $discount = $data['discount_cents'] ?? 0;
+            if ($subtotal < 1 || $discount > $subtotal) {
+                throw ValidationException::withMessages(['discount_cents' => 'O desconto não pode superar o valor faturável.']);
+            }
+
+            $nextId = (int) Invoice::withoutGlobalScopes()->max('id') + 1;
+            $identifier = sprintf('COB-%d-%06d', now()->year, $nextId);
+            $invoice = Invoice::query()->create([
+                'organization_id' => $folder->organization_id,
+                'folder_id' => $folder->id,
+                'client_id' => $data['client_id'],
+                'fee_agreement_id' => $data['fee_agreement_id'] ?? null,
+                'number' => sprintf('%d-%06d', now()->year, $nextId),
+                'charge_identifier' => $identifier,
+                'installment_number' => 1,
+                'installment_count' => 1,
+                'issued_on' => now()->toDateString(),
+                'due_on' => $data['due_on'],
+                'status' => 'open',
+                'subtotal_cents' => $subtotal,
+                'discount_cents' => $discount,
+                'total_cents' => $subtotal - $discount,
+                'paid_cents' => 0,
+                'balance_cents' => $subtotal - $discount,
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            TimeEntry::query()->whereKey($timeEntries->modelKeys())->update(['invoice_id' => $invoice->id, 'status' => 'billed']);
+            Expense::query()->whereKey($expenses->modelKeys())->update(['invoice_id' => $invoice->id, 'status' => 'billed']);
+
+            return $invoice;
+        });
+
+        return response()->json($invoice->load(['client:id,name', 'folder:id,name']), 201);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([

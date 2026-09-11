@@ -11,11 +11,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'organization_id',
     'invoice_id',
     'recorded_by',
+    'cancelled_by',
     'paid_at',
     'amount_cents',
     'method',
     'reference',
     'notes',
+    'cancellation_reason',
+    'cancelled_at',
 ])]
 class Payment extends Model
 {
@@ -26,6 +29,7 @@ class Payment extends Model
         return [
             'paid_at' => 'datetime',
             'amount_cents' => 'integer',
+            'cancelled_at' => 'datetime',
         ];
     }
 
@@ -37,5 +41,10 @@ class Payment extends Model
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 }

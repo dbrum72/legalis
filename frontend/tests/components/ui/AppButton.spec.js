@@ -57,6 +57,14 @@ describe('AppButton', () => {
         expect(wrapper.get('button').classes()).toContain('btn--navigation')
     })
 
+    it('aplica a variante de perigo', () => {
+        const wrapper = mountComponent({
+            variant: 'danger',
+        })
+
+        expect(wrapper.get('button').classes()).toContain('btn--danger')
+    })
+
     it('não aplica classe de tamanho para md', () => {
         const wrapper = mountComponent({
             size: 'md',

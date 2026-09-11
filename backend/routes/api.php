@@ -494,6 +494,9 @@ Route::middleware([
         |--------------------------------------------------------------------------
         */
 
+        Route::post('/folders/{folder}/billing', [InvoiceController::class, 'storeFromFolderItems'])
+            ->middleware('can:finance.manage');
+
         Route::get('/folders/{folder}/fee-agreements', [FeeAgreementController::class, 'index'])
             ->middleware('can:finance.view');
         Route::post('/folders/{folder}/fee-agreements', [FeeAgreementController::class, 'store'])
@@ -525,6 +528,8 @@ Route::middleware([
             ->middleware('can:finance.view');
         Route::get('/invoices', [InvoiceController::class, 'index'])
             ->middleware('can:finance.view');
+        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])
+            ->middleware('can:finance.view');
         Route::post('/invoices', [InvoiceController::class, 'store'])
             ->middleware('can:finance.manage');
         Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update'])
@@ -533,7 +538,11 @@ Route::middleware([
             ->middleware('can:finance.manage');
         Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
             ->middleware('can:finance.manage');
+        Route::post('/invoices/{invoice}/payments/{payment}/cancel', [PaymentController::class, 'cancel'])
+            ->middleware('can:finance.manage');
         Route::post('/invoices/{invoice}/installments', [InvoiceController::class, 'storeInstallment'])
+            ->middleware('can:finance.manage');
+        Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])
             ->middleware('can:finance.manage');
 
         /*
