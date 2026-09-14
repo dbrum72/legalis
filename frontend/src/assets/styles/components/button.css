@@ -31,12 +31,14 @@
   transform: none;
 }
 
-.btn--primary {
+.btn--primary,
+.btn--modal {
   background: var(--color-brand);
   color: var(--color-on-brand);
 }
 
-.btn--primary:hover {
+.btn--primary:hover,
+.btn--modal:hover {
   background: var(--color-brand-hover);
 }
 
@@ -60,22 +62,26 @@
   box-shadow: 0 5px 12px color-mix(in srgb, var(--color-danger) 28%, transparent);
 }
 
-.btn--highlight {
+.btn--highlight,
+.btn--action {
   background: var(--color-highlight);
   color: var(--color-on-highlight);
 }
 
-.btn--highlight:hover {
+.btn--highlight:hover,
+.btn--action:hover {
   background: var(--color-highlight-hover);
 }
 
-.btn--outline {
+.btn--outline,
+.btn--filter {
   background: transparent;
   border-color: var(--color-brand);
   color: var(--color-brand);
 }
 
-.btn--outline:hover {
+.btn--outline:hover,
+.btn--filter:hover {
   background: var(--color-surface-soft);
 }
 
@@ -89,21 +95,24 @@
   color: var(--color-brand);
 }
 
-.btn--navigation {
+.btn--navigation,
+.btn--route {
   background: var(--color-surface-secondary-soft);
   border-color: color-mix(in srgb, var(--color-brand-secondary) 28%, var(--color-border));
   color: var(--color-brand-secondary-active);
   box-shadow: 0 1px 2px rgb(41 67 47 / 0.08);
 }
 
-.btn--navigation:hover {
+.btn--navigation:hover,
+.btn--route:hover {
   background: var(--color-brand-secondary);
   border-color: var(--color-brand-secondary);
   color: var(--neutral-0);
   box-shadow: 0 4px 10px rgb(41 67 47 / 0.18);
 }
 
-.btn--navigation:active {
+.btn--navigation:active,
+.btn--route:active {
   background: var(--color-brand-secondary-active);
   border-color: var(--color-brand-secondary-active);
 }

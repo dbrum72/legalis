@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'organization_id',
@@ -46,5 +47,10 @@ class Payment extends Model
     public function cancelledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function receiptDeliveries(): HasMany
+    {
+        return $this->hasMany(PaymentReceiptDelivery::class);
     }
 }

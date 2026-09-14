@@ -9,6 +9,7 @@ use App\Http\Controllers\DjenSyncController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FeeAgreementController;
 use App\Http\Controllers\FinancialSummaryController;
+use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\FolderClientController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FolderDeadlineController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\FolderMovementController;
 use App\Http\Controllers\FolderTaskController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceReminderController;
+use App\Http\Controllers\InvoiceReminderRuleController;
 use App\Http\Controllers\LegalPublicationController;
 use App\Http\Controllers\MaritalStatusController;
 use App\Http\Controllers\MonitoredBarRegistrationController;
@@ -25,6 +27,8 @@ use App\Http\Controllers\OrganizationInvitationController;
 use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\OrganizationRoleController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PayableController;
+use App\Http\Controllers\PayablePaymentController;
 use App\Http\Controllers\PostalCodeController;
 use App\Http\Controllers\QualificationController;
 use App\Http\Controllers\TimeEntryController;
@@ -527,6 +531,23 @@ Route::middleware([
 
         Route::get('/finance/summary', FinancialSummaryController::class)
             ->middleware('can:finance.view');
+        Route::get('/finance/report', FinancialReportController::class)
+            ->middleware('can:finance.view');
+        Route::get('/payables', [PayableController::class, 'index'])->middleware('can:finance.view');
+        Route::post('/payables', [PayableController::class, 'store'])->middleware('can:finance.manage');
+        Route::patch('/payables/{payable}', [PayableController::class, 'update'])->middleware('can:finance.manage');
+        Route::delete('/payables/{payable}', [PayableController::class, 'destroy'])->middleware('can:finance.manage');
+        Route::post('/payables/{payable}/payments', [PayablePaymentController::class, 'store'])->middleware('can:finance.manage');
+        Route::post('/payables/{payable}/cancel', [PayableController::class, 'cancel'])->middleware('can:finance.manage');
+        Route::post('/payables/{payable}/payments/{payment}/cancel', [PayablePaymentController::class, 'cancel'])->middleware('can:finance.manage');
+        Route::get('/finance/reminder-rules', [InvoiceReminderRuleController::class, 'index'])
+            ->middleware('can:finance.view');
+        Route::post('/finance/reminder-rules', [InvoiceReminderRuleController::class, 'store'])
+            ->middleware('can:finance.manage');
+        Route::patch('/finance/reminder-rules/{reminderRule}', [InvoiceReminderRuleController::class, 'update'])
+            ->middleware('can:finance.manage');
+        Route::delete('/finance/reminder-rules/{reminderRule}', [InvoiceReminderRuleController::class, 'destroy'])
+            ->middleware('can:finance.manage');
         Route::get('/invoices', [InvoiceController::class, 'index'])
             ->middleware('can:finance.view');
         Route::get('/invoices/export', [InvoiceController::class, 'export'])
@@ -540,6 +561,10 @@ Route::middleware([
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])
             ->middleware('can:finance.manage');
         Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])
+            ->middleware('can:finance.manage');
+        Route::get('/invoices/{invoice}/payments/{payment}/receipt', [PaymentController::class, 'receipt'])
+            ->middleware('can:finance.view');
+        Route::post('/invoices/{invoice}/payments/{payment}/receipt', [PaymentController::class, 'sendReceipt'])
             ->middleware('can:finance.manage');
         Route::post('/invoices/{invoice}/reminders', [InvoiceReminderController::class, 'store'])
             ->middleware('can:finance.manage');

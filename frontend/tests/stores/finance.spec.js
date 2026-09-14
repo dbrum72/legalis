@@ -1,12 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-const api = vi.hoisted(() => ({ getFinancialSummary: vi.fn(), getInvoice: vi.fn(), listInvoices: vi.fn(), createInvoice: vi.fn(), updateInvoice: vi.fn(), createInvoiceInstallment: vi.fn(), createPayment: vi.fn(), cancelPayment: vi.fn(), cancelInvoice: vi.fn(), deleteInvoice: vi.fn() }))
+const api = vi.hoisted(() => ({
+    getFinancialSummary: vi.fn(),
+    getInvoice: vi.fn(),
+    getPaymentReceipt: vi.fn(),
+    sendPaymentReceipt: vi.fn(),
+    listInvoices: vi.fn(),
+    listPayables: vi.fn(),
+    createPayable: vi.fn(),
+    updatePayable: vi.fn(),
+    deletePayable: vi.fn(),
+    cancelPayable: vi.fn(),
+    createPayablePayment: vi.fn(),
+    cancelPayablePayment: vi.fn(),
+    exportInvoices: vi.fn(),
+    exportFinancialReport: vi.fn(),
+    createInvoice: vi.fn(),
+    updateInvoice: vi.fn(),
+    createInvoiceInstallment: vi.fn(),
+    createPayment: vi.fn(),
+    cancelPayment: vi.fn(),
+    createInvoiceReminder: vi.fn(),
+    cancelInvoice: vi.fn(),
+    deleteInvoice: vi.fn(),
+    listReminderRules: vi.fn(),
+    createReminderRule: vi.fn(),
+    updateReminderRule: vi.fn(),
+    deleteReminderRule: vi.fn(),
+}))
 vi.mock('@/api/finance.js', () => api)
 import { useFinanceStore } from '@/stores/finance.js'
 
 describe('finance store', () => {
-    beforeEach(() => { setActivePinia(createPinia()); vi.clearAllMocks() })
+    beforeEach(() => {
+        setActivePinia(createPinia())
+        vi.clearAllMocks()
+    })
 
     it('carrega resumo e cobranças', async () => {
         api.getFinancialSummary.mockResolvedValue({ data: { receivable_cents: 90000 } })
@@ -15,7 +45,7 @@ describe('finance store', () => {
         await store.fetchAll()
         expect(store.summary.receivable_cents).toBe(90000)
         expect(store.invoices).toEqual([{ id: 1 }])
-        expect(api.listInvoices).toHaveBeenCalledWith({})
+        expect(api.listInvoices).toHaveBeenCalledWith({ page: 1, per_page: 15 })
     })
 
     it('envia os filtros de cobrança para a API', async () => {
@@ -25,8 +55,105 @@ describe('finance store', () => {
 
         await store.fetchAll({ client_id: 7, month: '2026-09' })
 
-        expect(api.listInvoices).toHaveBeenCalledWith({ client_id: 7, month: '2026-09' })
+        expect(api.listInvoices).toHaveBeenCalledWith({
+            client_id: 7,
+            month: '2026-09',
+            page: 1,
+            per_page: 15,
+        })
         expect(store.activeFilters).toEqual({ client_id: 7, month: '2026-09' })
+    })
+
+    it('combina situação e ordenação na consulta', async () => {
+        api.getFinancialSummary.mockResolvedValue({ data: {} })
+        api.listInvoices.mockResolvedValue({ data: [] })
+        const store = useFinanceStore()
+
+        await store.fetchAll({ status: 'overdue', sort: 'balance_desc' })
+
+        expect(api.listInvoices).toHaveBeenCalledWith({
+            status: 'overdue',
+            sort: 'balance_desc',
+            page: 1,
+            per_page: 15,
+        })
+    })
+
+    it('reconstrói o mapa com todas as parcelas quando o resumo carregado ainda não possui as faixas', async () => {
+        api.getFinancialSummary.mockResolvedValue({ data: { receivable_cents: 150000 } })
+        api.listInvoices.mockResolvedValue({
+            data: [
+                {
+                    id: 1,
+                    status: 'open',
+                    due_on: new Date().toLocaleDateString('en-CA'),
+                    balance_cents: 50000,
+                },
+                {
+                    id: 2,
+                    status: 'open',
+                    due_on: new Date().toLocaleDateString('en-CA'),
+                    balance_cents: 50000,
+                },
+                {
+                    id: 3,
+                    status: 'open',
+                    due_on: new Date().toLocaleDateString('en-CA'),
+                    balance_cents: 50000,
+                },
+            ],
+        })
+        const store = useFinanceStore()
+
+        await store.fetchAll()
+
+        expect(store.summary.aging.current).toEqual({ count: 3, balance_cents: 150000 })
+    })
+
+    it('navega entre páginas mantendo os filtros ativos', async () => {
+        api.getFinancialSummary.mockResolvedValue({
+            data: {
+                receivable_cents: 20000,
+                aging: { current: { count: 2, balance_cents: 20000 } },
+            },
+        })
+        api.listInvoices
+            .mockResolvedValueOnce({
+                data: {
+                    data: [{ id: 1 }],
+                    current_page: 1,
+                    last_page: 2,
+                    per_page: 15,
+                    total: 16,
+                    from: 1,
+                    to: 15,
+                },
+            })
+            .mockResolvedValueOnce({
+                data: {
+                    data: [{ id: 16 }],
+                    current_page: 2,
+                    last_page: 2,
+                    per_page: 15,
+                    total: 16,
+                    from: 16,
+                    to: 16,
+                },
+            })
+        const store = useFinanceStore()
+
+        await store.fetchAll({ client_id: 7 })
+        await store.fetchPage(2)
+
+        expect(api.listInvoices).toHaveBeenLastCalledWith({ client_id: 7, page: 2, per_page: 15 })
+        expect(store.invoices).toEqual([{ id: 16 }])
+        expect(store.pagination).toMatchObject({
+            currentPage: 2,
+            lastPage: 2,
+            total: 16,
+            from: 16,
+            to: 16,
+        })
     })
 
     it('carrega os detalhes de uma cobrança sob demanda', async () => {
@@ -38,6 +165,56 @@ describe('finance store', () => {
         expect(api.getInvoice).toHaveBeenCalledWith(8)
         expect(store.invoiceDetails.time_entries).toHaveLength(1)
         expect(store.loadingDetails).toBe(false)
+    })
+
+    it('envia lembrete e atualiza o histórico aberto', async () => {
+        api.createInvoiceReminder.mockResolvedValue({ data: { id: 3 } })
+        api.getInvoice.mockResolvedValue({ data: { id: 8, reminders: [{ id: 3 }] } })
+        api.getFinancialSummary.mockResolvedValue({ data: {} })
+        api.listInvoices.mockResolvedValue({ data: [{ id: 8, reminders_count: 1 }] })
+        const store = useFinanceStore()
+        store.invoiceDetails = { id: 8, reminders: [] }
+
+        await store.sendReminder(8, { subject: 'Lembrete', message: 'Mensagem' })
+
+        expect(api.createInvoiceReminder).toHaveBeenCalledWith(8, {
+            subject: 'Lembrete',
+            message: 'Mensagem',
+        })
+        expect(store.invoiceDetails.reminders).toEqual([{ id: 3 }])
+        expect(store.invoices[0].reminders_count).toBe(1)
+    })
+
+    it('exporta as cobranças com os filtros ativos', async () => {
+        const blob = new Blob(['csv'])
+        api.exportInvoices.mockResolvedValue({ data: blob })
+        const store = useFinanceStore()
+        store.activeFilters = { client_id: 7 }
+
+        await expect(store.exportInvoices()).resolves.toBe(blob)
+
+        expect(api.exportInvoices).toHaveBeenCalledWith({ client_id: 7 })
+        expect(store.exporting).toBe(false)
+    })
+
+    it('exporta o relatório financeiro consolidado', async () => {
+        const blob = new Blob(['relatório'])
+        api.exportFinancialReport.mockResolvedValue({ data: blob })
+        const store = useFinanceStore()
+
+        await expect(store.exportFinancialReport()).resolves.toBe(blob)
+
+        expect(api.exportFinancialReport).toHaveBeenCalledOnce()
+        expect(store.exportingReport).toBe(false)
+    })
+
+    it('obtém o comprovante de um pagamento', async () => {
+        const blob = new Blob(['comprovante'])
+        api.getPaymentReceipt.mockResolvedValue({ data: blob })
+        const store = useFinanceStore()
+
+        await expect(store.paymentReceipt(8, 12)).resolves.toBe(blob)
+        expect(api.getPaymentReceipt).toHaveBeenCalledWith(8, 12)
     })
 
     it('cancela uma cobrança e atualiza a listagem e o resumo', async () => {
@@ -75,10 +252,14 @@ describe('finance store', () => {
     })
 
     it('cancela um pagamento e atualiza listagem, resumo e detalhes', async () => {
-        api.cancelPayment.mockResolvedValue({ data: { id: 2, cancelled_at: '2026-09-10T12:00:00Z' } })
+        api.cancelPayment.mockResolvedValue({
+            data: { id: 2, cancelled_at: '2026-09-10T12:00:00Z' },
+        })
         api.getFinancialSummary.mockResolvedValue({ data: { receivable_cents: 10000 } })
         api.listInvoices.mockResolvedValue({ data: [{ id: 1, status: 'open' }] })
-        api.getInvoice.mockResolvedValue({ data: { id: 1, payments: [{ id: 2, cancelled_at: '2026-09-10T12:00:00Z' }] } })
+        api.getInvoice.mockResolvedValue({
+            data: { id: 1, payments: [{ id: 2, cancelled_at: '2026-09-10T12:00:00Z' }] },
+        })
         const store = useFinanceStore()
 
         await store.cancelPayment(1, 2, { reason: 'Duplicidade' })

@@ -25,3 +25,14 @@ Schedule::command('datajud:sync-folders')
     ->timezone((string) config('services.datajud.timezone', 'America/Sao_Paulo'))
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('finance:send-reminders')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('finance:generate-reminders')
+    ->dailyAt('08:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();

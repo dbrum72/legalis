@@ -55,6 +55,7 @@ class InvoiceController extends Controller
             'expenses.user:id,name',
             'payments.recordedBy:id,name',
             'payments.cancelledBy:id,name',
+            'payments.receiptDeliveries.sentBy:id,name',
             'reminders.sentBy:id,name',
         ]));
     }
@@ -136,8 +137,8 @@ class InvoiceController extends Controller
 
         $invoices = Invoice::query()
             ->with(['client:id,name,email', 'folder:id,name', 'payments'])
-            ->withCount('reminders')
-            ->withMax(['reminders as last_reminder_at'], 'sent_at')
+            ->withCount(['reminders as reminders_count' => fn ($reminders) => $reminders->where('status', 'sent')])
+            ->withMax(['reminders as last_reminder_at' => fn ($reminders) => $reminders->where('status', 'sent')], 'sent_at')
             ->when($filters['status'] ?? null, function ($query, $status): void {
                 match ($status) {
                     'pending' => $query->whereIn('status', ['open', 'partial']),
@@ -172,9 +173,9 @@ class InvoiceController extends Controller
             ->when($filters['contact'] ?? null, function ($query, $contact): void {
                 $query->whereIn('status', ['open', 'partial'])->whereDate('due_on', '<', today());
                 if ($contact === 'without_reminder') {
-                    $query->doesntHave('reminders');
+                    $query->whereDoesntHave('reminders', fn ($reminders) => $reminders->where('status', 'sent'));
                 } else {
-                    $query->whereHas('reminders');
+                    $query->whereHas('reminders', fn ($reminders) => $reminders->where('status', 'sent'));
                 }
             });
 

@@ -9,7 +9,7 @@ export const appButtonProps = {
         type: String,
         default: 'primary',
         validator: (value) =>
-            ['primary', 'accent', 'highlight', 'outline', 'ghost', 'navigation', 'danger'].includes(value),
+            ['primary', 'accent', 'highlight', 'outline', 'ghost', 'navigation', 'danger', 'action', 'route', 'modal', 'filter'].includes(value),
     },
 
     size: {

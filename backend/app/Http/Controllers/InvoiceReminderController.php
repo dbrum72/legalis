@@ -23,14 +23,19 @@ class InvoiceReminderController extends Controller
         }
 
         $data = $request->validated();
-        Mail::to($invoice->client->email)->send(new InvoiceReminderMail($invoice, $data['subject'], $data['message']));
+        $scheduledAt = $data['scheduled_at'] ?? null;
+        if (! $scheduledAt) {
+            Mail::to($invoice->client->email)->send(new InvoiceReminderMail($invoice, $data['subject'], $data['message']));
+        }
         $reminder = $invoice->reminders()->create([
             'sent_by' => $request->user('api')?->id,
             'channel' => 'email',
             'recipient' => $invoice->client->email,
             'subject' => $data['subject'],
             'message' => $data['message'],
-            'sent_at' => now(),
+            'status' => $scheduledAt ? 'scheduled' : 'sent',
+            'scheduled_at' => $scheduledAt,
+            'sent_at' => $scheduledAt ? null : now(),
         ]);
 
         return response()->json($reminder->load('sentBy:id,name'), 201);

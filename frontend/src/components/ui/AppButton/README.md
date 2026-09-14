@@ -34,7 +34,17 @@ size    → md
 
 ## Variantes
 
-As variantes disponíveis seguem diretamente a taxonomia visual existente do Design System:
+Use preferencialmente as variantes semânticas:
+
+| Variante | Cor | Uso |
+| --- | --- | --- |
+| `action` | Laranja | Persistir, criar, atualizar ou executar uma ação |
+| `route` | Verde | Navegar para outra rota |
+| `modal` | Marrom | Abrir modal ou painel contextual |
+| `filter` | Marrom contornado | Aplicar ou abrir filtros e detalhes |
+| `danger` | Vermelho | Exclusão, cancelamento ou ação destrutiva |
+
+As variantes históricas continuam disponíveis por compatibilidade:
 
 ```text
 primary
@@ -42,6 +52,7 @@ accent
 highlight
 outline
 ghost
+navigation
 ```
 
 Exemplo:
@@ -149,7 +160,7 @@ btn--lg
 | Prop | Tipo | Padrão | Descrição |
 | --- | --- | --- | --- |
 | `type` | `'button' \| 'submit' \| 'reset'` | `'button'` | Tipo nativo do botão |
-| `variant` | `'primary' \| 'accent' \| 'highlight' \| 'outline' \| 'ghost'` | `'primary'` | Variante visual |
+| `variant` | `'action' \| 'route' \| 'modal' \| 'filter' \| 'danger'` e variantes legadas | `'primary'` | Variante visual semântica |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Tamanho |
 | `disabled` | `Boolean` | `false` | Desabilita o botão |
 | `loading` | `Boolean` | `false` | Coloca o botão em processamento |

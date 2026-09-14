@@ -117,25 +117,95 @@ return new class extends Migration
             $table->index(['organization_id', 'invoice_id']);
         });
 
+        Schema::create('invoice_reminder_rules', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->restrictOnDelete();
+            $table->string('name', 120);
+            $table->smallInteger('days_after_due');
+            $table->string('subject', 180);
+            $table->text('message');
+            $table->boolean('active')->default(true);
+            $table->timestamps();
+
+            $table->index(['organization_id', 'active', 'days_after_due'], 'reminder_rules_schedule_index');
+        });
+
+        Schema::create('payment_receipt_deliveries', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->restrictOnDelete();
+            $table->foreignId('payment_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sent_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('recipient');
+            $table->timestamp('sent_at');
+            $table->timestamps();
+
+            $table->index(['organization_id', 'payment_id', 'sent_at'], 'receipt_deliveries_history_index');
+        });
+
+        Schema::create('payables', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->restrictOnDelete();
+            $table->string('supplier', 180);
+            $table->string('description', 500);
+            $table->string('category', 80)->nullable();
+            $table->date('due_on');
+            $table->unsignedBigInteger('amount_cents');
+            $table->unsignedBigInteger('paid_cents')->default(0);
+            $table->unsignedBigInteger('balance_cents');
+            $table->string('status', 20)->default('open');
+            $table->text('notes')->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+            $table->timestamps();
+            $table->index(['organization_id', 'status', 'due_on']);
+            $table->index(['organization_id', 'supplier']);
+        });
+
+        Schema::create('payable_payments', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->restrictOnDelete();
+            $table->foreignId('payable_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('cancelled_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->dateTime('paid_at');
+            $table->unsignedBigInteger('amount_cents');
+            $table->string('method', 30);
+            $table->string('reference', 120)->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+            $table->timestamps();
+            $table->index(['organization_id', 'paid_at']);
+        });
+
         Schema::create('invoice_reminders', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('organization_id')->constrained()->restrictOnDelete();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete();
             $table->foreignId('sent_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('invoice_reminder_rule_id')->nullable()->constrained()->nullOnDelete();
             $table->string('channel', 20)->default('email');
             $table->string('recipient');
             $table->string('subject', 180);
             $table->text('message');
-            $table->timestamp('sent_at');
+            $table->string('status', 20)->default('sent');
+            $table->timestamp('scheduled_at')->nullable();
+            $table->timestamp('sent_at')->nullable();
+            $table->text('error_message')->nullable();
+            $table->string('automation_key', 120)->nullable();
             $table->timestamps();
 
             $table->index(['organization_id', 'invoice_id', 'sent_at']);
+            $table->unique(['invoice_id', 'automation_key']);
         });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('invoice_reminders');
+        Schema::dropIfExists('payable_payments');
+        Schema::dropIfExists('payables');
+        Schema::dropIfExists('payment_receipt_deliveries');
+        Schema::dropIfExists('invoice_reminder_rules');
         Schema::dropIfExists('payments');
         Schema::dropIfExists('expenses');
         Schema::dropIfExists('time_entries');
