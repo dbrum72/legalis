@@ -1,11 +1,14 @@
 import { useAuthStore } from '@/stores/auth.js'
+import { permits } from '@/config/settings.js'
 
 export function permissionGuard(to) {
     const authStore = useAuthStore()
 
-    const permission = to.matched.map((record) => record.meta.permission).find(Boolean)
+    const rules = to.matched
+        .map((record) => record.meta)
+        .filter((meta) => meta.permission || meta.permissionsAny)
 
-    if (!permission) {
+    if (!rules.length) {
         return true
     }
 
@@ -19,7 +22,7 @@ export function permissionGuard(to) {
         }
     }
 
-    if (authStore.hasPermission(permission)) {
+    if (rules.every((rule) => permits(authStore, rule))) {
         return true
     }
 

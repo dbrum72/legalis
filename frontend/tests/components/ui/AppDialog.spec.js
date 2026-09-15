@@ -19,6 +19,16 @@ function mountComponent(props = {}, slots = {}) {
 }
 
 describe('AppDialog', () => {
+    it('mantém o diálogo aberto enquanto uma operação está em andamento', async () => {
+        const wrapper = mountComponent({ busy: true, error: 'Falha ao salvar.' })
+        await wrapper.vm.$nextTick()
+        expect(document.querySelector('[role="alert"]').textContent).toBe('Falha ao salvar.')
+        expect(document.querySelector('button[aria-label="Fechar"]').disabled).toBe(true)
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+        expect(wrapper.emitted('close')).toBeUndefined()
+        wrapper.unmount()
+    })
+
     beforeEach(() => {
         document.body.innerHTML = ''
     })

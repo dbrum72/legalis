@@ -1,4 +1,5 @@
 export const appConfirmDialogProps = {
+    error: { type: String, default: '' },
     open: {
         type: Boolean,
         default: false,

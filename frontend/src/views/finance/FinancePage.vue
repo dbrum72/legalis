@@ -7,27 +7,11 @@
                     <h1>Financeiro</h1>
                     <p>Acompanhe cobranças, vencimentos e pagamentos do escritório.</p>
                 </div>
-                <div class="finance-page__header-actions">
-                    <AppButton
-                        type="button"
-                        variant="action"
-                        icon="download"
-                        :loading="financeStore.exportingReport"
-                        @click="downloadFinancialReport"
-                        >Exportar relatório</AppButton
-                    ><AppButton
-                        v-if="canManage && !showInvoiceForm"
-                        variant="modal"
-                        icon="wallet"
-                        @click="showInvoiceForm = true"
-                        >Nova cobrança</AppButton
-                    >
-                </div>
             </header>
 
             <div v-if="error" class="finance-page__alert" role="alert">{{ error }}</div>
 
-            <section class="finance-page__summary" aria-label="Resumo financeiro">
+            <section class="finance-page__summary" aria-label="Resumo financeiro — posição atual">
                 <AppCard class="finance-summary-card finance-summary-card--receivable">
                     <div class="finance-summary-card__icon" aria-hidden="true">
                         <WalletCards :size="22" :stroke-width="1.8" />
@@ -37,216 +21,61 @@
                         <strong class="finance-summary-card__value">{{
                             money(financeStore.summary.receivable_cents)
                         }}</strong>
-                        <small class="finance-summary-card__detail">Saldo total em aberto</small>
+                        <small class="finance-summary-card__detail"
+                            >{{ money(financeStore.summary.overdue_cents) }} vencidos ·
+                            {{ overdueDescription }}</small
+                        >
+                        <AppButton
+                            v-if="financeStore.summary.overdue_count"
+                            size="sm"
+                            variant="filter"
+                            class="finance-summary-card__action"
+                            @click="showOverdueClients = true"
+                            >Ver vencidos por cliente</AppButton
+                        >
                     </div>
                 </AppCard>
 
                 <AppCard class="finance-summary-card finance-summary-card--overdue">
                     <div class="finance-summary-card__icon" aria-hidden="true">
-                        <TriangleAlert :size="22" :stroke-width="1.8" />
+                        <TriangleAlert :size="22" />
                     </div>
                     <div class="finance-summary-card__content">
-                        <span class="finance-summary-card__label">Vencido</span>
+                        <span class="finance-summary-card__label">A pagar</span>
                         <strong class="finance-summary-card__value">{{
-                            money(financeStore.summary.overdue_cents)
+                            money(financeStore.summary.payable_cents)
                         }}</strong>
-                        <small class="finance-summary-card__detail">
-                            {{ overdueDescription }}
-                        </small>
-                        <AppButton
-                            v-if="financeStore.summary.overdue_count"
-                            type="button"
-                            size="sm"
-                            variant="filter"
-                            class="finance-summary-card__action"
-                            @click="showOverdueClients = true"
-                            >Ver por cliente</AppButton
+                        <small class="finance-summary-card__detail"
+                            >{{ money(financeStore.summary.payable_overdue_cents) }} vencidos</small
                         >
                     </div>
                 </AppCard>
-
                 <AppCard class="finance-summary-card finance-summary-card--received">
                     <div class="finance-summary-card__icon" aria-hidden="true">
-                        <CircleDollarSign :size="22" :stroke-width="1.8" />
+                        <CircleDollarSign :size="22" />
                     </div>
                     <div class="finance-summary-card__content">
-                        <span class="finance-summary-card__label">Recebido no mês</span>
+                        <span class="finance-summary-card__label">Posição líquida</span>
                         <strong class="finance-summary-card__value">{{
-                            money(financeStore.summary.received_this_month_cents)
+                            money(financeStore.summary.net_position_cents)
                         }}</strong>
-                        <small class="finance-summary-card__detail">Pagamentos confirmados</small>
+                        <small class="finance-summary-card__detail"
+                            >A receber − a pagar · saldos atuais, sem saldo bancário</small
+                        >
                     </div>
                 </AppCard>
             </section>
 
-            <section class="finance-aging" aria-labelledby="finance-aging-title">
-                <div class="finance-aging__heading">
-                    <div>
-                        <span class="finance-page__eyebrow">Mapa de vencimentos</span>
-                        <h2 id="finance-aging-title">Idade dos recebíveis</h2>
-                    </div>
-                    <p>Selecione uma faixa para filtrar as cobranças.</p>
-                </div>
-                <div class="finance-aging__grid">
-                    <AppButton
-                        v-for="bucket in agingBuckets"
-                        :key="bucket.value"
-                        type="button"
-                        variant="ghost"
-                        class="finance-aging__item"
-                        :class="{
-                            'finance-aging__item--active': invoiceFilters.aging === bucket.value,
-                        }"
-                        :aria-pressed="invoiceFilters.aging === bucket.value"
-                        @click="applyAgingFilter(bucket.value)"
-                    >
-                        <span class="finance-aging__content">
-                            <span class="finance-aging__label">{{ bucket.label }}</span>
-                            <strong class="finance-aging__value">{{
-                                money(bucket.balance_cents)
-                            }}</strong>
-                            <small class="finance-aging__count"
-                                ><span>{{ bucket.count }}</span>
-                                {{ bucket.count === 1 ? 'cobrança' : 'cobranças' }}</small
-                            >
-                        </span>
-                    </AppButton>
-                </div>
-            </section>
-
-            <section class="finance-forecast" aria-labelledby="finance-forecast-title">
-                <div class="finance-forecast__heading">
-                    <div>
-                        <span class="finance-page__eyebrow">Previsibilidade de caixa</span>
-                        <h2 id="finance-forecast-title">Agenda de recebimentos</h2>
-                        <p>Distribuição do saldo pendente por horizonte de vencimento.</p>
-                    </div>
-                    <div class="finance-forecast__total">
-                        <span>Próximos 90 dias</span
-                        ><strong>{{ money(financeStore.summary.forecast_90_days_cents) }}</strong>
-                    </div>
-                </div>
-                <div class="finance-forecast__grid">
-                    <article
-                        v-for="item in forecastBuckets"
-                        :key="item.key"
-                        class="finance-forecast__item"
-                        :class="{ 'finance-forecast__item--overdue': item.key === 'overdue' }"
-                    >
-                        <div class="finance-forecast__item-heading">
-                            <span>{{ item.label }}</span
-                            ><small
-                                >{{ item.count }}
-                                {{ item.count === 1 ? 'parcela' : 'parcelas' }}</small
-                            >
-                        </div>
-                        <strong>{{ money(item.balance_cents) }}</strong>
-                        <div class="finance-forecast__track" aria-hidden="true">
-                            <span :style="{ width: `${item.percentage}%` }"></span>
-                        </div>
-                    </article>
-                </div>
-                <p class="finance-forecast__note">
-                    A previsão considera o saldo atual das cobranças e não representa garantia de
-                    recebimento.
-                </p>
-            </section>
-
-            <section class="finance-performance" aria-labelledby="finance-performance-title">
-                <div class="finance-performance__heading">
-                    <div>
-                        <span class="finance-page__eyebrow">Desempenho financeiro</span>
-                        <h2 id="finance-performance-title">Receitas, despesas e caixa</h2>
-                        <p>Movimentação financeira dos últimos seis meses.</p>
-                    </div>
-                    <div class="finance-performance__legend">
-                        <span
-                            ><i
-                                class="finance-performance__dot finance-performance__dot--billed"
-                            ></i
-                            >Faturado</span
-                        ><span
-                            ><i
-                                class="finance-performance__dot finance-performance__dot--received"
-                            ></i
-                            >Recebido</span
-                        >
-                        <span
-                            ><i
-                                class="finance-performance__dot finance-performance__dot--expenses"
-                            ></i
-                            >Despesas pagas</span
-                        >
-                    </div>
-                </div>
-                <div
-                    class="finance-performance__chart"
-                    role="img"
-                    aria-label="Comparativo mensal entre valores faturados, recebidos e despesas pagas"
-                >
-                    <article
-                        v-for="month in performanceMonths"
-                        :key="month.month"
-                        class="finance-performance__month"
-                    >
-                        <div class="finance-performance__bars" aria-hidden="true">
-                            <span
-                                class="finance-performance__bar finance-performance__bar--billed"
-                                :style="{ height: `${month.billedHeight}%` }"
-                            ></span
-                            ><span
-                                class="finance-performance__bar finance-performance__bar--received"
-                                :style="{ height: `${month.receivedHeight}%` }"
-                                :title="`Recebido: ${money(month.received_cents)}`"
-                            ></span
-                            ><span
-                                class="finance-performance__bar finance-performance__bar--expenses"
-                                :style="{ height: `${month.expensesHeight}%` }"
-                                :title="`Despesas: ${money(month.paid_expenses_cents)}`"
-                            ></span>
-                        </div>
-                        <strong>{{ month.label }}</strong
-                        ><small
-                            :class="{
-                                'finance-performance__result--negative':
-                                    month.cash_result_cents < 0,
-                            }"
-                            >Resultado {{ money(month.cash_result_cents) }}</small
-                        >
-                    </article>
-                </div>
-                <div class="finance-performance__totals">
-                    <span
-                        >Faturado no período
-                        <strong>{{
-                            money(financeStore.summary.performance_totals?.billed_cents)
-                        }}</strong></span
-                    ><span
-                        >Recebido no período
-                        <strong>{{
-                            money(financeStore.summary.performance_totals?.received_cents)
-                        }}</strong></span
-                    >
-                    <span
-                        >Despesas no período
-                        <strong>{{
-                            money(financeStore.summary.performance_totals?.paid_expenses_cents)
-                        }}</strong></span
-                    ><span
-                        class="finance-performance__cash-result"
-                        :class="{
-                            'finance-performance__result--negative':
-                                financeStore.summary.performance_totals?.cash_result_cents < 0,
-                        }"
-                        >Resultado de caixa
-                        <strong>{{
-                            money(financeStore.summary.performance_totals?.cash_result_cents)
-                        }}</strong></span
-                    >
-                </div>
-            </section>
+            <nav class="finance-page__navigation" aria-label="Seções do financeiro">
+                <a href="#finance-invoices">Contas a receber</a>
+                <a href="#finance-payables">Contas a pagar</a>
+                <a href="#finance-analysis">Análise do período</a>
+                <a href="#finance-automation">Lembretes automáticos</a>
+            </nav>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="showInvoiceForm"
                 title="Nova cobrança"
                 size="lg"
@@ -345,13 +174,24 @@
             </AppDialog>
 
             <AppCard>
-                <section class="finance-page__invoices">
+                <section
+                    id="finance-invoices"
+                    class="finance-page__invoices"
+                    aria-labelledby="finance-invoices-title"
+                >
                     <div class="finance-page__section-heading">
                         <div>
-                            <h2>Contas a receber</h2>
+                            <h2 id="finance-invoices-title">Contas a receber</h2>
                             <p>Cobranças atuais e histórico de recebimentos.</p>
                         </div>
                         <div class="finance-page__section-actions">
+                            <AppButton
+                                v-if="canManage && !showInvoiceForm"
+                                variant="modal"
+                                icon="wallet"
+                                @click="showInvoiceForm = true"
+                                >Nova cobrança</AppButton
+                            >
                             <span v-if="hasActiveInvoiceFilters" class="finance-page__filter-count"
                                 >{{ financeStore.invoices.length }} resultado(s)</span
                             ><AppButton
@@ -366,6 +206,89 @@
                             >
                         </div>
                     </div>
+                    <details class="finance-page__disclosure">
+                        <summary>Consultar distribuição dos vencimentos</summary>
+                        <section class="finance-aging" aria-labelledby="finance-aging-title">
+                            <div class="finance-aging__heading">
+                                <div>
+                                    <span class="finance-page__eyebrow">Mapa de vencimentos</span>
+                                    <h3 id="finance-aging-title">Priorizar cobranças por atraso</h3>
+                                </div>
+                                <p>Selecione uma faixa para filtrar as cobranças.</p>
+                            </div>
+                            <div class="finance-aging__grid">
+                                <AppButton
+                                    v-for="bucket in agingBuckets"
+                                    :key="bucket.value"
+                                    type="button"
+                                    variant="ghost"
+                                    class="finance-aging__item"
+                                    :class="{
+                                        'finance-aging__item--active':
+                                            invoiceFilters.aging === bucket.value,
+                                    }"
+                                    :aria-pressed="invoiceFilters.aging === bucket.value"
+                                    @click="applyAgingFilter(bucket.value)"
+                                >
+                                    <span class="finance-aging__content">
+                                        <span class="finance-aging__label">{{ bucket.label }}</span>
+                                        <strong class="finance-aging__value">{{
+                                            money(bucket.balance_cents)
+                                        }}</strong>
+                                        <small class="finance-aging__count"
+                                            ><span>{{ bucket.count }}</span>
+                                            {{
+                                                bucket.count === 1 ? 'cobrança' : 'cobranças'
+                                            }}</small
+                                        >
+                                    </span>
+                                </AppButton>
+                            </div>
+                        </section>
+
+                        <section class="finance-forecast" aria-labelledby="finance-forecast-title">
+                            <div class="finance-forecast__heading">
+                                <div>
+                                    <span class="finance-page__eyebrow"
+                                        >Previsibilidade de caixa</span
+                                    >
+                                    <h3 id="finance-forecast-title">Próximos vencimentos</h3>
+                                    <p>
+                                        Distribuição do saldo pendente por horizonte de vencimento.
+                                    </p>
+                                </div>
+                                <div class="finance-forecast__total">
+                                    <span>Próximos 90 dias</span
+                                    ><strong>{{
+                                        money(financeStore.summary.forecast_90_days_cents)
+                                    }}</strong>
+                                </div>
+                            </div>
+                            <div class="finance-forecast__grid">
+                                <article
+                                    v-for="item in forecastBuckets"
+                                    :key="item.key"
+                                    class="finance-forecast__item"
+                                >
+                                    <div class="finance-forecast__item-heading">
+                                        <span>{{ item.label }}</span
+                                        ><small
+                                            >{{ item.count }}
+                                            {{ item.count === 1 ? 'parcela' : 'parcelas' }}</small
+                                        >
+                                    </div>
+                                    <strong>{{ money(item.balance_cents) }}</strong>
+                                    <div class="finance-forecast__track" aria-hidden="true">
+                                        <span :style="{ width: `${item.percentage}%` }"></span>
+                                    </div>
+                                </article>
+                            </div>
+                            <p class="finance-forecast__note">
+                                A previsão considera o saldo atual das cobranças e não representa
+                                garantia de recebimento.
+                            </p>
+                        </section>
+                    </details>
                     <form
                         class="finance-page__filters"
                         aria-label="Filtros de contas a receber"
@@ -627,22 +550,44 @@
             </AppCard>
 
             <AppCard
-                ><section class="finance-payables">
+                ><section
+                    id="finance-payables"
+                    class="finance-payables"
+                    aria-labelledby="finance-payables-title"
+                    :aria-busy="financeStore.loadingPayables"
+                >
                     <div class="finance-page__section-heading">
                         <div>
                             <span class="finance-page__eyebrow">Saídas do escritório</span>
-                            <h2>Contas a pagar</h2>
+                            <h2 id="finance-payables-title">Contas a pagar</h2>
                             <p>Compromissos operacionais e pagamentos realizados.</p>
                         </div>
                         <AppButton
                             v-if="canManage"
                             type="button"
                             variant="modal"
-                            @click="showPayableForm = true"
+                            @click="openNewPayable"
                             >Nova conta</AppButton
                         >
                     </div>
-                    <form class="finance-payables__filters" @submit.prevent="applyPayableFilters">
+                    <PayableRecurrences
+                        :refresh-token="financeStore.summary"
+                        @changed="refreshRecurringPayables"
+                        @due-soon="showUpcomingPayables"
+                    />
+                    <form
+                        class="finance-payables__filters"
+                        aria-label="Filtros de contas a pagar"
+                        @submit.prevent="applyPayableFilters"
+                    >
+                        <ClassificationFields
+                            prefix="payable-filter"
+                            include-inactive
+                            :category-id="payableFilters.category_id"
+                            :cost-center-id="payableFilters.cost_center_id"
+                            @update:category-id="payableFilters.category_id = $event"
+                            @update:cost-center-id="payableFilters.cost_center_id = $event"
+                        />
                         <AppSearch
                             v-model="payableFilters.supplier"
                             id="payable-filter-supplier"
@@ -666,38 +611,75 @@
                             label="Até"
                         />
                         <div class="finance-payables__filter-actions">
-                            <AppButton type="button" variant="ghost" @click="clearPayableFilters"
+                            <AppButton
+                                type="button"
+                                variant="ghost"
+                                :disabled="financeStore.loadingPayables"
+                                @click="clearPayableFilters"
                                 >Limpar</AppButton
                             >
-                            <AppButton type="submit" variant="filter">Filtrar</AppButton>
+                            <AppButton
+                                type="submit"
+                                variant="filter"
+                                :loading="financeStore.loadingPayables"
+                                >Filtrar</AppButton
+                            >
                         </div>
                     </form>
-                    <div class="finance-payables__summary">
-                        <span
-                            >A pagar
-                            <strong>{{ money(financeStore.summary.payable_cents) }}</strong></span
-                        ><span
-                            >Vencido
-                            <strong>{{
-                                money(financeStore.summary.payable_overdue_cents)
-                            }}</strong></span
-                        ><span
-                            >Posição líquida
-                            <strong>{{
-                                money(financeStore.summary.net_position_cents)
-                            }}</strong></span
+                    <p
+                        v-if="financeStore.loadingPayables"
+                        class="finance-page__empty"
+                        role="status"
+                    >
+                        Carregando contas a pagar...
+                    </p>
+                    <div
+                        v-else-if="financeStore.payablesError"
+                        class="finance-page__alert"
+                        role="alert"
+                    >
+                        <p>{{ financeStore.payablesError }}</p>
+                        <AppButton type="button" variant="filter" @click="applyPayableFilters"
+                            >Tentar novamente</AppButton
                         >
                     </div>
-                    <div v-if="!financeStore.payables.length" class="finance-page__empty">
-                        Nenhuma conta a pagar registrada.
+                    <div
+                        v-else-if="!financeStore.payables.length"
+                        class="finance-page__empty"
+                        role="status"
+                    >
+                        {{
+                            hasPayableFilters
+                                ? 'Nenhuma conta encontrada para os filtros aplicados.'
+                                : 'Nenhuma conta a pagar registrada.'
+                        }}
                     </div>
                     <div v-else class="finance-payables__list">
                         <article v-for="payable in financeStore.payables" :key="payable.id">
                             <div class="finance-payables__identity">
+                                <small v-if="payable.recurrence_id"
+                                    >Conta recorrente · série #{{ payable.recurrence_id }}</small
+                                >
                                 <strong>{{ payable.supplier }}</strong
                                 ><small
                                     >{{ payable.description }} ·
-                                    {{ payable.category || 'Sem categoria' }}</small
+                                    {{
+                                        payable.financial_category?.name ||
+                                        payable.category ||
+                                        'Sem categoria'
+                                    }}</small
+                                >
+                                <small
+                                    v-if="payable.cost_center || payable.folder || payable.client"
+                                    >{{
+                                        [
+                                            payable.cost_center?.name,
+                                            payable.folder?.name,
+                                            payable.client?.name,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' · ')
+                                    }}</small
                                 >
                             </div>
                             <div class="finance-payables__meta">
@@ -715,6 +697,7 @@
                                     type="button"
                                     size="sm"
                                     variant="modal"
+                                    :aria-label="`Detalhes da conta de ${payable.supplier}`"
                                     @click="payableDetails = payable"
                                     >Detalhes</AppButton
                                 >
@@ -723,6 +706,7 @@
                                     type="button"
                                     size="sm"
                                     variant="modal"
+                                    :aria-label="`Registrar pagamento para ${payable.supplier}`"
                                     @click="openPayablePayment(payable)"
                                     >Registrar pagamento</AppButton
                                 >
@@ -732,7 +716,72 @@
                 </section></AppCard
             >
 
-            <section class="finance-automation" aria-labelledby="finance-automation-title">
+            <section
+                id="finance-analysis"
+                class="finance-page__analysis"
+                aria-label="Análise financeira"
+            >
+                <CashFlowPanel :refresh-token="financeStore.summary" />
+                <AppButton variant="route" @click="$router.push({ name: 'finance.reconciliation' })"
+                    >Conciliação e fechamento</AppButton
+                >
+                <details class="finance-page__disclosure">
+                    <summary>Comparar faturamento e recebimentos dos últimos seis meses</summary>
+                    <p>
+                        Compare as cobranças emitidas com os valores recebidos em cada mês. Os
+                        recebimentos podem corresponder a cobranças de meses anteriores. Este
+                        histórico tem período fixo.
+                    </p>
+                    <div
+                        class="finance-page__history"
+                        role="region"
+                        aria-label="Histórico de faturamento"
+                        tabindex="0"
+                    >
+                        <table>
+                            <caption>
+                                Faturamento e recebimentos — últimos seis meses
+                            </caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Mês</th>
+                                    <th scope="col">Faturado</th>
+                                    <th scope="col">Recebido</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="month in financeStore.summary.monthly_performance || []"
+                                    :key="month.month"
+                                >
+                                    <th scope="row">
+                                        {{ month.month.split('-').reverse().join('/') }}
+                                    </th>
+                                    <td>{{ money(month.billed_cents) }}</td>
+                                    <td>{{ money(month.received_cents) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <AppButton
+                        variant="action"
+                        icon="download"
+                        :loading="financeStore.exportingReport"
+                        @click="downloadFinancialReport"
+                        >Exportar relatório geral</AppButton
+                    >
+                    <p>
+                        O relatório geral reúne a posição atual e o histórico fixo,
+                        independentemente dos filtros do fluxo de caixa.
+                    </p>
+                </details>
+            </section>
+
+            <section
+                id="finance-automation"
+                class="finance-automation"
+                aria-labelledby="finance-automation-title"
+            >
                 <div class="finance-automation__heading">
                     <div>
                         <span class="finance-page__eyebrow">Régua de cobrança</span>
@@ -789,6 +838,8 @@
             </section>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(detailInvoiceId)"
                 title="Detalhes da cobrança"
                 size="lg"
@@ -1071,6 +1122,8 @@
                 </div>
             </AppDialog>
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(payableToEdit)"
                 title="Editar conta a pagar"
                 size="md"
@@ -1084,11 +1137,28 @@
                             label="Fornecedor"
                             required
                         />
-                        <AppInput
-                            v-model="payableEditForm.category"
-                            id="payable-edit-category"
-                            label="Categoria"
+                        <ClassificationFields
+                            prefix="payable-edit"
+                            v-model:category-id="payableEditForm.category_id"
+                            v-model:cost-center-id="payableEditForm.cost_center_id"
                         />
+                        <AppSelect
+                            id="payable-edit-folder"
+                            v-model="payableEditForm.folder_id"
+                            label="Pasta (opcional)"
+                            :options="folderOptions"
+                        />
+                        <AppSelect
+                            id="payable-edit-client"
+                            v-model="payableEditForm.client_id"
+                            label="Cliente (opcional)"
+                            :options="[{ value: '', label: 'Sem cliente' }, ...clientOptions]"
+                        />
+                        <small class="finance-page__wide"
+                            >Vínculos para acompanhamento. Esta conta não gera reembolso
+                            automaticamente; despesas reembolsáveis devem ser faturadas na
+                            pasta.</small
+                        >
                         <AppInput
                             v-model="payableEditForm.description"
                             id="payable-edit-description"
@@ -1120,7 +1190,11 @@
                         />
                     </div>
                     <div class="finance-page__actions">
-                        <AppButton type="button" variant="ghost" @click="payableToEdit = null"
+                        <AppButton
+                            :disabled="submitting"
+                            type="button"
+                            variant="ghost"
+                            @click="payableToEdit = null"
                             >Cancelar</AppButton
                         ><AppButton type="submit" variant="action" :loading="submitting"
                             >Salvar alterações</AppButton
@@ -1129,13 +1203,15 @@
                 </form>
             </AppDialog>
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(payableDetails)"
                 title="Detalhes da conta"
                 size="md"
                 @close="payableDetails = null"
             >
                 <div v-if="payableDetails" class="finance-payable-details">
-                    <div class="finance-payment__summary">
+                    <dl class="finance-payment__summary">
                         <div>
                             <dt>Fornecedor</dt>
                             <dd>{{ payableDetails.supplier }}</dd>
@@ -1152,12 +1228,29 @@
                             <dt>Saldo</dt>
                             <dd>{{ money(payableDetails.balance_cents) }}</dd>
                         </div>
-                    </div>
+                    </dl>
                     <div>
                         <strong>{{ payableDetails.description }}</strong>
                         <p>
-                            {{ payableDetails.category || 'Sem categoria' }} · vencimento em
+                            {{
+                                payableDetails.financial_category?.name ||
+                                payableDetails.category ||
+                                'Sem categoria'
+                            }}
+                            · vencimento em
                             {{ date(payableDetails.due_on) }}
+                        </p>
+                        <p v-if="payableDetails.notes">{{ payableDetails.notes }}</p>
+                        <p v-if="payableDetails.cost_center">
+                            Centro de custo: {{ payableDetails.cost_center.name }}
+                        </p>
+                        <p v-if="payableDetails.folder">Pasta: {{ payableDetails.folder.name }}</p>
+                        <p v-if="payableDetails.client">
+                            Cliente: {{ payableDetails.client.name }}
+                        </p>
+                        <p v-if="payableDetails.cancelled_at">
+                            Cancelada em {{ date(payableDetails.cancelled_at) }}:
+                            {{ payableDetails.cancellation_reason }}
                         </p>
                     </div>
                     <section>
@@ -1177,6 +1270,15 @@
                                     {{ paymentMethodLabel(payment.method) }}</small
                                 ><small v-if="payment.cancelled_at"
                                     >Estornado: {{ payment.cancellation_reason }}</small
+                                >
+                                <small v-if="payment.recorded_by"
+                                    >Registrado por {{ payment.recorded_by.name }}</small
+                                >
+                                <small v-if="payment.cancelled_at"
+                                    >Em {{ date(payment.cancelled_at)
+                                    }}<template v-if="payment.cancelled_by">
+                                        por {{ payment.cancelled_by.name }}</template
+                                    ></small
                                 >
                             </div>
                             <AppButton
@@ -1224,7 +1326,10 @@
                                 >Cancelar conta</AppButton
                             >
                             <AppButton
-                                v-if="!(payableDetails.payments || []).length"
+                                v-if="
+                                    !(payableDetails.payments || []).length &&
+                                    !payableDetails.recurrence_id
+                                "
                                 type="button"
                                 size="sm"
                                 variant="danger"
@@ -1236,6 +1341,8 @@
                 </div>
             </AppDialog>
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(payableToCancel)"
                 title="Cancelar conta a pagar"
                 size="sm"
@@ -1249,7 +1356,11 @@
                         required
                     />
                     <div class="finance-page__actions">
-                        <AppButton type="button" variant="ghost" @click="payableToCancel = null"
+                        <AppButton
+                            :disabled="submitting"
+                            type="button"
+                            variant="ghost"
+                            @click="payableToCancel = null"
                             >Manter conta</AppButton
                         ><AppButton type="submit" variant="danger" :loading="submitting"
                             >Cancelar conta</AppButton
@@ -1258,6 +1369,8 @@
                 </form></AppDialog
             >
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(payablePaymentToCancel)"
                 title="Estornar pagamento"
                 size="sm"
@@ -1272,6 +1385,7 @@
                     />
                     <div class="finance-page__actions">
                         <AppButton
+                            :disabled="submitting"
                             type="button"
                             variant="ghost"
                             @click="payablePaymentToCancel = null"
@@ -1284,6 +1398,8 @@
             >
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="showPayableForm"
                 title="Nova conta a pagar"
                 size="md"
@@ -1295,11 +1411,28 @@
                             id="payable-supplier"
                             label="Fornecedor"
                             required
-                        /><AppInput
-                            v-model="payableForm.category"
-                            id="payable-category"
-                            label="Categoria"
-                        /><AppInput
+                        /><ClassificationFields
+                            prefix="payable"
+                            v-model:category-id="payableForm.category_id"
+                            v-model:cost-center-id="payableForm.cost_center_id"
+                        />
+                        <AppSelect
+                            id="payable-folder"
+                            v-model="payableForm.folder_id"
+                            label="Pasta (opcional)"
+                            :options="folderOptions"
+                        />
+                        <AppSelect
+                            id="payable-client"
+                            v-model="payableForm.client_id"
+                            label="Cliente (opcional)"
+                            :options="[{ value: '', label: 'Sem cliente' }, ...clientOptions]"
+                        />
+                        <small class="finance-page__wide"
+                            >Vínculos para acompanhamento. Esta conta não gera reembolso
+                            automaticamente; despesas reembolsáveis devem ser faturadas na
+                            pasta.</small
+                        ><AppInput
                             v-model="payableForm.description"
                             id="payable-description"
                             class="finance-page__wide"
@@ -1327,7 +1460,11 @@
                         />
                     </div>
                     <div class="finance-page__actions">
-                        <AppButton type="button" variant="ghost" @click="showPayableForm = false"
+                        <AppButton
+                            :disabled="submitting"
+                            type="button"
+                            variant="ghost"
+                            @click="showPayableForm = false"
                             >Cancelar</AppButton
                         ><AppButton type="submit" variant="action" :loading="submitting"
                             >Salvar conta</AppButton
@@ -1336,6 +1473,8 @@
                 </form></AppDialog
             >
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(payableToPay)"
                 title="Pagar conta"
                 size="sm"
@@ -1377,7 +1516,11 @@
                         label="Referência"
                     />
                     <div class="finance-page__actions">
-                        <AppButton type="button" variant="ghost" @click="payableToPay = null"
+                        <AppButton
+                            :disabled="submitting"
+                            type="button"
+                            variant="ghost"
+                            @click="payableToPay = null"
                             >Cancelar</AppButton
                         ><AppButton type="submit" variant="action" :loading="submitting"
                             >Confirmar pagamento</AppButton
@@ -1387,6 +1530,8 @@
             >
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(receiptPayment)"
                 title="Enviar comprovante"
                 size="sm"
@@ -1434,6 +1579,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="showOverdueClients"
                 title="Inadimplência por cliente"
                 size="lg"
@@ -1496,6 +1643,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(reminderInvoice)"
                 title="Enviar lembrete"
                 size="md"
@@ -1585,6 +1734,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(reminderRuleEditor)"
                 :title="reminderRuleEditor?.id ? 'Editar regra' : 'Nova regra de cobrança'"
                 size="md"
@@ -1657,6 +1808,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(invoiceToEdit)"
                 title="Editar cobrança"
                 size="md"
@@ -1745,6 +1898,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(cancellationInvoice)"
                 title="Cancelar cobrança"
                 size="sm"
@@ -1829,6 +1984,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(installmentInvoice)"
                 title="Adicionar parcela"
                 size="md"
@@ -1938,6 +2095,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(paymentInvoice)"
                 title="Registrar pagamento"
                 size="md"
@@ -2038,6 +2197,8 @@
             </AppDialog>
 
             <AppDialog
+                :error="error"
+                :busy="submitting"
                 :open="Boolean(paymentToCancel)"
                 title="Cancelar pagamento"
                 size="sm"
@@ -2103,6 +2264,7 @@
                 </form>
             </AppDialog>
             <AppConfirmDialog
+                :error="error"
                 :open="Boolean(payableToDelete)"
                 title="Excluir conta a pagar"
                 message="A conta será removida permanentemente."
@@ -2112,6 +2274,7 @@
                 @confirm="confirmPayableDelete"
             />
             <AppConfirmDialog
+                :error="error"
                 :open="Boolean(pendingDelete)"
                 title="Excluir cobrança"
                 message="Esta cobrança será removida permanentemente."
@@ -2121,6 +2284,7 @@
                 @confirm="confirmDelete"
             />
             <AppConfirmDialog
+                :error="error"
                 :open="Boolean(ruleToDelete)"
                 title="Excluir regra"
                 message="A regra será removida. Lembretes já registrados permanecerão no histórico."
@@ -2151,6 +2315,9 @@ import { useClientsStore } from '@/stores/clients.js'
 import { useFinanceStore } from '@/stores/finance.js'
 import { useFoldersStore } from '@/stores/folders.js'
 import { listFeeAgreements } from '@/api/folder-financial.js'
+import CashFlowPanel from './components/CashFlowPanel.vue'
+import PayableRecurrences from './components/PayableRecurrences.vue'
+import ClassificationFields from './components/ClassificationFields.vue'
 
 const authStore = useAuthStore()
 const clientsStore = useClientsStore()
@@ -2235,6 +2402,10 @@ const payableForm = reactive({
     supplier: '',
     description: '',
     category: '',
+    category_id: '',
+    cost_center_id: '',
+    folder_id: '',
+    client_id: '',
     due_on: localDate(),
     amount: 0,
     notes: '',
@@ -2245,19 +2416,59 @@ const payablePaymentForm = reactive({
     method: 'pix',
     reference: '',
 })
-const payableFilters = reactive({ supplier: '', status: '', due_from: '', due_to: '' })
+const payableFilters = reactive({
+    supplier: '',
+    status: '',
+    due_from: '',
+    due_to: '',
+    ...financeStore.activePayableFilters,
+})
+const hasPayableFilters = computed(() =>
+    Object.values(financeStore.activePayableFilters).some(Boolean),
+)
 const payableEditForm = reactive({
     supplier: '',
     description: '',
     category: '',
+    category_id: '',
+    cost_center_id: '',
+    folder_id: '',
+    client_id: '',
     due_on: '',
     amount: 0,
     notes: '',
 })
 const payableCancellationForm = reactive({ reason: '' })
 const payablePaymentCancellationForm = reactive({ reason: '' })
+watch(
+    [
+        showInvoiceForm,
+        paymentInvoice,
+        showPayableForm,
+        payableToPay,
+        payableToEdit,
+        payableDetails,
+        payableToCancel,
+        payableToDelete,
+        payablePaymentToCancel,
+        installmentInvoice,
+        pendingDelete,
+        detailInvoiceId,
+        receiptPayment,
+        cancellationInvoice,
+        invoiceToEdit,
+        reminderInvoice,
+        reminderRuleEditor,
+        ruleToDelete,
+        paymentToCancel,
+    ],
+    () => {
+        error.value = ''
+    },
+)
 const payableStatusOptions = [
     { value: '', label: 'Todas' },
+    { value: 'due_soon', label: 'Vencem em até 7 dias' },
     { value: 'open', label: 'Em aberto' },
     { value: 'partial', label: 'Parcial' },
     { value: 'paid', label: 'Paga' },
@@ -2393,7 +2604,6 @@ const overdueDescription = computed(() => {
 })
 const forecastBuckets = computed(() => {
     const labels = {
-        overdue: 'Vencido',
         next_30_days: 'Até 30 dias',
         days_31_60: '31–60 dias',
         days_61_90: '61–90 dias',
@@ -2411,33 +2621,6 @@ const forecastBuckets = computed(() => {
         percentage: item.balance_cents
             ? Math.max(5, Math.round((item.balance_cents / maximum) * 100))
             : 0,
-    }))
-})
-const performanceMonths = computed(() => {
-    const values = financeStore.summary.monthly_performance ?? []
-    const maximum = Math.max(
-        1,
-        ...values.flatMap((item) => [
-            Number(item.billed_cents || 0),
-            Number(item.received_cents || 0),
-            Number(item.paid_expenses_cents || 0),
-        ]),
-    )
-    return values.map((item) => ({
-        ...item,
-        label: new Intl.DateTimeFormat('pt-BR', { month: 'short' })
-            .format(new Date(`${item.month}-01T12:00:00`))
-            .replace('.', ''),
-        billedHeight: Number(item.billed_cents)
-            ? Math.max(4, Math.round((Number(item.billed_cents) / maximum) * 100))
-            : 0,
-        receivedHeight: Number(item.received_cents)
-            ? Math.max(4, Math.round((Number(item.received_cents) / maximum) * 100))
-            : 0,
-        expensesHeight: Number(item.paid_expenses_cents)
-            ? Math.max(4, Math.round((Number(item.paid_expenses_cents) / maximum) * 100))
-            : 0,
-        cash_result_cents: Number(item.received_cents || 0) - Number(item.paid_expenses_cents || 0),
     }))
 })
 const agingBuckets = computed(() =>
@@ -2873,13 +3056,18 @@ async function submitPayment() {
     }
 }
 async function submitPayable() {
+    if (submitting.value) return
     submitting.value = true
     error.value = ''
     try {
         await financeStore.addPayable({
             supplier: payableForm.supplier,
             description: payableForm.description,
-            category: payableForm.category || null,
+            category: payableForm.category_id ? null : payableForm.category || null,
+            category_id: payableForm.category_id || null,
+            cost_center_id: payableForm.cost_center_id || null,
+            folder_id: payableForm.folder_id || null,
+            client_id: payableForm.client_id || null,
             due_on: payableForm.due_on,
             amount_cents: Math.round(payableForm.amount * 100),
             notes: payableForm.notes || null,
@@ -2891,6 +3079,21 @@ async function submitPayable() {
         submitting.value = false
     }
 }
+function openNewPayable() {
+    Object.assign(payableForm, {
+        supplier: '',
+        description: '',
+        category: '',
+        category_id: '',
+        cost_center_id: '',
+        folder_id: '',
+        client_id: '',
+        due_on: localDate(),
+        amount: 0,
+        notes: '',
+    })
+    showPayableForm.value = true
+}
 function openPayablePayment(payable) {
     payableToPay.value = payable
     Object.assign(payablePaymentForm, {
@@ -2901,6 +3104,7 @@ function openPayablePayment(payable) {
     })
 }
 async function submitPayablePayment() {
+    if (submitting.value) return
     submitting.value = true
     error.value = ''
     try {
@@ -2926,13 +3130,35 @@ const payableStatus = (payable) => {
 }
 async function applyPayableFilters() {
     error.value = ''
+    if (
+        payableFilters.due_from &&
+        payableFilters.due_to &&
+        payableFilters.due_from > payableFilters.due_to
+    ) {
+        financeStore.payablesError = 'A data inicial deve ser anterior ou igual à data final.'
+        return
+    }
     try {
         await financeStore.fetchPayables({ ...payableFilters })
     } catch (exception) {
-        error.value = message(exception)
+        // A falha de consulta é exibida junto à lista pelo store.
     }
 }
+async function refreshRecurringPayables() {
+    await Promise.allSettled([
+        financeStore.fetchPayables({ ...payableFilters }),
+        financeStore.refreshSummary(),
+    ])
+}
+async function showUpcomingPayables() {
+    delete payableFilters.category_id
+    delete payableFilters.cost_center_id
+    Object.assign(payableFilters, { supplier: '', status: 'due_soon', due_from: '', due_to: '' })
+    await applyPayableFilters()
+}
 async function clearPayableFilters() {
+    delete payableFilters.category_id
+    delete payableFilters.cost_center_id
     Object.assign(payableFilters, { supplier: '', status: '', due_from: '', due_to: '' })
     await applyPayableFilters()
 }
@@ -2942,7 +3168,11 @@ function openPayableEdit(payable) {
         supplier: payable.supplier,
         description: payable.description,
         category: payable.category || '',
-        due_on: payable.due_on,
+        category_id: payable.category_id || '',
+        cost_center_id: payable.cost_center_id || '',
+        folder_id: payable.folder_id || '',
+        client_id: payable.client_id || '',
+        due_on: String(payable.due_on || '').slice(0, 10),
         amount: Number(payable.amount_cents) / 100,
         notes: payable.notes || '',
     })
@@ -2957,13 +3187,18 @@ function openPayableDetailsAction(action) {
     if (action === 'delete') payableToDelete.value = payable
 }
 async function submitPayableEdit() {
+    if (submitting.value) return
     submitting.value = true
     error.value = ''
     try {
         await financeStore.editPayable(payableToEdit.value.id, {
             supplier: payableEditForm.supplier,
             description: payableEditForm.description,
-            category: payableEditForm.category || null,
+            category: payableEditForm.category_id ? null : payableEditForm.category || null,
+            category_id: payableEditForm.category_id || null,
+            cost_center_id: payableEditForm.cost_center_id || null,
+            folder_id: payableEditForm.folder_id || null,
+            client_id: payableEditForm.client_id || null,
             due_on: payableEditForm.due_on,
             amount_cents: Math.round(payableEditForm.amount * 100),
             notes: payableEditForm.notes || null,
@@ -2976,6 +3211,7 @@ async function submitPayableEdit() {
     }
 }
 async function submitPayableCancellation() {
+    if (submitting.value) return
     submitting.value = true
     error.value = ''
     try {
@@ -2991,6 +3227,7 @@ async function submitPayableCancellation() {
     }
 }
 async function confirmPayableDelete() {
+    if (submitting.value) return
     submitting.value = true
     error.value = ''
     try {
@@ -3003,6 +3240,7 @@ async function confirmPayableDelete() {
     }
 }
 async function submitPayablePaymentCancellation() {
+    if (submitting.value) return
     submitting.value = true
     error.value = ''
     try {
@@ -3095,6 +3333,86 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.finance-page__navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+.finance-page__navigation a {
+    color: var(--color-brand);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-weight: 600;
+    text-decoration: none;
+}
+.finance-page__navigation a:hover {
+    background: var(--color-surface-highlight-soft);
+}
+.finance-page__navigation a:focus-visible,
+.finance-page__disclosure > summary:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+}
+.finance-page__invoices,
+.finance-payables,
+.finance-page__analysis,
+.finance-automation {
+    scroll-margin-top: 6rem;
+}
+.finance-page__analysis {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+}
+.finance-page__disclosure {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-block: var(--space-4);
+    min-width: 0;
+}
+.finance-page__disclosure > summary {
+    cursor: pointer;
+    color: var(--color-brand);
+    font-weight: 600;
+}
+.finance-page__disclosure[open] > summary {
+    margin-bottom: var(--space-4);
+}
+.finance-page__disclosure .finance-aging,
+.finance-page__disclosure .finance-forecast {
+    padding-inline: 0;
+    border: 0;
+    box-shadow: none;
+}
+.finance-page__disclosure > p {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+.finance-page__history {
+    overflow-x: auto;
+    margin-block: var(--space-4);
+}
+.finance-page__history table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.finance-page__history caption {
+    text-align: left;
+    padding-bottom: var(--space-3);
+}
+.finance-page__history th,
+.finance-page__history td {
+    text-align: right;
+    white-space: nowrap;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+.finance-page__history th:first-child {
+    text-align: left;
+}
 .finance-page {
     display: flex;
     flex-direction: column;
@@ -3125,7 +3443,7 @@ onMounted(async () => {
 }
 .finance-page__summary {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
     gap: var(--space-4);
 }
 .finance-page__summary :deep(.app-card) {
@@ -3280,30 +3598,6 @@ onMounted(async () => {
     flex-direction: column;
     gap: var(--space-5);
 }
-.finance-payables__summary {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    overflow: hidden;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-}
-.finance-payables__summary span {
-    display: flex;
-    padding: var(--space-3) var(--space-4);
-    flex-direction: column;
-    gap: var(--space-1);
-    color: var(--color-text-muted);
-    border-right: 1px solid var(--color-border);
-    font-size: var(--font-size-xs);
-}
-.finance-payables__summary span:last-child {
-    border-right: 0;
-    background: var(--color-surface-highlight-soft);
-}
-.finance-payables__summary strong {
-    color: var(--color-brand);
-    font-size: var(--font-size-lg);
-}
 .finance-payables__filters {
     display: grid;
     grid-template-columns: minmax(12rem, 2fr) minmax(9rem, 1fr) repeat(2, minmax(10rem, 1fr));
@@ -3361,6 +3655,7 @@ onMounted(async () => {
     font-weight: 700;
 }
 .finance-payable-details {
+    overflow-wrap: anywhere;
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
@@ -3388,6 +3683,7 @@ onMounted(async () => {
 }
 .finance-payables__identity,
 .finance-payables__meta {
+    overflow-wrap: anywhere;
     display: flex;
     min-width: 0;
     flex-direction: column;
@@ -3450,7 +3746,7 @@ onMounted(async () => {
     align-items: flex-end;
     gap: var(--space-4);
 }
-.finance-forecast__heading h2 {
+.finance-forecast__heading h3 {
     margin-top: var(--space-1);
     color: var(--color-brand);
     font-size: var(--font-size-lg);
@@ -3476,7 +3772,7 @@ onMounted(async () => {
 }
 .finance-forecast__grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     overflow: hidden;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -3527,138 +3823,8 @@ onMounted(async () => {
     background: var(--color-brand-secondary);
     border-radius: inherit;
 }
-.finance-forecast__item--overdue {
-    background: color-mix(in srgb, var(--color-danger-soft) 55%, var(--color-surface));
-}
-.finance-forecast__item--overdue > strong {
-    color: var(--color-danger);
-}
-.finance-forecast__item--overdue .finance-forecast__track span {
-    background: var(--color-danger);
-}
 .finance-forecast__note {
     margin: 0;
-}
-.finance-performance {
-    display: flex;
-    padding: var(--space-5);
-    flex-direction: column;
-    gap: var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 0.3rem 1rem rgb(53 37 27 / 0.05);
-}
-.finance-performance__heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: var(--space-4);
-}
-.finance-performance__heading h2 {
-    margin-top: var(--space-1);
-    color: var(--color-brand);
-    font-size: var(--font-size-lg);
-}
-.finance-performance__heading p {
-    margin-top: var(--space-1);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-}
-.finance-performance__legend {
-    display: flex;
-    gap: var(--space-4);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-}
-.finance-performance__legend span {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-.finance-performance__dot {
-    width: 0.65rem;
-    height: 0.65rem;
-    border-radius: 999px;
-}
-.finance-performance__dot--billed,
-.finance-performance__bar--billed {
-    background: var(--color-highlight);
-}
-.finance-performance__dot--received,
-.finance-performance__bar--received {
-    background: var(--color-brand-secondary);
-}
-.finance-performance__dot--expenses,
-.finance-performance__bar--expenses {
-    background: var(--color-danger);
-}
-.finance-performance__chart {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    min-height: 13rem;
-    padding: var(--space-4) var(--space-3) 0;
-    gap: var(--space-3);
-    background: linear-gradient(to bottom, var(--color-border) 1px, transparent 1px) 0 25%/100% 25%;
-    border-bottom: 1px solid var(--color-border);
-}
-.finance-performance__month {
-    display: grid;
-    min-width: 0;
-    grid-template-rows: 1fr auto auto;
-    gap: var(--space-2);
-    text-align: center;
-}
-.finance-performance__bars {
-    display: flex;
-    height: 9rem;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 0.35rem;
-}
-.finance-performance__bar {
-    width: min(1.3rem, 38%);
-    min-height: 0;
-    border-radius: 0.3rem 0.3rem 0 0;
-    transition: height var(--duration-normal) var(--ease-standard);
-}
-.finance-performance__month > strong {
-    color: var(--color-text-soft);
-    font-size: var(--font-size-sm);
-    text-transform: capitalize;
-}
-.finance-performance__month > small {
-    overflow: hidden;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.finance-performance__totals {
-    display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: var(--space-5);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-}
-.finance-performance__totals span {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-}
-.finance-performance__totals strong {
-    color: var(--color-brand);
-    font-size: var(--font-size-base);
-}
-.finance-performance__cash-result {
-    padding: var(--space-2) var(--space-3);
-    background: var(--color-surface-secondary-soft);
-    border-radius: var(--radius-md);
-}
-.finance-performance__result--negative,
-.finance-performance__result--negative strong {
-    color: var(--color-danger) !important;
 }
 .finance-automation__heading {
     display: flex;
@@ -3787,18 +3953,6 @@ onMounted(async () => {
 @media (max-width: 560px) {
     .finance-forecast__grid {
         grid-template-columns: 1fr;
-    }
-    .finance-forecast__heading,
-    .finance-performance__heading {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .finance-performance__chart {
-        overflow-x: auto;
-        grid-template-columns: repeat(6, minmax(5rem, 1fr));
-    }
-    .finance-performance__totals {
-        justify-content: flex-start;
     }
     .finance-rule__grid {
         grid-template-columns: 1fr;
@@ -4024,11 +4178,11 @@ onMounted(async () => {
     justify-content: space-between;
     gap: var(--space-4);
 }
-.finance-aging__heading h2,
+.finance-aging__heading h3,
 .finance-aging__heading p {
     margin: 0;
 }
-.finance-aging__heading h2 {
+.finance-aging__heading h3 {
     margin-top: var(--space-1);
     color: var(--color-brand);
     font-size: var(--font-size-lg);
@@ -5044,16 +5198,6 @@ onMounted(async () => {
     .finance-payables__filter-actions,
     .finance-payables__actions {
         justify-content: stretch;
-    }
-    .finance-payables__summary {
-        grid-template-columns: 1fr;
-    }
-    .finance-payables__summary span {
-        border-right: 0;
-        border-bottom: 1px solid var(--color-border);
-    }
-    .finance-payables__summary span:last-child {
-        border-bottom: 0;
     }
     .finance-payables__filter-actions > *,
     .finance-payables__list article > .finance-payables__actions > * {

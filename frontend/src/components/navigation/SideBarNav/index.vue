@@ -5,31 +5,20 @@
 </template>
 
 <script setup>
-import {
-    computed,
-} from 'vue'
+import { computed } from 'vue'
 
 import SideBarItem from '@/components/navigation/SideBarItem/index.vue'
 
 import menuItems from '@/config/menu.js'
+import { permits } from '@/config/settings.js'
 
 import { useAuthStore } from '@/stores/auth.js'
 
-const authStore =
-    useAuthStore()
+const authStore = useAuthStore()
 
-const visibleMenuItems =
-    computed(() =>
-        menuItems.filter(
-            (item) => {
-                if (!item.permission) {
-                    return true
-                }
-
-                return authStore.hasPermission(
-                    item.permission,
-                )
-            },
-        ),
-    )
+const visibleMenuItems = computed(() =>
+    menuItems.filter((item) => {
+        return permits(authStore, item)
+    }),
+)
 </script>

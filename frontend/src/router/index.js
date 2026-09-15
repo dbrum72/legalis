@@ -254,13 +254,52 @@ const router = createRouter({
                 {
                     path: 'publications/monitoring',
                     name: 'publications.monitoring',
-                    component: () => import('@/views/publications/MonitoredBarRegistrationPage.vue'),
+                    component: () =>
+                        import('@/views/publications/MonitoredBarRegistrationPage.vue'),
                     meta: {
                         breadcrumb: 'OABs monitoradas',
                         permission: 'publications.view',
                     },
                 },
 
+                {
+                    path: 'settings',
+                    name: 'settings',
+                    component: () => import('@/views/settings/SettingsPage.vue'),
+                    meta: {
+                        breadcrumb: 'Configurações',
+                        permissionsAny: ['roles.view', 'finance.view', 'expenses.view', 'documents.generate'],
+                    },
+                },
+                {
+                    path: 'settings/document-templates',
+                    name: 'settings.document-templates',
+                    component: () => import('@/views/settings/DocumentTemplatesPage.vue'),
+                    meta: {
+                        breadcrumb: 'Modelos de documentos',
+                        permission: 'documents.generate',
+                    },
+                },
+                {
+                    path: 'settings/financial-categories',
+                    name: 'settings.categories',
+                    component: () => import('@/views/settings/FinancialClassificationPage.vue'),
+                    props: { kind: 'category' },
+                    meta: {
+                        breadcrumb: 'Categorias financeiras',
+                        permissionsAny: ['finance.view', 'expenses.view'],
+                    },
+                },
+                {
+                    path: 'settings/cost-centers',
+                    name: 'settings.cost-centers',
+                    component: () => import('@/views/settings/FinancialClassificationPage.vue'),
+                    props: { kind: 'cost_center' },
+                    meta: {
+                        breadcrumb: 'Centros de custo',
+                        permissionsAny: ['finance.view', 'expenses.view'],
+                    },
+                },
                 {
                     path: 'settings/roles',
                     name: 'role-permissions',
@@ -271,6 +310,12 @@ const router = createRouter({
                     },
                 },
 
+                {
+                    path: 'finance/reconciliation',
+                    name: 'finance.reconciliation',
+                    component: () => import('@/views/finance/FinancialReconciliationPage.vue'),
+                    meta: { breadcrumb: 'Conciliação e fechamento', permission: 'finance.view' },
+                },
                 {
                     path: 'finance',
                     name: 'finance',

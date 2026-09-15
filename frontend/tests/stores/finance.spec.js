@@ -33,6 +33,53 @@ vi.mock('@/api/finance.js', () => api)
 import { useFinanceStore } from '@/stores/finance.js'
 
 describe('finance store', () => {
+    it('preserva filtros de contas a pagar após alterações', async () => {
+        const store = useFinanceStore()
+        api.listPayables.mockResolvedValue({ data: [] })
+        api.getFinancialSummary.mockResolvedValue({ data: {} })
+        api.createPayablePayment.mockResolvedValue({ data: {} })
+        await store.fetchPayables({ supplier: 'Aluguel', status: 'open' })
+        await store.payPayable(1, { amount_cents: 1000 })
+        expect(api.listPayables).toHaveBeenLastCalledWith({ supplier: 'Aluguel', status: 'open' })
+    })
+
+    it('ignora respostas antigas quando um filtro mais recente já respondeu', async () => {
+        const store = useFinanceStore()
+        let resolveOld
+        api.listPayables.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolveOld = resolve
+                }),
+        )
+        const oldRequest = store.fetchPayables({ supplier: 'Antigo' })
+        api.listPayables.mockResolvedValueOnce({ data: [{ id: 2 }] })
+        await store.fetchPayables({ supplier: 'Novo' })
+        resolveOld({ data: [{ id: 1 }] })
+        await oldRequest
+        expect(store.payables).toEqual([{ id: 2 }])
+        expect(store.activePayableFilters).toEqual({ supplier: 'Novo' })
+        expect(store.loadingPayables).toBe(false)
+    })
+
+    it('não repõe dados antigos após limpar o contexto da organização', async () => {
+        const store = useFinanceStore()
+        let resolveRequest
+        api.listPayables.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolveRequest = resolve
+                }),
+        )
+        const pending = store.fetchPayables({ status: 'open' })
+        store.clear()
+        resolveRequest({ data: [{ id: 1 }] })
+        await pending
+        expect(store.payables).toEqual([])
+        expect(store.activePayableFilters).toEqual({})
+        expect(store.loadingPayables).toBe(false)
+    })
+
     beforeEach(() => {
         setActivePinia(createPinia())
         vi.clearAllMocks()

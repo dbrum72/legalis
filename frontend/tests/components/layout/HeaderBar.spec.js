@@ -30,6 +30,7 @@ async function mountComponent(user = {}) {
     const router = createRouter({
         history: createMemoryHistory(),
         routes: [
+            { path: '/settings', name: 'settings', component: { template: '<div />' } },
             { path: '/', name: 'dashboard', component: { template: '<div />' } },
             { path: '/login', name: 'login', component: { template: '<div />' } },
         ],
@@ -84,9 +85,14 @@ describe('HeaderBar', () => {
     })
 
     it('renderiza notificações e configurações', async () => {
-        const { wrapper } = await mountComponent()
+        const { wrapper, authStore, router } = await mountComponent()
         expect(wrapper.get('[aria-label="Notificações, 3 não lidas"]').exists()).toBe(true)
+        expect(wrapper.find('[aria-label="Configurações"]').exists()).toBe(false)
+        authStore.permissions = ['expenses.view']
+        await wrapper.vm.$nextTick()
         expect(wrapper.get('[aria-label="Configurações"]').exists()).toBe(true)
+        await wrapper.get('[aria-label="Configurações"]').trigger('click')
+        await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('settings'))
     })
 
     it('executa logout e retorna ao login', async () => {

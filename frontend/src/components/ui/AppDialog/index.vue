@@ -1,19 +1,33 @@
 <template>
     <Teleport to="body">
         <div v-if="open" class="app-dialog" @click.self="handleBackdrop">
-            <section ref="panelRef" class="app-dialog__panel" :class="`app-dialog__panel--${size}`" role="dialog"
-                aria-modal="true" :aria-labelledby="titleId" tabindex="-1">
+            <section
+                ref="panelRef"
+                class="app-dialog__panel"
+                :class="`app-dialog__panel--${size}`"
+                role="dialog"
+                aria-modal="true"
+                :aria-labelledby="titleId"
+                tabindex="-1"
+            >
                 <header class="app-dialog__header">
                     <h2 :id="titleId" ref="titleRef" class="app-dialog__title" tabindex="-1">
                         {{ title }}
                     </h2>
 
-                    <AppButton type="button" variant="ghost" aria-label="Fechar" @click="close">
-                        <AppIcon name="xmark" aria-hidden="true" />
+                    <AppButton
+                        type="button"
+                        variant="ghost"
+                        aria-label="Fechar"
+                        :disabled="busy"
+                        @click="close"
+                    >
+                        <AppIcon name="close" aria-hidden="true" />
                     </AppButton>
                 </header>
 
                 <div class="app-dialog__body">
+                    <p v-if="error" class="app-dialog__error" role="alert">{{ error }}</p>
                     <slot />
                 </div>
 
@@ -26,36 +40,23 @@
 </template>
 
 <script setup>
-import {
-    nextTick,
-    onBeforeUnmount,
-    ref,
-    watch,
-} from 'vue'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
 import AppButton from '@/components/ui/AppButton/index.vue'
 import AppIcon from '@/components/ui/AppIcon/index.vue'
 
 import { appDialogProps } from './props.js'
 
-const props = defineProps(
-    appDialogProps,
-)
+const props = defineProps(appDialogProps)
 
-const emit = defineEmits([
-    'close',
-])
+const emit = defineEmits(['close'])
 
 const panelRef = ref(null)
 const titleRef = ref(null)
 
-const previousActiveElement =
-    ref(null)
+const previousActiveElement = ref(null)
 
-const titleId =
-    `app-dialog-title-${Math.random()
-        .toString(36)
-        .slice(2)}`
+const titleId = `app-dialog-title-${Math.random().toString(36).slice(2)}`
 
 const focusableSelector = [
     'a[href]:not([tabindex="-1"])',
@@ -67,6 +68,7 @@ const focusableSelector = [
 ].join(',')
 
 function close() {
+    if (props.busy) return
     emit('close')
 }
 
@@ -83,11 +85,7 @@ function getFocusableElements() {
         return []
     }
 
-    return Array.from(
-        panelRef.value.querySelectorAll(
-            focusableSelector,
-        ),
-    )
+    return Array.from(panelRef.value.querySelectorAll(focusableSelector))
 }
 
 function focusInitialElement() {
@@ -95,18 +93,14 @@ function focusInitialElement() {
         return
     }
 
-    const autofocusElement =
-        panelRef.value.querySelector(
-            '[autofocus]',
-        )
+    const autofocusElement = panelRef.value.querySelector('[autofocus]')
 
     if (autofocusElement) {
         autofocusElement.focus()
         return
     }
 
-    const focusableElements =
-        getFocusableElements()
+    const focusableElements = getFocusableElements()
 
     if (focusableElements.length) {
         focusableElements[0].focus()
@@ -123,8 +117,7 @@ function trapFocus(event) {
         return
     }
 
-    const focusableElements =
-        getFocusableElements()
+    const focusableElements = getFocusableElements()
 
     if (!focusableElements.length) {
         event.preventDefault()
@@ -134,22 +127,14 @@ function trapFocus(event) {
         return
     }
 
-    const firstElement =
-        focusableElements[0]
+    const firstElement = focusableElements[0]
 
-    const lastElement =
-        focusableElements[
-        focusableElements.length - 1
-        ]
+    const lastElement = focusableElements[focusableElements.length - 1]
 
-    const activeElement =
-        document.activeElement
+    const activeElement = document.activeElement
 
     if (event.shiftKey) {
-        if (
-            activeElement === firstElement ||
-            !panel.contains(activeElement)
-        ) {
+        if (activeElement === firstElement || !panel.contains(activeElement)) {
             event.preventDefault()
 
             lastElement.focus()
@@ -158,10 +143,7 @@ function trapFocus(event) {
         return
     }
 
-    if (
-        activeElement === lastElement ||
-        !panel.contains(activeElement)
-    ) {
+    if (activeElement === lastElement || !panel.contains(activeElement)) {
         event.preventDefault()
 
         firstElement.focus()
@@ -169,10 +151,9 @@ function trapFocus(event) {
 }
 
 function handleKeydown(event) {
-    if (
-        event.key === 'Escape' &&
-        props.closeOnEscape
-    ) {
+    const panels = document.querySelectorAll('[role="dialog"][aria-modal="true"]')
+    if (panels[panels.length - 1] !== panelRef.value) return
+    if (event.key === 'Escape' && props.closeOnEscape) {
         event.preventDefault()
 
         close()
@@ -186,17 +167,11 @@ function handleKeydown(event) {
 }
 
 function addKeyboardListener() {
-    document.addEventListener(
-        'keydown',
-        handleKeydown,
-    )
+    document.addEventListener('keydown', handleKeydown)
 }
 
 function removeKeyboardListener() {
-    document.removeEventListener(
-        'keydown',
-        handleKeydown,
-    )
+    document.removeEventListener('keydown', handleKeydown)
 }
 
 watch(
@@ -204,8 +179,7 @@ watch(
 
     async (open) => {
         if (open) {
-            previousActiveElement.value =
-                document.activeElement
+            previousActiveElement.value = document.activeElement
 
             addKeyboardListener()
 
@@ -220,11 +194,9 @@ watch(
 
         await nextTick()
 
-        previousActiveElement.value
-            ?.focus?.()
+        previousActiveElement.value?.focus?.()
 
-        previousActiveElement.value =
-            null
+        previousActiveElement.value = null
     },
 
     {

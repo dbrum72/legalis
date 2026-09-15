@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
@@ -136,6 +137,17 @@ Route::middleware([
     'tenant',
 ])
     ->group(function () {
+        Route::middleware('can:documents.generate')->group(function () {
+            Route::get('/document-templates/fields', [\App\Http\Controllers\DocumentAutomationController::class, 'fields']);
+            Route::get('/document-templates', [\App\Http\Controllers\DocumentAutomationController::class, 'index']);
+            Route::post('/document-templates', [\App\Http\Controllers\DocumentAutomationController::class, 'store'])->middleware('can:folders.update');
+            Route::post('/document-templates/{template}/replace', [\App\Http\Controllers\DocumentAutomationController::class, 'replace'])->middleware('can:folders.update');
+            Route::delete('/document-templates/{template}', [\App\Http\Controllers\DocumentAutomationController::class, 'destroy'])->middleware('can:folders.update');
+            Route::get('/document-templates/{template}/download', [\App\Http\Controllers\DocumentAutomationController::class, 'download']);
+            Route::get('/folders/{folder}/document-generation/context', [\App\Http\Controllers\DocumentAutomationController::class, 'context'])->middleware('can:folders.view');
+            Route::post('/folders/{folder}/document-generation/preview', [\App\Http\Controllers\DocumentAutomationController::class, 'preview'])->middleware('can:folders.view');
+            Route::post('/folders/{folder}/document-generation', [\App\Http\Controllers\DocumentAutomationController::class, 'generate'])->middleware(['can:folders.view', 'can:folders.update']);
+        });
         Route::get(
             '/postal-codes/{postalCode}',
             [PostalCodeController::class, 'show'],
@@ -531,8 +543,27 @@ Route::middleware([
 
         Route::get('/finance/summary', FinancialSummaryController::class)
             ->middleware('can:finance.view');
+        Route::get('/finance/classifications', [\App\Http\Controllers\FinancialClassificationController::class, 'index']);
+        Route::post('/finance/classifications', [\App\Http\Controllers\FinancialClassificationController::class, 'store'])
+            ->middleware('can:finance.manage');
+        Route::patch('/finance/classifications/{classification}', [\App\Http\Controllers\FinancialClassificationController::class, 'update'])
+            ->middleware('can:finance.manage');
+        Route::get('/finance/cash-flow', [CashFlowController::class, 'index'])
+            ->middleware('can:finance.view');
+        Route::get('/finance/cash-flow/export', [CashFlowController::class, 'export'])
+            ->middleware('can:finance.view');
         Route::get('/finance/report', FinancialReportController::class)
             ->middleware('can:finance.view');
+        Route::get('/finance/reconciliation', [\App\Http\Controllers\FinancialReconciliationController::class, 'index'])->middleware('can:finance.view');
+        Route::put('/finance/reconciliation/{kind}/{id}', [\App\Http\Controllers\FinancialReconciliationController::class, 'check'])->whereIn('kind', ['incoming', 'outgoing'])->whereNumber('id')->middleware('can:finance.manage');
+        Route::post('/finance/closing', [\App\Http\Controllers\FinancialReconciliationController::class, 'close'])->middleware('can:finance.manage');
+        Route::post('/finance/closing/reopen', [\App\Http\Controllers\FinancialReconciliationController::class, 'reopen'])->middleware('can:finance.manage');
+        Route::get('/payables/alerts', [\App\Http\Controllers\PayableRecurrenceController::class, 'alerts'])->middleware('can:finance.view');
+        Route::get('/payable-recurrences', [\App\Http\Controllers\PayableRecurrenceController::class, 'index'])->middleware('can:finance.view');
+        Route::post('/payable-recurrences', [\App\Http\Controllers\PayableRecurrenceController::class, 'store'])->middleware('can:finance.manage');
+        Route::patch('/payable-recurrences/{recurrence}', [\App\Http\Controllers\PayableRecurrenceController::class, 'update'])->middleware('can:finance.manage');
+        Route::get('/payable-recurrences/{recurrence}/preview', [\App\Http\Controllers\PayableRecurrenceController::class, 'preview'])->middleware('can:finance.view');
+        Route::post('/payable-recurrences/{recurrence}/generate', [\App\Http\Controllers\PayableRecurrenceController::class, 'generate'])->middleware('can:finance.manage');
         Route::get('/payables', [PayableController::class, 'index'])->middleware('can:finance.view');
         Route::post('/payables', [PayableController::class, 'store'])->middleware('can:finance.manage');
         Route::patch('/payables/{payable}', [PayableController::class, 'update'])->middleware('can:finance.manage');

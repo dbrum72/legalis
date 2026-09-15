@@ -63,6 +63,8 @@
             </footer>
         </form>
 
+        <FolderDocumentAutomation v-if="authStore.hasPermission('documents.generate')" :folder-id="folderId" @generated="handleGenerated" />
+
         <AppTable :columns="columns" :rows="folderDocumentsStore.documents" empty-text="Nenhum documento anexado.">
             <template #cell-document="{ row }">
                 <div class="folder-documents__document">
@@ -136,6 +138,7 @@ import { useDeleteConfirmation } from '@/composables/useDeleteConfirmation.js'
 import { useAuthStore } from '@/stores/auth.js'
 
 import { useFolderDocumentsStore } from '@/stores/folder-documents.js'
+import FolderDocumentAutomation from './FolderDocumentAutomation.vue'
 
 const props = defineProps({
     folderId: {
@@ -153,6 +156,11 @@ const emit = defineEmits(['changed'])
 const authStore = useAuthStore()
 
 const folderDocumentsStore = useFolderDocumentsStore()
+
+function handleGenerated(document) {
+    folderDocumentsStore.documents.unshift(document)
+    emit('changed')
+}
 
 const {
     itemToDelete: documentToDelete,

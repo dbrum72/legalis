@@ -211,7 +211,8 @@
    ITEM ATIVO
    ========================================================================== */
 
-.sidebar-item.router-link-exact-active {
+.sidebar-item.router-link-exact-active,
+.sidebar-item.router-link-active {
     color: var(--neutral-0);
 
     font-weight: var(--font-weight-semibold);
@@ -225,13 +226,15 @@
         0 4px 12px rgb(26 48 30 / 0.12);
 }
 
-.sidebar-item.router-link-exact-active .sidebar-item__icon {
+.sidebar-item.router-link-exact-active .sidebar-item__icon,
+.sidebar-item.router-link-active .sidebar-item__icon {
     color: var(--neutral-0);
 }
 
 /* pequeno detalhe âmbar do item ativo */
 
-.sidebar-item.router-link-exact-active::after {
+.sidebar-item.router-link-exact-active::after,
+.sidebar-item.router-link-active::after {
     display: none;
 }
 

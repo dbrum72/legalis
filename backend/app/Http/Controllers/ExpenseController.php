@@ -12,7 +12,7 @@ class ExpenseController extends Controller
 {
     public function index(Folder $folder): JsonResponse
     {
-        return response()->json($folder->expenses()->with('user:id,name')->latest('incurred_on')->latest('id')->get());
+        return response()->json($folder->expenses()->with(['user:id,name', 'financialCategory', 'costCenter'])->latest('incurred_on')->latest('id')->get());
     }
 
     public function store(ExpenseRequest $request, Folder $folder): JsonResponse
@@ -24,7 +24,7 @@ class ExpenseController extends Controller
             'status' => $data['status'] ?? 'open',
         ]);
 
-        return response()->json($expense->load('user:id,name'), 201);
+        return response()->json($expense->load(['user:id,name', 'financialCategory', 'costCenter']), 201);
     }
 
     public function update(ExpenseRequest $request, Folder $folder, Expense $expense): JsonResponse
@@ -33,7 +33,7 @@ class ExpenseController extends Controller
         $this->ensureOwnerOrSupervisor($request->user('api'), $expense);
         $expense->update($request->validated());
 
-        return response()->json($expense->refresh()->load('user:id,name'));
+        return response()->json($expense->refresh()->load(['user:id,name', 'financialCategory', 'costCenter']));
     }
 
     public function destroy(Folder $folder, Expense $expense): JsonResponse

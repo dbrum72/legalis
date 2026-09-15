@@ -1,6 +1,7 @@
 <template>
     <PageContainer>
         <div class="role-permissions">
+            <RouterLink :to="{ name: 'settings' }">← Configurações</RouterLink>
             <header class="role-permissions__header">
                 <div>
                     <h1>Perfis e permissões</h1>
@@ -130,6 +131,7 @@
 </template>
 
 <script setup>
+import { RouterLink } from 'vue-router'
 import { computed, onMounted, ref } from 'vue'
 import PageContainer from '@/components/layout/PageContainer/index.vue'
 import { AppCheckbox } from '@/components/forms'

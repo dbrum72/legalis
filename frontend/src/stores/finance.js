@@ -58,6 +58,10 @@ export const useFinanceStore = defineStore('finance', () => {
     const exportingReport = ref(false)
     const reminderRules = ref([])
     const payables = ref([])
+    const loadingPayables = ref(false)
+    const payablesError = ref('')
+    const activePayableFilters = ref({})
+    let payableRequest = 0
 
     function agingFromInvoices(items) {
         const buckets = Object.fromEntries(
@@ -215,9 +219,24 @@ export const useFinanceStore = defineStore('finance', () => {
         const { data } = await listReminderRules()
         reminderRules.value = data
     }
-    async function fetchPayables(filters = {}) {
-        const { data } = await listPayables(filters)
-        payables.value = data
+    async function fetchPayables(filters = activePayableFilters.value) {
+        const request = ++payableRequest
+        activePayableFilters.value = { ...filters }
+        loadingPayables.value = true
+        payablesError.value = ''
+        try {
+            const { data } = await listPayables({ ...filters })
+            if (request === payableRequest) payables.value = data
+        } catch (exception) {
+            if (request === payableRequest) {
+                payablesError.value =
+                    exception.response?.data?.message ||
+                    'Não foi possível carregar as contas a pagar.'
+            }
+            throw exception
+        } finally {
+            if (request === payableRequest) loadingPayables.value = false
+        }
     }
     async function addPayable(payload) {
         await createPayable(payload)
@@ -304,12 +323,19 @@ export const useFinanceStore = defineStore('finance', () => {
         exportingReport.value = false
         reminderRules.value = []
         payables.value = []
+        payableRequest++
+        loadingPayables.value = false
+        payablesError.value = ''
+        activePayableFilters.value = {}
     }
 
     return {
         summary,
         invoices,
         payables,
+        loadingPayables,
+        payablesError,
+        activePayableFilters,
         reminderRules,
         loading,
         exporting,

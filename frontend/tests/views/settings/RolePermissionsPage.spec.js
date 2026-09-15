@@ -56,7 +56,7 @@ async function mountPage() {
     useAuthStore().permissions = ['roles.view', 'roles.update']
     listOrganizationRoles.mockResolvedValue({ data: roles })
     getOrganizationRole.mockImplementation((id) => Promise.resolve({ data: roleDetails[id] }))
-    const wrapper = mount(RolePermissionsPage, { global: { plugins: [pinia] } })
+    const wrapper = mount(RolePermissionsPage, { global: { plugins: [pinia], stubs: { RouterLink: { template: '<a><slot /></a>' } } } })
     await flushPromises()
     return wrapper
 }

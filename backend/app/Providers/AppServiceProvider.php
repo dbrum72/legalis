@@ -40,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \App\Models\Payment::observe(\App\Observers\FinancialPaymentObserver::class);
+        \App\Models\PayablePayment::observe(\App\Observers\FinancialPaymentObserver::class);
         RateLimiter::for(
             'datajud',
             fn () => Limit::perMinute(

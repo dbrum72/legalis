@@ -21,6 +21,21 @@ function createRoute(permission = null, fullPath = '/clients') {
 }
 
 describe('permission guard', () => {
+    it('permite catálogo com acesso a despesas sem acesso a perfis', () => {
+        setActivePinia(createPinia())
+        const auth = useAuthStore()
+        auth.contextLoaded = true
+        auth.permissions = ['expenses.view']
+        expect(permissionGuard({ fullPath: '/settings/financial-categories', matched: [{ meta: { permissionsAny: ['finance.view', 'expenses.view'] } }] })).toBe(true)
+        expect(permissionGuard(createRoute('roles.view', '/settings/roles'))).toEqual({ name: 'dashboard' })
+    })
+    it('não usa permissão do pai para contornar restrição da rota filha', () => {
+        setActivePinia(createPinia())
+        const auth = useAuthStore()
+        auth.contextLoaded = true
+        auth.permissions = ['finance.view']
+        expect(permissionGuard({ fullPath: '/settings/roles', matched: [{ meta: { permissionsAny: ['finance.view', 'roles.view'] } }, { meta: { permission: 'roles.view' } }] })).toEqual({ name: 'dashboard' })
+    })
     beforeEach(() => {
         setActivePinia(createPinia())
     })

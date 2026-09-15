@@ -15,6 +15,7 @@ function createTestRouter() {
         history: createMemoryHistory(),
 
         routes: [
+            { path: '/settings', name: 'settings', component: { template: '<div />' } },
             {
                 path: '/',
                 name: 'dashboard',

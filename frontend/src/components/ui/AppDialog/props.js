@@ -1,4 +1,6 @@
 export const appDialogProps = {
+    busy: { type: Boolean, default: false },
+    error: { type: String, default: '' },
     open: {
         type: Boolean,
         default: false,

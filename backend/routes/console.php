@@ -36,3 +36,9 @@ Schedule::command('finance:generate-reminders')
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('finance:generate-payables')
+    ->dailyAt('07:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer();

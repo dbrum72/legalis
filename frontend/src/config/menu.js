@@ -54,10 +54,10 @@ export default [
     },
 
     {
-        id: 'role-permissions',
+        id: 'settings',
         label: 'Configurações',
-        name: 'role-permissions',
+        name: 'settings',
         icon: 'settings',
-        permission: 'roles.view',
+        permissionsAny: ['roles.view', 'finance.view', 'expenses.view', 'documents.generate'],
     },
 ]

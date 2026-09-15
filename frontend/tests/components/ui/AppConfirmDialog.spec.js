@@ -17,6 +17,26 @@ function mountComponent(props = {}) {
 }
 
 describe('AppConfirmDialog', () => {
+    it('mantém foco na confirmação, permite Escape e devolve foco ao acionador', async () => {
+        const trigger = document.createElement('button')
+        document.body.appendChild(trigger)
+        trigger.focus()
+        const wrapper = mountComponent()
+        await wrapper.vm.$nextTick()
+        const buttons = document.querySelectorAll('.app-confirm-dialog button')
+        expect(document.activeElement).toBe(buttons[0])
+        buttons[buttons.length - 1].focus()
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', cancelable: true }))
+        expect(document.activeElement).toBe(buttons[0])
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+        expect(wrapper.emitted('cancel')).toHaveLength(1)
+        await wrapper.setProps({ open: false })
+        await wrapper.vm.$nextTick()
+        expect(document.activeElement).toBe(trigger)
+        wrapper.unmount()
+        trigger.remove()
+    })
+
     it('não renderiza quando fechado', () => {
         const wrapper = mountComponent({
             open: false,
@@ -104,4 +124,3 @@ describe('AppConfirmDialog', () => {
         wrapper.unmount()
     })
 })
-

@@ -8,6 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::create('financial_classifications', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->restrictOnDelete();
+            $table->string('kind', 20);
+            $table->string('name', 80);
+            $table->boolean('active')->default(true);
+            $table->timestamps();
+            $table->unique(['organization_id', 'kind', 'name'], 'financial_classification_unique');
+        });
+
         Schema::create('fee_agreements', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('organization_id')->constrained()->restrictOnDelete();
@@ -81,6 +91,8 @@ return new class extends Migration
 
         Schema::create('expenses', function (Blueprint $table): void {
             $table->id();
+            $table->foreignId('category_id')->nullable()->constrained('financial_classifications')->restrictOnDelete();
+            $table->foreignId('cost_center_id')->nullable()->constrained('financial_classifications')->restrictOnDelete();
             $table->foreignId('organization_id')->constrained()->restrictOnDelete();
             $table->foreignId('folder_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
@@ -144,6 +156,10 @@ return new class extends Migration
 
         Schema::create('payables', function (Blueprint $table): void {
             $table->id();
+            $table->foreignId('folder_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('client_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained('financial_classifications')->restrictOnDelete();
+            $table->foreignId('cost_center_id')->nullable()->constrained('financial_classifications')->restrictOnDelete();
             $table->foreignId('organization_id')->constrained()->restrictOnDelete();
             $table->string('supplier', 180);
             $table->string('description', 500);
@@ -211,5 +227,6 @@ return new class extends Migration
         Schema::dropIfExists('time_entries');
         Schema::dropIfExists('invoices');
         Schema::dropIfExists('fee_agreements');
+        Schema::dropIfExists('financial_classifications');
     }
 };
