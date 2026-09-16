@@ -66,11 +66,11 @@
                         Use pelo menos 8 caracteres.
                     </p>
 
-                    <div v-if="registerError" class="register-page__error" role="alert">
-                        {{ registerError }}
+                    <div v-if="retryMessage || registerError" class="register-page__error" role="alert">
+                        {{ retryMessage || registerError }}
                     </div>
 
-                    <AppButton type="submit" variant="highlight" size="lg" :loading="loading" :disabled="loading" block>
+                    <AppButton type="submit" variant="highlight" size="lg" :loading="loading" :disabled="loading || retryRemaining > 0" block>
                         Criar minha conta
                     </AppButton>
                 </form>
@@ -90,6 +90,7 @@
 </template>
 
 <script setup>
+import { useRetryCountdown } from '@/composables/useRetryCountdown'
 import {
     reactive,
     ref,
@@ -123,6 +124,8 @@ const authStore = useAuthStore()
 const loading = ref(false)
 
 const registerError = ref('')
+
+const { remaining: retryRemaining, message: retryMessage, start: startRetryCountdown } = useRetryCountdown()
 
 const form =
     reactive({
@@ -217,6 +220,7 @@ function validate() {
 async function handleSubmit() {
     if (
         loading.value ||
+        retryRemaining.value > 0 ||
         !validate()
     ) {
         return
@@ -249,6 +253,11 @@ async function handleSubmit() {
     } catch (error) {
         const status =
             error.response?.status
+
+        if (status === 429) {
+            startRetryCountdown(error)
+            return
+        }
 
         if (status === 422) {
             const validationErrors =

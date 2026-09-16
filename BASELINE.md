@@ -1,5 +1,37 @@
 # Baseline do Legalis
 
+## Atualização de 16/09/2026 — início do ciclo 2
+
+Jobs DataJud/DJEN e comandos de geração/envio de lembretes financeiros agora
+usam contexto organizacional temporário com restauração em `finally`.
+Organizações inativas são ignoradas nesses fluxos; a cobrança do lembrete é
+carregada sob o escritório correto e vínculos cruzados são recusados.
+Workflow de CI preparado em `.github/workflows/ci.yml`, ainda sem execução remota.
+Backend completo: 455 de 456 testes aprovados; falha na sincronização manual
+DataJud corrigida e revalidada com 23 testes direcionados e 111 assertions.
+A suíte completa não foi repetida após a correção localizada. Frontend completo:
+1.634 testes em 106 arquivos aprovados em 329,81 segundos.
+Escopo, validação e próximos passos em [CICLO_2_CONFIABILIDADE.md](CICLO_2_CONFIABILIDADE.md).
+Nenhuma migration, alteração de banco de desenvolvimento ou envio externo nesta entrega.
+
+## Atualização de 16/09/2026 — início do ciclo 1
+
+Proteção de login/cadastro adicionada com limitadores Laravel por IP e e-mail/IP,
+resposta HTTP 429 e orientação em português nas telas. Limites e requisitos
+operacionais estão em [CICLO_1_VALIDACAO.md](CICLO_1_VALIDACAO.md), junto da revisão
+inicial de isolamento, especificação de homologação e medição XML de documentos.
+Nenhuma migration ou mudança no banco de desenvolvimento nesta entrega.
+
+Backend completo: 446 testes e 2.117 assertions aprovados em 567,753 segundos.
+Frontend completo: 1.633 testes em 106 arquivos aprovados em 192,99 segundos;
+25 testes direcionados também aprovados; build aprovado com 2.155 módulos.
+O usuário disponibilizou o caminho de um modelo de teste; a meta de dez modelos
+permanece pendente. O modelo disponível foi renderizado no Word 16.0 e revisado
+visualmente em dois cenários aprovados, com original preservado por hash.
+LibreOffice permanece ausente; evidências da alternativa pelo Word instalado
+registradas em `CICLO_1_VALIDACAO.md`.
+O ciclo 1 está em andamento no `CRONOGRAMA.md`; os registros abaixo são históricos.
+
 Atualização documental mais recente: 15/09/2026 — estudo da etapa 14 em
 `ESTUDO_INTEGRACOES_FINANCEIRAS.md`. Integrações financeiras adiadas para o
 futuro por decisão do usuário, incluindo importação OFX/CSV, cobrança externa

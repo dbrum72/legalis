@@ -75,6 +75,7 @@ class DataJudSyncTest extends TestCase
 
     public function test_sincronizacao_manual_executa_imediatamente(): void
     {
+        $this->assertFalse($this->folder->refresh()->datajud_monitoring_enabled);
         $client = Mockery::mock(DataJudClient::class);
         $client->shouldReceive('findProcess')->once()->andReturn([
             'numeroProcesso' => '50000000020268210001',

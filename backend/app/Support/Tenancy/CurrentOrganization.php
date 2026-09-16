@@ -39,4 +39,17 @@ class CurrentOrganization
     {
         $this->organization = null;
     }
+
+    /** Execute a trusted background operation and always restore its caller's context. */
+    public function run(Organization $organization, callable $operation): mixed
+    {
+        $previous = $this->organization;
+        $this->set($organization);
+
+        try {
+            return $operation();
+        } finally {
+            $this->organization = $previous;
+        }
+    }
 }

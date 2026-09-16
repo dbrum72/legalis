@@ -1,0 +1,95 @@
+name: Legalis CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
+      # Disposable CI credentials, never shared with local/staging/production.
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: db_legalis_testing
+      DB_USERNAME: legalis_ci
+      DB_PASSWORD: legalis-ci-only
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      MAIL_MAILER: array
+      QUEUE_CONNECTION: sync
+      JWT_SECRET: legalis-ci-jwt-secret-only-for-automated-tests-2026
+      DATAJUD_API_KEY: ''
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: db_legalis_testing
+          MYSQL_USER: legalis_ci
+          MYSQL_PASSWORD: legalis-ci-only
+          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, dom, xml, zip, fileinfo, bcmath
+          coverage: none
+          tools: composer:v2
+      - name: Prepare test environment
+        run: cp .env.example .env
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Run backend suite
+        run: composer test -- --compact
+
+  frontend:
+    name: Frontend tests and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_API_URL: http://127.0.0.1:8000/api
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run frontend suite
+        run: npm test -- --maxWorkers=2
+      - name: Build frontend
+        run: npm run build

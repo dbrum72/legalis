@@ -30,6 +30,7 @@ class DataJudSyncController extends Controller
         Bus::dispatchSync(new SyncFolderDataJud(
             $folder->id,
             CarbonImmutable::now($timezone)->toDateString(),
+            requireMonitoring: false,
         ));
 
         return response()->json([

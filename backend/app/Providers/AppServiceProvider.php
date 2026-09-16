@@ -10,6 +10,7 @@ use App\Integrations\ViaCep\Contracts\PostalCodeClient;
 use App\Integrations\ViaCep\HttpViaCepClient;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -40,6 +41,31 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $authLimitResponse = static function (Request $request, array $headers) {
+            $seconds = (int) ($headers['Retry-After'] ?? 60);
+
+            return response()->json([
+                'message' => "Muitas tentativas. Aguarde {$seconds} segundos e tente novamente.",
+                'retry_after' => $seconds,
+            ], 429, $headers);
+        };
+
+        RateLimiter::for('auth-login', static function (Request $request) use ($authLimitResponse) {
+            $email = $request->input('email');
+            $identity = is_string($email) ? mb_strtolower(trim($email)) : '';
+
+            return [
+                Limit::perMinute(60)->by('ip:'.$request->ip())->response($authLimitResponse),
+                Limit::perMinute(5)
+                    ->by('identity:'.hash('sha256', $identity.'|'.$request->ip()))
+                    ->response($authLimitResponse),
+            ];
+        });
+
+        RateLimiter::for('auth-register', static fn (Request $request) =>
+            Limit::perMinute(5)->by('ip:'.$request->ip())->response($authLimitResponse)
+        );
+
         \App\Models\Payment::observe(\App\Observers\FinancialPaymentObserver::class);
         \App\Models\PayablePayment::observe(\App\Observers\FinancialPaymentObserver::class);
         RateLimiter::for(

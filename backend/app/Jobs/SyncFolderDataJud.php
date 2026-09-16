@@ -4,7 +4,9 @@ namespace App\Jobs;
 
 use App\Models\Folder;
 use App\Models\IntegrationSyncRun;
+use App\Models\Scopes\OrganizationScope;
 use App\Services\Folders\SyncFolderWithDataJud;
+use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,8 +20,12 @@ class SyncFolderDataJud implements ShouldBeUnique, ShouldQueue
     use Queueable;
 
     public int $tries = 4;
+
     public int $uniqueFor = 3600;
+
     public int $timeout = 90;
+
+    public bool $requireMonitoring = true;
 
     public array $backoff = [
         60,
@@ -31,7 +37,9 @@ class SyncFolderDataJud implements ShouldBeUnique, ShouldQueue
     public function __construct(
         public readonly int $folderId,
         public readonly string $syncDate,
+        bool $requireMonitoring = true,
     ) {
+        $this->requireMonitoring = $requireMonitoring;
         $this->onQueue('integrations');
     }
 
@@ -44,14 +52,25 @@ class SyncFolderDataJud implements ShouldBeUnique, ShouldQueue
 
     public function handle(SyncFolderWithDataJud $service): void
     {
-        $folder = Folder::query()
+        // The queued ID is a platform lookup; all subsequent work is tenant-scoped.
+        $folder = Folder::withoutGlobalScope(OrganizationScope::class)
             ->with('organization')
+            ->whereHas('organization', fn ($query) => $query->where('status', 'active'))
+            ->when($this->requireMonitoring, fn ($query) => $query->where('datajud_monitoring_enabled', true))
             ->find($this->folderId);
 
         if ($folder === null) {
             return;
         }
 
+        app(CurrentOrganization::class)->run(
+            $folder->organization,
+            fn () => $this->synchronize($folder, $service),
+        );
+    }
+
+    private function synchronize(Folder $folder, SyncFolderWithDataJud $service): void
+    {
         $folder->forceFill([
             'datajud_last_attempt_at' => now(),
             'datajud_sync_error' => null,

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 
 import { createMemoryHistory, createRouter } from 'vue-router'
 
@@ -187,6 +187,10 @@ function mockLoginWithContext(authStore) {
 }
 
 describe('LoginPage', () => {
+    afterEach(() => {
+        vi.clearAllTimers()
+        vi.useRealTimers()
+    })
     beforeEach(() => {
         vi.clearAllMocks()
     })
@@ -399,6 +403,39 @@ describe('LoginPage', () => {
         await vi.waitFor(() => {
             expect(wrapper.text()).toContain('O e-mail informado é inválido.')
         })
+    })
+
+    it.each([
+        [{ data: { retry_after: 39 } }, 39],
+        [{ headers: { 'retry-after': '42' } }, 42],
+        [{ data: { retry_after: 'invalid' } }, 60],
+    ])('conta o bloqueio e libera a próxima tentativa: %j', async (response, seconds) => {
+        vi.useFakeTimers()
+        const { wrapper, router, authStore } = await mountPage()
+        const login = vi.spyOn(authStore, 'login').mockRejectedValue({
+            response: { status: 429, ...response },
+        })
+        await wrapper.get('#login-email').setValue('admin@legalis.local')
+        await wrapper.get('#login-password').setValue('senha')
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+        expect(wrapper.get('[role="alert"]').text()).toBe(`Muitas tentativas. Aguarde ${seconds} segundos e tente novamente.`)
+        expect(router.currentRoute.value.name).toBe('login')
+        expect(wrapper.get('button[type="submit"]').element.disabled).toBe(true)
+        await wrapper.get('form').trigger('submit')
+        expect(login).toHaveBeenCalledTimes(1)
+        await vi.advanceTimersByTimeAsync(1000)
+        expect(wrapper.get('[role="alert"]').text()).toContain(`${seconds - 1} segundos`)
+        await vi.advanceTimersByTimeAsync((seconds - 2) * 1000)
+        expect(wrapper.get('[role="alert"]').text()).toContain('1 segundo e')
+        await vi.advanceTimersByTimeAsync(1000)
+        expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+        expect(wrapper.get('button[type="submit"]').element.disabled).toBe(false)
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+        expect(login).toHaveBeenCalledTimes(2)
+        wrapper.unmount()
+        expect(vi.getTimerCount()).toBe(0)
     })
 
     it('exibe erro genérico para falha inesperada', async () => {

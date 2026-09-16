@@ -43,7 +43,7 @@ Route::prefix('auth')
                 AuthController::class,
                 'login',
             ]
-        );
+        )->middleware('throttle:auth-login');
 
         Route::post(
             '/register',
@@ -51,7 +51,7 @@ Route::prefix('auth')
                 AuthController::class,
                 'register',
             ],
-        );
+        )->middleware('throttle:auth-register');
 
         Route::middleware(
             'auth:api'

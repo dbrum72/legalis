@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 
 import { createMemoryHistory, createRouter } from 'vue-router'
 
@@ -279,6 +279,32 @@ describe('RegisterPage', () => {
 
             expect(wrapper.text()).toContain('O nome da organização é obrigatório.')
         })
+    })
+
+    afterEach(() => {
+        vi.clearAllTimers()
+        vi.useRealTimers()
+    })
+
+    it.each([39, undefined])('atualiza contagem de cadastro e libera botão: %s', async (seconds) => {
+        vi.useFakeTimers()
+        const { wrapper, authStore } = await mountPage()
+        const register = vi.spyOn(authStore, 'register').mockRejectedValue({
+            response: { status: 429, data: { retry_after: seconds } },
+        })
+        await fillValidForm(wrapper)
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+        expect(wrapper.get('[role="alert"]').text()).toContain(`${seconds ?? 60} segundos`)
+        expect(wrapper.get('button[type="submit"]').element.disabled).toBe(true)
+        await wrapper.get('form').trigger('submit')
+        expect(register).toHaveBeenCalledTimes(1)
+        await vi.advanceTimersByTimeAsync(1000)
+        expect(wrapper.get('[role="alert"]').text()).toContain(`${(seconds ?? 60) - 1} segundos`)
+        await vi.advanceTimersByTimeAsync(((seconds ?? 60) - 1) * 1000)
+        expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+        expect(wrapper.get('button[type="submit"]').element.disabled).toBe(false)
+        wrapper.unmount()
     })
 
     it('exibe erro generico quando cadastro falha', async () => {

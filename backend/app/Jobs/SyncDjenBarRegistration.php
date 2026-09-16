@@ -3,7 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\MonitoredBarRegistration;
+use App\Models\Scopes\OrganizationScope;
 use App\Services\Publications\ImportDjenPublications;
+use App\Support\Tenancy\CurrentOrganization;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -33,8 +35,9 @@ class SyncDjenBarRegistration implements ShouldBeUnique, ShouldQueue
         ImportDjenPublications $service,
     ): void {
         $barRegistration =
-            MonitoredBarRegistration::query()
+            MonitoredBarRegistration::withoutGlobalScope(OrganizationScope::class)
                 ->with('organization')
+                ->whereHas('organization', fn ($query) => $query->where('status', 'active'))
                 ->find(
                     $this->barRegistrationId
                 );
@@ -46,7 +49,7 @@ class SyncDjenBarRegistration implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $service->handle(
+        app(CurrentOrganization::class)->run($barRegistration->organization, fn () => $service->handle(
             $barRegistration,
             CarbonImmutable::parse(
                 $this->periodStart
@@ -54,7 +57,7 @@ class SyncDjenBarRegistration implements ShouldBeUnique, ShouldQueue
             CarbonImmutable::parse(
                 $this->periodEnd
             ),
-        );
+        ));
     }
 
     public function uniqueId(): string

@@ -23,11 +23,11 @@
                     <AppPassword id="login-password" v-model="form.password" name="password" label="Senha"
                         autocomplete="current-password" :disabled="loading" :error="errors.password" required />
 
-                    <div v-if="authError" class="login-page__error" role="alert">
-                        {{ authError }}
+                    <div v-if="retryMessage || authError" class="login-page__error" role="alert">
+                        {{ retryMessage || authError }}
                     </div>
 
-                    <AppButton type="submit" variant="primary" size="lg" :loading="loading" :disabled="loading" block>
+                    <AppButton type="submit" variant="primary" size="lg" :loading="loading" :disabled="loading || retryRemaining > 0" block>
                         Entrar
                     </AppButton>
                 </form>
@@ -47,6 +47,7 @@
 </template>
 
 <script setup>
+import { useRetryCountdown } from '@/composables/useRetryCountdown'
 import {
     reactive,
     ref,
@@ -88,6 +89,8 @@ const loading =
 
 const authError =
     ref('')
+
+const { remaining: retryRemaining, message: retryMessage, start: startRetryCountdown } = useRetryCountdown()
 
 const form = reactive({
     email: '',
@@ -145,6 +148,7 @@ function resolveRedirect() {
 async function handleSubmit() {
     if (
         loading.value ||
+        retryRemaining.value > 0 ||
         !validate()
     ) {
         return
@@ -190,6 +194,11 @@ async function handleSubmit() {
     } catch (error) {
         const status =
             error.response?.status
+
+        if (status === 429) {
+            startRetryCountdown(error)
+            return
+        }
 
         if (status === 422) {
             const validationErrors =
